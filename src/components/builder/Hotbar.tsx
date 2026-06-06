@@ -17,6 +17,7 @@ export function Hotbar() {
   const activeType = useBuildStore((s) => s.activeBlockType);
   const setActiveType = useBuildStore((s) => s.setActiveBlockType);
   const inventory = useBuildStore((s) => s.inventory);
+  const labels = useBlockLabel();
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
