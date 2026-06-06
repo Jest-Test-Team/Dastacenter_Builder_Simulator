@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Providers } from './providers';
 import { WebVitalsReporter } from '@/components/perf/WebVitalsReporter';
 import { SkipLink } from '@/components/a11y/SkipLink';
+import { ConsentBanner } from '@/components/analytics/ConsentBanner';
 import { getServerLocale } from '@/lib/i18n/server';
 import './globals.css';
 
