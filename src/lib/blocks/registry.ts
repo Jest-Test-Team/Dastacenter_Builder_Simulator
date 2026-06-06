@@ -9,7 +9,9 @@
  * The scoring engine picks it up automatically.
  */
 
-import type { BlockDef, BlockCategory } from './types';
+import type { BlockDef, BlockCategory, BlockInstance, BuildState } from './types';
+import { cellKey } from '@/lib/grid';
+import { nanoid } from 'nanoid';
 
 // ----------------------------------------------------------------------------
 // STRUCTURE
