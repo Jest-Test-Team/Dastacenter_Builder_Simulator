@@ -1143,7 +1143,7 @@ export function canPlace(
   rot: 0 | 1 | 2 | 3 = 0,
   worldSize: { x: number; y: number; z: number } = { x: 32, y: 8, z: 32 },
 ): { ok: true } | { ok: false; reason: string } {
-  const def = getBlockDef(typeId);
+  const def = getBlock(typeId);
   if (!def) return { ok: false, reason: `Unknown block type ${typeId}` };
   const [w, h, d] = sizeOf(def, rot);
   for (let dx = 0; dx < w; dx++) {
