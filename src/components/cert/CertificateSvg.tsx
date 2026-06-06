@@ -6,7 +6,7 @@
  */
 
 import type { RatingReport } from '@/lib/scoring';
-import { QRCodeSVG } from 'qrcode.react';
+import { QRCode as QRCodeSVG } from 'qrcode.react';
 
 export interface CertificateSvgProps {
   report: RatingReport;
