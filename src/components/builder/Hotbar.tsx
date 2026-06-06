@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { useBuildStore } from '@/lib/store/build-store';
 import { getBlock, isValidBlockType } from '@/lib/blocks';
 import { cn } from '@/lib/utils';
+import { useBlockLabel } from '@/lib/i18n/blocks';
 
 const HOTBAR_SIZE = 9;
 
