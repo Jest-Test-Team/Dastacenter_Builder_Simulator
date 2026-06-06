@@ -36,15 +36,21 @@ describe('block registry', () => {
     expect(getBlock('nope.does.not.exist')).toBeUndefined();
   });
 
+  it('getBlock returns the definition for a known id', () => {
+    const b = getBlock('server_rack');
+    expect(b).toBeDefined();
+    expect(b?.category).toBe('it');
+  });
+
   it('canPlace returns ok:false when out of bounds', () => {
     const state = s();
-    const r = canPlace(state, 'it.server.generic', { x: 100, y: 0, z: 0 });
+    const r = canPlace(state, 'server_rack', { x: 100, y: 0, z: 0 });
     expect(r.ok).toBe(false);
   });
 
   it('placeBlock creates an instance and updates the spatial index', () => {
     const state = s();
-    const id = placeBlock(state, { typeId: 'it.server.generic', cell: { x: 4, y: 1, z: 4 } });
+    const id = placeBlock(state, { typeId: 'server_rack', cell: { x: 4, y: 1, z: 4 } });
     expect(id).toBeTruthy();
     expect(state.voxels[id!]).toBeDefined();
     expect(state.byCell[cellKey({ x: 4, y: 1, z: 4 })]).toBe(id);
@@ -52,14 +58,14 @@ describe('block registry', () => {
 
   it('placeBlock refuses to overlap an existing block', () => {
     const state = s();
-    placeBlock(state, { typeId: 'it.server.generic', cell: { x: 4, y: 1, z: 4 } });
-    const id2 = placeBlock(state, { typeId: 'it.server.generic', cell: { x: 4, y: 1, z: 4 } });
+    placeBlock(state, { typeId: 'server_rack', cell: { x: 4, y: 1, z: 4 } });
+    const id2 = placeBlock(state, { typeId: 'server_rack', cell: { x: 4, y: 1, z: 4 } });
     expect(id2).toBeNull();
   });
 
   it('removeBlock returns the instance and clears the index', () => {
     const state = s();
-    const id = placeBlock(state, { typeId: 'it.server.generic', cell: { x: 4, y: 1, z: 4 } })!;
+    const id = placeBlock(state, { typeId: 'server_rack', cell: { x: 4, y: 1, z: 4 } })!;
     const removed = removeBlock(state, id);
     expect(removed?.id).toBe(id);
     expect(state.voxels[id]).toBeUndefined();
