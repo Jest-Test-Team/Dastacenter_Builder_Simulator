@@ -76,8 +76,12 @@ function stripForShare(s: BuildSnapshot): BuildSnapshot {
 }
 
 /** Build a shareable URL for a given origin. */
-export async function buildShareUrl(snapshot: BuildSnapshot, origin?: string): Promise<string> {
+export async function buildShareUrl(
+  snapshot: BuildSnapshot,
+  origin?: string,
+  path = '/build/free',
+): Promise<string> {
   const token = await encodeBuildToShareToken(snapshot);
   const o = origin ?? (typeof window !== 'undefined' ? window.location.origin : '');
-  return `${o}/build/free?share=${encodeURIComponent(token)}`;
+  return `${o}${path}?share=${encodeURIComponent(token)}`;
 }
