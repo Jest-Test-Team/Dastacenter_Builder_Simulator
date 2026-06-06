@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { buildSiwsMessage, parseSiwsMessage, verifySiwsSignature } from '@/lib/wallet/siws';
 import nacl from 'tweetnacl';
+import bs58 from 'bs58';
 import { encodeBase64, decodeUTF8 } from 'tweetnacl-util';
 
 describe('SIWS', () => {
@@ -19,8 +20,7 @@ describe('SIWS', () => {
 
   it('verifies a valid ed25519 signature', () => {
     const kp = nacl.sign.keyPair();
-    const pubkeyBase58 = encodeBase64(kp.publicKey);
-    const address = btoa(pubkeyBase58).replace(/=/g, '');
+    const address = bs58.encode(kp.publicKey);
     const msg = buildSiwsMessage({
       domain: 'example.com',
       address,
@@ -34,8 +34,7 @@ describe('SIWS', () => {
 
   it('rejects a tampered signature', () => {
     const kp = nacl.sign.keyPair();
-    const pubkeyBase58 = encodeBase64(kp.publicKey);
-    const address = btoa(pubkeyBase58).replace(/=/g, '');
+    const address = bs58.encode(kp.publicKey);
     const msg = buildSiwsMessage({
       domain: 'example.com',
       address,
