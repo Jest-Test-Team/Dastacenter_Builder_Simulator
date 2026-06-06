@@ -101,6 +101,7 @@ export function BuilderCanvas({
 
         <SiteEnvironment />
         <VoxelWorld />
+        <CctvCoverage />
         {showPreview && <PlacementPreview />}
       </Suspense>
     </Canvas>
