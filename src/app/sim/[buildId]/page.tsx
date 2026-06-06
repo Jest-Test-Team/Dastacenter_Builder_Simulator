@@ -191,7 +191,7 @@ function NPCs({ count, t }: { count: number; t: number; }) {
   return (
     <>
       {seeds.map((_, i) => (
-        <group key={i} ref={(el) => { refs.current[i] = el; }}>
+        <group key={i} ref={(el: any) => { refs.current[i] = el; }}>
           <mesh position={[0, 0.5, 0]}>
             <capsuleGeometry args={[0.2, 0.6, 4, 8]} />
             <meshStandardMaterial color="#5fa8d3" />
