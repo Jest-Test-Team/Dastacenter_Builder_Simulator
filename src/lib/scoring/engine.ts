@@ -29,7 +29,7 @@ import {
 import { type BuildState, countByType } from '@/lib/store/build-store';
 import type { Cell } from '@/lib/grid';
 import { type PolicyState } from './policy';
-import { allRules, type Rule, type Issue, type RuleContext } from './rules';
+import { allRules, type Rule, type Issue } from './rules';
 
 export type Severity = 'info' | 'warn' | 'error' | 'critical';
 
