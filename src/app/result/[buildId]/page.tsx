@@ -77,7 +77,7 @@ export default function ResultPage() {
         <section className="mt-10">
           <h2 className="flex items-center gap-2 text-xl font-semibold">
             <AlertTriangle className="h-5 w-5 text-warn" />
-            Issues ({report.issues.length})
+            {t('result.issues')} ({report.issues.length})
           </h2>
           <p className="mt-1 text-sm text-fg-muted">
             Each issue cites its source standard. Click an issue to see how to fix it.
@@ -102,12 +102,12 @@ export default function ResultPage() {
           </div>
           <div className="flex gap-3">
             <Link href={`/build/${useBuildStore.getState().scenarioId}`} className="btn-ghost">
-              Back to builder
+              {t('result.retry')}
             </Link>
             {report.certifiable ? (
               <Link href={`/cert/${buildId}`} className="btn">
                 <Award className="h-4 w-4" />
-                Claim Certificate
+                {t('result.claim')}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             ) : (
