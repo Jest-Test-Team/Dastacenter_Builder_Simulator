@@ -38,8 +38,9 @@ export default function SettingsPage() {
   async function clearAll() {
     if (!window.confirm('Delete all local builds? This cannot be undone.')) return;
     try {
-      const { deleteAllBuilds } = await import('@/lib/persist/idb');
-      await deleteAllBuilds();
+      const { listBuildsFromIDB, deleteBuildFromIDB } = await import('@/lib/persist');
+      const all = await listBuildsFromIDB();
+      await Promise.all(all.map((b) => deleteBuildFromIDB(b.id)));
       setAutosaves([]);
     } catch {
       /* ignore */
@@ -48,8 +49,8 @@ export default function SettingsPage() {
 
   async function exportAll() {
     try {
-      const { getAllBuilds } = await import('@/lib/persist/idb');
-      const all = await getAllBuilds();
+      const { listBuildsFromIDB } = await import('@/lib/persist');
+      const all = await listBuildsFromIDB();
       const blob = new Blob([JSON.stringify(all, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
