@@ -17,6 +17,8 @@ import {
   Wallet,
   ArrowRight,
 } from 'lucide-react';
+import { LocaleSwitcher } from '@/components/i18n/LocaleSwitcher';
+import { getServerLocale } from '@/lib/i18n/server';
 
 export default function HomePage() {
   return (
