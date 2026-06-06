@@ -37,7 +37,7 @@ export async function saveBuildToIDB(snapshot: BuildSnapshot): Promise<void> {
     id: snapshot.buildId,
     name: snapshot.name,
     scenarioId: snapshot.scenarioId,
-    scenarioName: snapshot.scenarioName,
+    scenarioName: (snapshot as { scenarioName?: string }).scenarioName ?? '',
     createdAt: snapshot.createdAt,
     updatedAt: snapshot.updatedAt,
     snapshot,
