@@ -130,7 +130,9 @@ export function score(state: BuildState): RatingReport {
     level,
     certifiable,
     issues: issues.sort(severityRank),
-    achievements: Array.from(achievements).map((id) => ACHIEVEMENTS[id]).filter(Boolean),
+    achievements: Array.from(achievements)
+      .map((id) => ACHIEVEMENTS[id])
+      .filter((a): a is Achievement => a !== undefined),
     pue,
     wue,
     totalHeatKW: ctx.totalHeatKW,
