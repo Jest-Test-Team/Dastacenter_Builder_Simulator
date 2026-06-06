@@ -1124,3 +1124,89 @@ export const CATEGORY_LABELS: Record<BlockCategory, string> = {
   safety: 'Safety',
   network: 'Network',
 };
+
+// ----------------------------------------------------------------------------
+// Placement helpers (pure functions over BuildState)
+// ----------------------------------------------------------------------------
+
+/** Minimum cell for a block at the given base cell, accounting for rotation. */
+function sizeOf(def: BlockDef, rot: 0 | 1 | 2 | 3): [number, number, number] {
+  const [w, h, d] = def.size;
+  return rot % 2 === 0 ? [w, h, d] : [d, h, w];
+}
+
+/** Check whether the block's bounding box fits inside the world and does not collide. */
+export function canPlace(
+  state: BuildState,
+  typeId: string,
+  baseCell: { x: number; y: number; z: number },
+  rot: 0 | 1 | 2 | 3 = 0,
+  worldSize: { x: number; y: number; z: number } = { x: 32, y: 8, z: 32 },
+): { ok: true } | { ok: false; reason: string } {
+  const def = getBlockDef(typeId);
+  if (!def) return { ok: false, reason: `Unknown block type ${typeId}` };
+  const [w, h, d] = sizeOf(def, rot);
+  for (let dx = 0; dx < w; dx++) {
+    for (let dy = 0; dy < h; dy++) {
+      for (let dz = 0; dz < d; dz++) {
+        const c = { x: baseCell.x + dx, y: baseCell.y + dy, z: baseCell.z + dz };
+        if (c.x < 0 || c.y < 0 || c.z < 0 || c.x >= worldSize.x || c.y >= worldSize.y || c.z >= worldSize.z) {
+          return { ok: false, reason: 'Out of bounds' };
+        }
+        if (state.byCell[cellKey(c)]) {
+          return { ok: false, reason: 'Cell already occupied' };
+        }
+      }
+    }
+  }
+  return { ok: true };
+}
+
+/** Place a block. Mutates the state. Returns the new instance id, or null on failure. */
+export function placeBlock(
+  state: BuildState,
+  opts: { typeId: string; cell: { x: number; y: number; z: number }; rotation?: 0 | 1 | 2 | 3 },
+): string | null {
+  const rot = opts.rotation ?? 0;
+  const v = canPlace(state, opts.typeId, opts.cell, rot);
+  if (!v.ok) return null;
+  const id = nanoid(10);
+  const inst: BlockInstance = {
+    id,
+    type: opts.typeId,
+    position: opts.cell,
+    rotation: rot,
+    metadata: {},
+  };
+  state.voxels[id] = inst;
+  const [w, h, d] = sizeOf(getBlockDef(opts.typeId)!, rot);
+  for (let dx = 0; dx < w; dx++) {
+    for (let dy = 0; dy < h; dy++) {
+      for (let dz = 0; dz < d; dz++) {
+        state.byCell[cellKey({ x: opts.cell.x + dx, y: opts.cell.y + dy, z: opts.cell.z + dz })] = id;
+      }
+    }
+  }
+  state.updatedAt = Date.now();
+  return id;
+}
+
+/** Remove a block by id. Returns the removed instance, or null if not found. */
+export function removeBlock(state: BuildState, id: string): BlockInstance | null {
+  const inst = state.voxels[id];
+  if (!inst) return null;
+  delete state.voxels[id];
+  const def = getBlockDef(inst.type);
+  if (def) {
+    const [w, h, d] = sizeOf(def, inst.rotation);
+    for (let dx = 0; dx < w; dx++) {
+      for (let dy = 0; dy < h; dy++) {
+        for (let dz = 0; dz < d; dz++) {
+          delete state.byCell[cellKey({ x: inst.position.x + dx, y: inst.position.y + dy, z: inst.position.z + dz })];
+        }
+      }
+    }
+  }
+  state.updatedAt = Date.now();
+  return inst;
+}
