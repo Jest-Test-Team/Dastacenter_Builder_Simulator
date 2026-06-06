@@ -1,3 +1,4 @@
+// eslint-disable-next-line @typescript-eslint/consistent-type-imports
 declare module 'qrcode.react' {
   import { ComponentType, CSSProperties } from 'react';
 
