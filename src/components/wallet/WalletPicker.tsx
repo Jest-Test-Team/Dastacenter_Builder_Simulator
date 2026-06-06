@@ -66,7 +66,8 @@ function WalletModal({
 }: {
   onClose: () => void;
   connectors: ReturnType<typeof useConnect>['connectors'];
-  connect: ReturnType<typeof useConnect>['connect'];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  connect: (vars: any) => void;
   isPending: boolean;
   error: Error | null;
 }) {
