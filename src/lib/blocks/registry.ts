@@ -1179,7 +1179,7 @@ export function placeBlock(
     metadata: {},
   };
   state.voxels[id] = inst;
-  const [w, h, d] = sizeOf(getBlockDef(opts.typeId)!, rot);
+  const [w, h, d] = sizeOf(getBlock(opts.typeId)!, rot);
   for (let dx = 0; dx < w; dx++) {
     for (let dy = 0; dy < h; dy++) {
       for (let dz = 0; dz < d; dz++) {
