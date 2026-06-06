@@ -8,6 +8,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import * as THREE from 'three';
 import { useBuildStore } from '@/lib/store/build-store';
 import { getBlock } from '@/lib/blocks/registry';
 
@@ -35,8 +36,7 @@ export function CctvCoverage({ angleDeg = 45, range = 12, height = 2.5 }: CctvCo
           x: v.position.x + 0.5,
           y: v.position.y + height,
           z: v.position.z + 0.5,
-          // Rotation 0 = +X axis, 1 = +Z, 2 = -X, 3 = -Z
-          yawRad: (v.rotation ?? 0) * (Math.PI / 2),
+          yawRad: ((v.rotation ?? 0) * Math.PI) / 2,
         };
       })
       .filter((c): c is NonNullable<typeof c> => c !== null);
@@ -44,69 +44,24 @@ export function CctvCoverage({ angleDeg = 45, range = 12, height = 2.5 }: CctvCo
 
   if (cones.length === 0) return null;
   const half = (angleDeg * Math.PI) / 180 / 2;
+  const baseR = Math.tan(half) * range;
 
   return (
     <group>
       {cones.map((c) => (
-        <Cone
-          key={c.id}
-          position={[c.x, c.y, c.z]}
-          yaw={c.yawRad}
-          range={range}
-          half={half}
-        />
+        <group key={c.id} position={[c.x, c.y, c.z]} rotation={[0, -c.yawRad, 0]}>
+          {/* ConeGeometry points along +Y; we point it along +X with a Z-rotation. */}
+          <mesh rotation={[0, 0, -Math.PI / 2]} position={[range / 2, 0, 0]}>
+            <coneGeometry args={[baseR, range, 16, 1, true]} />
+            <meshBasicMaterial color="#5fa8d3" transparent opacity={0.18} side={THREE.DoubleSide} depthWrite={false} />
+          </mesh>
+          {/* Camera pole dot */}
+          <mesh>
+            <sphereGeometry args={[0.08, 8, 8]} />
+            <meshBasicMaterial color="#5fa8d3" />
+          </mesh>
+        </group>
       ))}
     </group>
-  );
-}
-
-function Cone({
-  position,
-  yaw,
-  range,
-  half,
-}: {
-  position: [number, number, number];
-  yaw: number;
-  range: number;
-  half: number;
-}) {
-  // Build a cone mesh that opens in +X then rotate to the camera's yaw.
-  const geom = useMemo(() => {
-    // Three's ConeGeometry points along +Y. We want +X, so pre-rotate -Z by 90°.
-    // We'll instead use a custom flat cone: array of triangles.
-    const segments = 16;
-    const positions: number[] = [];
-    const indices: number[] = [];
-    // Tip at origin
-    positions.push(0, 0, 0);
-    // Base ring
-    for (let i = 0; i < segments; i++) {
-      const a = (i / segments) * Math.PI * 2;
-      const r = Math.tan(half) * range;
-      positions.push(range, 0, Math.cos(a) * r);
-      positions.push(range, 0, Math.sin(a) * r);
-      // triangle from tip to two base points
-      // we'll connect as fan: tip + base[i] + base[i+1]
-    }
-    // Generate indices for triangle fan
-    for (let i = 0; i < segments; i++) {
-      const a = 1 + i * 2;
-      const b = 1 + ((i + 1) % segments) * 2;
-      indices.push(0, a, b);
-    }
-    const g = new (require('three').BufferGeometry)();
-    g.setAttribute('position', new (require('three').Float32BufferAttribute)(positions, 3));
-    g.setIndex(indices);
-    g.computeVertexNormals();
-    return g;
-  }, [half, range]);
-
-  return (
-    // @ts-expect-error — R3F intrinsic element typing is provided by src/types/r3f-jsx.d.ts
-    <mesh position={position} rotation={[0, -yaw + Math.PI / 2, 0]} geometry={geom}>
-      {/* @ts-expect-error */}
-      <meshBasicMaterial color="#5fa8d3" transparent opacity={0.18} side={2} depthWrite={false} />
-    </mesh>
   );
 }
