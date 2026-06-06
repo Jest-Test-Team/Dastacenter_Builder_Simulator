@@ -1196,7 +1196,7 @@ export function removeBlock(state: BuildState, id: string): BlockInstance | null
   const inst = state.voxels[id];
   if (!inst) return null;
   delete state.voxels[id];
-  const def = getBlockDef(inst.type);
+  const def = getBlock(inst.type);
   if (def) {
     const [w, h, d] = sizeOf(def, inst.rotation);
     for (let dx = 0; dx < w; dx++) {
