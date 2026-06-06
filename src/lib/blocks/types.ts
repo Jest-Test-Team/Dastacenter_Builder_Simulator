@@ -11,6 +11,7 @@
  */
 
 import { z } from 'zod';
+import { defaultPolicyState, type PolicyState } from '@/lib/scoring/policy';
 
 export const BlockCategorySchema = z.enum([
   'structure',
