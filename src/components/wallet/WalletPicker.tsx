@@ -29,7 +29,7 @@ export function WalletPicker() {
           <Wallet className="h-4 w-4" />
           Connect wallet
         </button>
-        {open && <WalletModal onClose={() => setOpen(false)} connectors={connectors} connect={connect} isPending={isPending} error={error} />}
+        {open && <WalletModal onClose={() => setOpen(false)} connectors={connectors} connect={connectAny} isPending={isPending} error={error} />}
       </>
     );
   }
