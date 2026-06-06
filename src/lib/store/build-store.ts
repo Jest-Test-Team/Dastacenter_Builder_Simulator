@@ -63,6 +63,7 @@ export interface BuildState {
   name: string;
   createdAt: number;
   updatedAt: number;
+  shareToken?: string;
 }
 
 export interface BuildActions {
