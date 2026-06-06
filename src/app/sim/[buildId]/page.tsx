@@ -175,6 +175,7 @@ function SiteGround() {
 }
 
 function NPCs({ count, t }: { count: number; t: number; }) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const refs = useRef<Array<any>>([]);
   const seeds = useMemo(
     () => Array.from({ length: count }, (_, i) => ({ x: 4 + (i * 3.7) % 30, z: 4 + (i * 5.1) % 30, speed: 0.3 + (i % 3) * 0.1 })),
