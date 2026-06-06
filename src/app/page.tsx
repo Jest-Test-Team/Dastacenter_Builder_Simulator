@@ -125,7 +125,10 @@ export default function HomePage() {
           Built for engineers, students, and certification-track professionals.
           <br />
           Open source · <Link href="/legal/terms" className="underline">Terms</Link>{' · '}
-          <Link href="/legal/privacy" className="underline">Privacy</Link>
+          <Link href="/legal/privacy" className="underline">Privacy</Link>{' · '}
+          <Link href="/settings" className="underline">Settings</Link>{' · '}
+          <Link href="/credits" className="underline">Credits</Link>{' · '}
+          <Link href="/help" className="underline">Help</Link>
         </p>
       </footer>
     </div>
