@@ -119,7 +119,7 @@ export default function CertPage() {
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           <section className="panel p-5">
-            <h2 className="font-semibold">Download</h2>
+            <h2 className="font-semibold">{t('cert.download')}</h2>
             <p className="mt-1 text-sm text-fg-muted">
               Save your certificate for your portfolio.
             </p>
@@ -134,7 +134,7 @@ export default function CertPage() {
           </section>
 
           <section className="panel p-5">
-            <h2 className="font-semibold">Publish to Credly</h2>
+            <h2 className="font-semibold">{t('cert.publish')}</h2>
             <p className="mt-1 text-sm text-fg-muted">
               Receive the badge in your email. Free, opt-in.
             </p>
