@@ -8,10 +8,10 @@
  * every consumer sees a single global `JSX.IntrinsicElements`.
  */
 
-import type { ThreeElements } from '@react-three/fiber';
-
 declare global {
   namespace JSX {
-    interface IntrinsicElements extends ThreeElements {}
+    interface IntrinsicElements {
+      [elem: string]: unknown;
+    }
   }
 }
