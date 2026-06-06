@@ -18,7 +18,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { LocaleSwitcher } from '@/components/i18n/LocaleSwitcher';
-import { getServerLocale } from '@/lib/i18n/server';
+import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
 
 export default function HomePage() {
   return (
