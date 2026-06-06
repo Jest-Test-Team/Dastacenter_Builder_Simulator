@@ -40,17 +40,16 @@ export default function ResultPage() {
   const buildId = params?.buildId;
   useLoadBuild(buildId ?? null);
   const [report, setReport] = useState<RatingReport | null>(null);
+  const t = useT();
 
   useEffect(() => {
     if (!buildId) return;
     void (async () => {
-      // Ensure the store is loaded
       const rec = await loadBuildFromIDB(buildId);
       if (rec) {
         useBuildStore.getState().loadBuild(rec.snapshot);
         setReport(score(rec.snapshot));
       } else {
-        // try scoring current state
         setReport(score(useBuildStore.getState()));
       }
     })();
