@@ -262,12 +262,13 @@ function Achievements({ report }: { report: RatingReport }) {
 }
 
 function IssueRow({ issue }: { issue: Issue }) {
-  const icon: Record<Issue['severity'], ReactNode> = {
+  const icons: Record<Issue['severity'], ReactNode> = {
     critical: <XCircle className="h-4 w-4 text-danger" />,
     error: <XCircle className="h-4 w-4 text-danger" />,
     warn: <AlertTriangle className="h-4 w-4 text-warn" />,
     info: <Info className="h-4 w-4 text-fg-muted" />,
-  }[issue.severity];
+  };
+  const icon = icons[issue.severity];
 
   return (
     <li className="panel p-3">
