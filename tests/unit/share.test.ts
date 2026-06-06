@@ -1,12 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { encodeShareToken, decodeShareToken, buildShareUrl } from '@/lib/persist/share';
+import { encodeBuildToShareToken, decodeShareToken, buildShareUrl } from '@/lib/persist/share';
 import { emptyState, placeBlock, type BuildState } from '@/lib/blocks';
 
 describe('share tokens', () => {
   it('round-trips a state', async () => {
     const s: BuildState = emptyState();
-    placeBlock(s, { typeId: 'it.server.generic', cell: { x: 4, y: 1, z: 4 } });
-    const token = await encodeShareToken(s);
+    placeBlock(s, { typeId: 'server_rack', cell: { x: 4, y: 1, z: 4 } });
+    const token = await encodeBuildToShareToken(s);
     expect(token).toMatch(/^v1\./);
     const back = await decodeShareToken(token);
     expect(back).toBeTruthy();
