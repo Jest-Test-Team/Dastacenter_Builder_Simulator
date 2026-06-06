@@ -58,7 +58,6 @@ export async function decodeShareToken(token: string): Promise<BuildSnapshot | n
 
 function stripForShare(s: Partial<BuildSnapshot> & Partial<BuildState>) {
   const live = s as Partial<BuildSnapshot> & {
-  const live = s as Partial<BuildSnapshot> & {
     scenarioName?: string;
     gridSize?: { w: number; h: number; d: number };
     camera?: { position: [number, number, number]; target: [number, number, number]; zoom: number };
