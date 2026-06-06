@@ -10,12 +10,17 @@
  */
 
 import type { BuildSnapshot } from '@/lib/store/build-store';
+import type { BuildState } from '@/lib/blocks';
 
 const MAX_URL_SIZE = 1800; // safe under 2KB browser limit
 
+/** A snapshot is any BuildState (pure or live). We tolerate UI fields
+ *  being absent by falling back to safe defaults in stripForShare. */
+export type ShareInput = BuildSnapshot | BuildState;
+
 /** Encode a build snapshot to a URL-safe string. */
-export async function encodeBuildToShareToken(snapshot: BuildSnapshot): Promise<string> {
-  const json = JSON.stringify(stripForShare(snapshot));
+export async function encodeBuildToShareToken(snapshot: ShareInput): Promise<string> {
+  const json = JSON.stringify(stripForShare(snapshot as BuildSnapshot));
   // Try LZ-string compression first
   try {
     const LZ = (await import('lz-string')).default;
