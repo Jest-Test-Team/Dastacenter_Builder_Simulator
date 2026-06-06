@@ -15,7 +15,7 @@ describe('share tokens', () => {
 
   it('builds an absolute URL', async () => {
     const s = emptyState();
-    const url = await buildShareUrl(s, 'https://example.com', 'free');
+    const url = await buildShareUrl(s, 'https://example.com', '/build/free');
     expect(url).toMatch(/^https:\/\/example\.com\/build\/free\?share=v1\./);
   });
 
