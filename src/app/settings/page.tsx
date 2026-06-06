@@ -18,12 +18,10 @@ export default function SettingsPage() {
   useEffect(() => {
     void (async () => {
       try {
-        const { getAllBuilds } = await import('@/lib/persist/idb');
-        const all = await getAllBuilds();
+        const { listBuildsFromIDB } = await import('@/lib/persist');
+        const all = await listBuildsFromIDB();
         setAutosaves(
-          all
-            .map((b) => ({ id: b.id, name: b.scenarioName || b.id, updatedAt: b.updatedAt ?? 0 }))
-            .sort((a, b) => b.updatedAt - a.updatedAt),
+          all.map((b) => ({ id: b.id, name: b.scenarioName || b.name || b.id, updatedAt: b.updatedAt })),
         );
       } catch {
         setAutosaves([]);
