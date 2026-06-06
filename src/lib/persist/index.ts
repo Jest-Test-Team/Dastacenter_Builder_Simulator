@@ -6,6 +6,8 @@
  * writes to Cloudflare R2 in a future phase.
  */
 
+'use client';
+
 import { useEffect } from 'react';
 import { create } from 'zustand';
 import { get as idbGet, set as idbSet, del as idbDel, keys as idbKeys, createStore as idbCreateStore } from 'idb-keyval';
