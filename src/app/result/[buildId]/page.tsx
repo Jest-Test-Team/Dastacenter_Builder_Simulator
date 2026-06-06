@@ -32,6 +32,7 @@ import {
   Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useT } from '@/lib/i18n/client';
 
 export default function ResultPage() {
   const params = useParams<{ buildId: string }>();
