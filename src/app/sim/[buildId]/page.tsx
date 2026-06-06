@@ -249,7 +249,7 @@ function HUD({ powerLoad, tempC, t, report }: { powerLoad: number; tempC: number
         <div className="mt-1 flex gap-2">
           <span className="badge">{report.tier}</span>
           <span className="badge">{report.level}</span>
-          <span className="badge">{report.scores.overall.toFixed(0)}/100</span>
+          <span className="badge">{report.score.toFixed(0)}/100</span>
         </div>
       </div>
     </div>
