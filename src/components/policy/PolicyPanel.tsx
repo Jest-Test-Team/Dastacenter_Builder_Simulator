@@ -7,18 +7,35 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useBuildStore } from '@/lib/store/build-store';
 import { POLICY_GROUPS, POLICY_LABELS, type PolicyKey } from '@/lib/scoring/policy';
+import { useFocusTrap } from '@/lib/hooks/useFocusTrap';
 import { cn } from '@/lib/utils';
 import { Shield, X, ChevronRight } from 'lucide-react';
 
 export function PolicyPanel({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const asideRef = useRef<HTMLElement>(null);
+  useFocusTrap(open, asideRef);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [open, onClose]);
+
   if (!open) return null;
   return (
     <div className="fixed inset-0 z-40 flex justify-end bg-black/40" onClick={onClose}>
       <aside
+        ref={asideRef}
         className="panel flex h-full w-96 flex-col rounded-l-lg rounded-r-none border-r-0"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="policy-panel-title"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b p-4">
