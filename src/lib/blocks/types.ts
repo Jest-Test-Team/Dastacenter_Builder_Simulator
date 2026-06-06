@@ -131,6 +131,11 @@ export const BuildStateSchema = z.object({
   updatedAt: z.number().default(0),
   /** Tag for sharing (e.g. encoded share token). */
   shareToken: z.string().optional(),
+  /** Non-spatial toggles (deterrence, 5 functions, ESG, privacy). */
+  policies: z
+    .object({})
+    .passthrough()
+    .default(() => defaultPolicyState()),
 });
 export type BuildState = z.infer<typeof BuildStateSchema>;
 
@@ -146,5 +151,6 @@ export function emptyState(): BuildState {
     inventory: {},
     createdAt: now,
     updatedAt: now,
+    policies: defaultPolicyState(),
   };
 }
