@@ -89,7 +89,9 @@ export interface BuildActions {
   exportSnapshot: () => BuildSnapshot;
 }
 
-export type BuildSnapshot = Omit<BuildState, never>;
+/** Snapshot of a build that can be persisted or shared.
+ *  Uses the pure data BuildState (no UI fields). */
+export type BuildSnapshot = PureBuildState;
 
 export type BuildStore = BuildState & BuildActions;
 
