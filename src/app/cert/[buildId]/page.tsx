@@ -102,7 +102,7 @@ export default function CertPage() {
       <main className="mx-auto max-w-5xl px-6 py-10">
         <h1 className="flex items-center gap-2 text-2xl font-bold">
           <Award className="h-6 w-6 text-warn" />
-          Your certificate
+          {t('cert.title')}
         </h1>
         <p className="mt-1 text-fg-muted">
           Share it, download it, or publish to Credly. The QR code lets anyone verify.
