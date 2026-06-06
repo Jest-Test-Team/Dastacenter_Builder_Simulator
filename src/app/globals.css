@@ -1,0 +1,117 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --bg: 9 11 19;
+    --bg-subtle: 17 24 39;
+    --bg-panel: 24 33 47;
+    --fg: 226 232 240;
+    --fg-muted: 148 163 184;
+    --border: 51 65 85;
+    --primary: 99 102 241;
+    --primary-fg: 255 255 255;
+    --accent: 34 211 238;
+    --accent-fg: 9 11 19;
+  }
+
+  .light {
+    --bg: 248 250 252;
+    --bg-subtle: 241 245 249;
+    --bg-panel: 255 255 255;
+    --fg: 15 23 42;
+    --fg-muted: 71 85 105;
+    --border: 226 232 240;
+    --primary: 79 70 229;
+    --primary-fg: 255 255 255;
+    --accent: 14 165 233;
+    --accent-fg: 255 255 255;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  html,
+  body {
+    @apply h-full bg-bg text-fg antialiased;
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
+  }
+
+  body {
+    overflow: hidden; /* prevent body scroll; builder manages its own */
+  }
+
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgb(var(--bg-subtle));
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--border));
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--fg-muted));
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-lg border bg-bg-panel/95 backdrop-blur-sm;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-transparent
+           bg-primary px-4 py-2 text-sm font-medium text-primary-fg
+           transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-ghost {
+    @apply inline-flex items-center justify-center gap-2 rounded-md border border-border
+           bg-transparent px-4 py-2 text-sm font-medium text-fg
+           transition-colors hover:bg-bg-subtle focus:outline-none focus:ring-2 focus:ring-primary
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .icon-btn {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-md border border-border
+           bg-bg-panel text-fg transition-colors hover:bg-bg-subtle
+           focus:outline-none focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .input {
+    @apply block w-full rounded-md border border-border bg-bg-subtle px-3 py-2 text-sm
+           text-fg placeholder:text-fg-muted
+           focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary;
+  }
+
+  .label {
+    @apply block text-xs font-medium uppercase tracking-wide text-fg-muted;
+  }
+
+  .badge {
+    @apply inline-flex items-center rounded-full border border-border bg-bg-subtle
+           px-2 py-0.5 text-xs font-medium;
+  }
+}
+
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+
+  .grid-bg {
+    background-image:
+      linear-gradient(to right, rgb(var(--border) / 0.3) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(var(--border) / 0.3) 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+}
