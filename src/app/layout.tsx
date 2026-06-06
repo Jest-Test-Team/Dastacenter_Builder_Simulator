@@ -30,8 +30,8 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  const locale = getServerLocale();
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getServerLocale();
   return (
     <html lang={locale} suppressHydrationWarning>
       <body>
