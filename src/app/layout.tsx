@@ -32,7 +32,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" suppressHydrationWarning>
       <body>
-        <Providers>{children}</Providers>
+        <SkipLink />
+        <Providers>
+          {children}
+          <WebVitalsReporter />
+        </Providers>
       </body>
     </html>
   );
