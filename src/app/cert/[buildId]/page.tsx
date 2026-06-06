@@ -16,6 +16,7 @@ import { useBuildStore } from '@/lib/store/build-store';
 import { score, type RatingReport } from '@/lib/scoring';
 import { Award, Download, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { CertificateSvg } from '@/components/cert/CertificateSvg';
+import { useT } from '@/lib/i18n/client';
 
 export default function CertPage() {
   const params = useParams<{ buildId: string }>();
