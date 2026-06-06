@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Providers } from './providers';
+import { WebVitalsReporter } from '@/components/perf/WebVitalsReporter';
+import { SkipLink } from '@/components/a11y/SkipLink';
 import './globals.css';
 
 export const metadata: Metadata = {
