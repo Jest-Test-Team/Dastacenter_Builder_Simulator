@@ -31,7 +31,7 @@ export default function SettingsPage() {
 
   function onChangeLocale(l: Locale) {
     setLocale(l);
-    document.cookie = `dcb-locale=${l}; path=/; max-age=31536000; samesite=lax`;
+    document.cookie = `lang=${l}; path=/; max-age=31536000; samesite=lax`;
     window.location.reload();
   }
 
