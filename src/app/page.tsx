@@ -152,23 +152,6 @@ const STANDARDS = [
 ];
 
 function Header() {
-  // getServerLocale is async in Next 15; this is a server component so await is fine.
-  // We don't await here to keep the page simple — the LocaleSwitcher is interactive.
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return <HeaderInner />;
-}
-
-function HeaderInner() {
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-  return <HeaderReal />;
-}
-
-function HeaderReal() {
-  // Lazy: the LocaleSwitcher handles the locale state on the client.
-  return <HeaderWithLocale locale="en" />;
-}
-
-function HeaderWithLocale({ locale }: { locale: 'en' | 'zh-TW' | 'ja' }) {
   return (
     <header className="border-b border-border bg-bg-panel/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
