@@ -57,7 +57,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const templateId = templateIdForLevel(report.level);
+  const templateId = templateIdForLevel(report.level as 'Bronze' | 'Silver' | 'Gold' | 'Platinum');
   if (!templateId) {
     return NextResponse.json(
       { error: `No Credly template configured for level ${report.level}` },
