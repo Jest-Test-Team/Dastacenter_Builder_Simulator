@@ -16,28 +16,35 @@ import {
 } from '@/lib/blocks';
 import { cn } from '@/lib/utils';
 import { Search, X } from 'lucide-react';
+import { useT } from '@/lib/i18n/client';
+import { useBlockLabel } from '@/lib/i18n/blocks';
 
 export function BlockPalette() {
   const [activeCategory, setActiveCategory] = useState<BlockCategory>('power');
   const [query, setQuery] = useState('');
+  const t = useT();
+  const labels = useBlockLabel();
 
   const blocks = useMemo(() => {
     const all = getBlocksByCategory(activeCategory);
     if (!query.trim()) return all;
     const q = query.toLowerCase();
-    return all.filter(
-      (b) =>
+    return all.filter((b) => {
+      const lbl = labels.block(b);
+      return (
         b.id.toLowerCase().includes(q) ||
-        b.displayName.toLowerCase().includes(q) ||
-        b.tags.some((t) => t.toLowerCase().includes(q)),
-    );
-  }, [activeCategory, query]);
+        lbl.displayName.toLowerCase().includes(q) ||
+        lbl.description.toLowerCase().includes(q) ||
+        b.tags.some((tt) => tt.toLowerCase().includes(q))
+      );
+    });
+  }, [activeCategory, query, labels]);
 
   return (
     <aside className="panel flex h-full w-72 flex-col border-r">
       <div className="border-b p-3">
-        <h2 className="text-sm font-semibold">Block Palette</h2>
-        <p className="text-xs text-fg-muted">Click to arm, then click in the scene to place.</p>
+        <h2 className="text-sm font-semibold">{t('builder.palette.title')}</h2>
+        <p className="text-xs text-fg-muted">{t('builder.palette.hint')}</p>
       </div>
 
       <div className="border-b p-2">
@@ -45,7 +52,7 @@ export function BlockPalette() {
           <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" />
           <input
             className="input pl-8 pr-8"
-            placeholder="Search blocks…"
+            placeholder={t('builder.palette.search')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -73,14 +80,14 @@ export function BlockPalette() {
                 : 'bg-bg-subtle text-fg-muted hover:text-fg',
             )}
           >
-            {CATEGORY_LABELS[cat]}
+            {labels.category(cat, CATEGORY_LABELS[cat])}
           </button>
         ))}
       </div>
 
       <div className="flex-1 overflow-y-auto p-2">
         {blocks.length === 0 ? (
-          <p className="p-4 text-center text-sm text-fg-muted">No blocks found.</p>
+          <p className="p-4 text-center text-sm text-fg-muted">{t('builder.palette.empty')}</p>
         ) : (
           <ul className="grid grid-cols-2 gap-2">
             {blocks.map((b) => (
