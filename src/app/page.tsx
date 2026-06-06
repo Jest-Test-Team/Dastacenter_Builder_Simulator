@@ -152,6 +152,7 @@ const STANDARDS = [
 ];
 
 function Header() {
+  const locale = getServerLocale();
   return (
     <header className="border-b border-border bg-bg-panel/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
@@ -160,6 +161,7 @@ function Header() {
           <span>Datacenter Builder</span>
         </Link>
         <nav className="flex items-center gap-1">
+          <LocaleSwitcher current={locale} />
           <Link href="/learn" className="btn-ghost text-sm">Curriculum</Link>
           <Link href="/build/free" className="btn text-sm">
             Build
