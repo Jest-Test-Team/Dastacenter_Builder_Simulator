@@ -15,6 +15,7 @@ import { useBuildStore } from '@/lib/store/build-store';
 import { VoxelWorld } from './VoxelWorld';
 import { PlacementPreview } from './PlacementPreview';
 import { SiteEnvironment } from './SiteEnvironment';
+import { CctvCoverage } from './CctvCoverage';
 
 export interface BuilderCanvasProps {
   showGrid?: boolean;
