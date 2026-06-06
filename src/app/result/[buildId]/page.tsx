@@ -262,7 +262,7 @@ function Achievements({ report }: { report: RatingReport }) {
 }
 
 function IssueRow({ issue }: { issue: Issue }) {
-  const icon = {
+  const icon: Record<Issue['severity'], JSX.Element> = {
     critical: <XCircle className="h-4 w-4 text-danger" />,
     error: <XCircle className="h-4 w-4 text-danger" />,
     warn: <AlertTriangle className="h-4 w-4 text-warn" />,
