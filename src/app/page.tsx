@@ -160,7 +160,7 @@ function Header() {
           <span>Datacenter Builder</span>
         </Link>
         <nav className="flex items-center gap-1">
-          <LocaleSwitcher current={locale} />
+          <LocaleSwitcher current={'en'} />
           <Link href="/learn" className="btn-ghost text-sm">Curriculum</Link>
           <Link href="/build/free" className="btn text-sm">
             Build
