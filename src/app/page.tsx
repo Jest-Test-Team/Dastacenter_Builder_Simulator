@@ -23,7 +23,7 @@ export default function HomePage() {
     <div className="min-h-screen overflow-y-auto bg-bg">
       <Header />
 
-      <main className="mx-auto max-w-6xl px-6 py-16">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-6 py-16">
         <section className="grid gap-8 md:grid-cols-2 md:items-center">
           <div>
             <h1 className="text-4xl font-bold leading-tight md:text-5xl">
