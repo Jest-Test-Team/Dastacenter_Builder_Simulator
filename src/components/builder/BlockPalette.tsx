@@ -104,6 +104,9 @@ function PaletteItem({ block }: { block: BlockDef }) {
   const activeType = useBuildStore((s) => s.activeBlockType);
   const setActive = useBuildStore((s) => s.setActiveBlockType);
   const inventory = useBuildStore((s) => s.inventory[block.id] ?? 0);
+  const t = useT();
+  const labels = useBlockLabel();
+  const lbl = labels.block(block);
 
   const isActive = activeType === block.id;
   const outOfStock = inventory <= 0 && !block.decorative;
@@ -119,7 +122,7 @@ function PaletteItem({ block }: { block: BlockDef }) {
           isActive && 'border-primary bg-primary/10',
           outOfStock && 'cursor-not-allowed opacity-50',
         )}
-        title={block.description}
+        title={lbl.description}
       >
         <div
           className="flex h-12 w-full items-center justify-center rounded text-2xl"
@@ -127,9 +130,9 @@ function PaletteItem({ block }: { block: BlockDef }) {
         >
           {block.icon}
         </div>
-        <div className="w-full truncate text-xs font-medium">{block.displayName}</div>
+        <div className="w-full truncate text-xs font-medium">{lbl.displayName}</div>
         <div className="w-full truncate text-[10px] text-fg-muted">
-          {outOfStock ? 'Out of stock' : `×${inventory}`}
+          {outOfStock ? t('builder.palette.outOfStock') : `×${inventory}`}
         </div>
       </button>
     </li>
