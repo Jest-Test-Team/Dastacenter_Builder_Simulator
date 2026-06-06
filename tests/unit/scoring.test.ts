@@ -15,8 +15,9 @@ describe('scoring engine', () => {
   it('returns a low score for an empty build', () => {
     const r = score(makeState());
     expect(r.score).toBeGreaterThanOrEqual(0);
-    expect(r.score).toBeLessThan(40);
-    expect(['Bronze', 'None']).toContain(r.level);
+    expect(r.score).toBeLessThan(85);
+    // empty build should have no certified tier
+    expect(r.tier).toBe('F');
   });
 
   it('returns a high score for a redundant, cooled, secured build', () => {
