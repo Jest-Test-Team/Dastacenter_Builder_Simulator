@@ -27,6 +27,7 @@ import {
   BLOCK_REGISTRY,
 } from '@/lib/blocks';
 import { type Cell, type BuildState, countByType } from '@/lib/store/build-store';
+import type { Cell as _Cell } from '@/lib/grid';
 import { type PolicyState } from './policy';
 import { allRules, type Rule, type Issue, type RuleContext } from './rules';
 
