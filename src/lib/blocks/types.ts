@@ -114,30 +114,27 @@ export type BlockInstance = z.infer<typeof BlockInstanceSchema>;
 
 /**
  * Top-level build state. The 3D builder, the simulation mode, and the
- * scoring engine all read from this same shape.
+ * scoring engine all read from this same shape. This is the "pure data"
+ * subset — the live store extends it with UI fields (mode, hover, camera).
  */
-export const BuildStateSchema = z.object({
-  buildId: z.string().default(''),
-  name: z.string().default('Untitled build'),
-  scenarioId: z.string().default('free'),
+export interface BuildState {
+  buildId: string;
+  name: string;
+  scenarioId: string;
   /** id -> instance */
-  voxels: z.record(z.string(), BlockInstanceSchema).default({}),
+  voxels: Record<string, BlockInstance>;
   /** CellKey -> instance id (spatial index). */
-  byCell: z.record(z.string(), z.string()).default({}),
+  byCell: Record<string, string>;
   /** BlockType id -> count remaining in inventory. */
-  inventory: z.record(z.string(), z.number().int().nonnegative()).default({}),
+  inventory: Record<string, number>;
   /** Created/updated timestamps (ms epoch). */
-  createdAt: z.number().default(0),
-  updatedAt: z.number().default(0),
+  createdAt: number;
+  updatedAt: number;
   /** Tag for sharing (e.g. encoded share token). */
-  shareToken: z.string().optional(),
+  shareToken?: string;
   /** Non-spatial toggles (deterrence, 5 functions, ESG, privacy). */
-  policies: z
-    .object({})
-    .passthrough()
-    .default(() => defaultPolicyState()),
-});
-export type BuildState = z.infer<typeof BuildStateSchema>;
+  policies: PolicyState;
+}
 
 /** Returns a fresh, fully-defaulted BuildState. */
 export function emptyState(): BuildState {
