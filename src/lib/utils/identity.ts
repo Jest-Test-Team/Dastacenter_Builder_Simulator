@@ -7,7 +7,7 @@ export async function buildIdFromSnapshot(snapshot: unknown): Promise<string> {
   const text = JSON.stringify(snapshot, replacerStable);
   const data = new TextEncoder().encode(text);
   if (typeof crypto !== 'undefined' && crypto.subtle) {
-    const buf = await crypto.subtle.digest('SHA-256', data);
+    const buf = await crypto.subtle.digest('SHA-256', data as BufferSource);
     return Array.from(new Uint8Array(buf))
       .map((b) => b.toString(16).padStart(2, '0'))
       .join('');
