@@ -30,5 +30,3 @@ export async function GET() {
   await session.save();
   return NextResponse.json({ nonce, issuedAt: Date.now(), ttl: NONCE_TTL_MS });
 }
-
-export { usedNonces };
