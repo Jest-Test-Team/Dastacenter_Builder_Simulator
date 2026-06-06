@@ -237,27 +237,30 @@ function Bar({ label, value, icon }: { label: string; value: number; icon: React
 }
 
 function Achievements({ report }: { report: RatingReport }) {
+  const t = useT();
   return (
     <section className="panel p-5">
       <h2 className="flex items-center gap-2 text-lg font-semibold">
         <Award className="h-5 w-5" />
-        Achievements ({report.achievements.length})
+        {t('result.achievements')} ({report.achievements.length})
       </h2>
       {report.achievements.length === 0 ? (
-        <p className="mt-4 text-sm text-fg-muted">
-          No achievements yet. Build more controls and try again.
-        </p>
+        <p className="mt-4 text-sm text-fg-muted">{t('result.achievements.empty')}</p>
       ) : (
         <ul className="mt-4 grid grid-cols-1 gap-2">
-          {report.achievements.map((a) => (
-            <li key={a.id} className="flex items-start gap-3 rounded border border-border p-2">
-              <span className="text-2xl">{a.icon}</span>
-              <div>
-                <p className="font-medium">{a.title}</p>
-                <p className="text-xs text-fg-muted">{a.description}</p>
-              </div>
-            </li>
-          ))}
+          {report.achievements.map((a) => {
+            const titleKey = `ach.${a.id}`;
+            const descKey = `ach.${a.id}.desc`;
+            return (
+              <li key={a.id} className="flex items-start gap-3 rounded border border-border p-2">
+                <span className="text-2xl">{a.icon}</span>
+                <div>
+                  <p className="font-medium">{t(titleKey) !== titleKey ? t(titleKey) : a.title}</p>
+                  <p className="text-xs text-fg-muted">{t(descKey) !== descKey ? t(descKey) : a.description}</p>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
