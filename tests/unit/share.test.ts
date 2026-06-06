@@ -15,8 +15,7 @@ describe('share tokens', () => {
 
   it('builds an absolute URL', async () => {
     const s = emptyState();
-    // share util takes the full BuildSnapshot (with UI fields); we cast since the test only exercises persistence shape
-    const url = await buildShareUrl(s as unknown as Parameters<typeof buildShareUrl>[0], 'https://example.com', '/build/free');
+    const url = await buildShareUrl(s, 'https://example.com', '/build/free');
     expect(url).toMatch(/^https:\/\/example\.com\/build\/free\?share=v1\./);
   });
 
