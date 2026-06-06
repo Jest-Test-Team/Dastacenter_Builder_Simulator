@@ -120,15 +120,6 @@ export function score(state: BuildState): RatingReport {
   const tier = deriveTier(issues, state);
   const level = deriveLevel(overall, issues);
   const pue = estimatePUE(state);
-  // local countByType
-  const counts: Record<string, number> = {};
-  for (const v of Object.values(state.voxels)) counts[v.type] = (counts[v.type] ?? 0) + 1;
-  function countByType(s: BuildState): Record<string, number> {
-    if (s === state) return counts;
-    const out: Record<string, number> = {};
-    for (const v of Object.values(s.voxels)) out[v.type] = (out[v.type] ?? 0) + 1;
-    return out;
-  }
   const wue = estimateWUE(state);
   const certifiable = overall >= 60 && tier !== 'F';
 
