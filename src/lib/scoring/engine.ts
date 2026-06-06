@@ -194,7 +194,8 @@ function buildContext(state: BuildState): RuleContext {
     const d = getBlock(b.type);
     if (d) blockDefs.set(b.id, d);
   }
-  const counts = countByType(state);
+  const counts: Record<string, number> = {};
+  for (const b of blocks) counts[b.type] = (counts[b.type] ?? 0) + 1;
 
   let totalHeatKW = 0;
   let totalITLoadKW = 0;
