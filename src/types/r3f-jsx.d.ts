@@ -1,9 +1,11 @@
 /**
- * React Three Fiber auto-augments JSX.IntrinsicElements at the type
- * level. This shim exists because we are pinned to the React 19 RC
- * types, which sometimes drop the merge. If the actual R3F types are
- * picked up, this file is a no-op (it just re-declares the same
- * intrinsics in a way that is a structural subtype).
+ * React 19 RC types do not declare a global `JSX` namespace —
+ * they use `React.JSX`. R3F 8 still augments the global namespace.
+ * We re-declare a global `JSX` namespace (the way React 18 did) and
+ * re-export every R3F intrinsic element so `tsc --noEmit` is happy.
+ *
+ * This file is intentionally a script (no imports, no exports) so
+ * every consumer sees a single global `JSX.IntrinsicElements`.
  */
 
 import type { ThreeElements } from '@react-three/fiber';
@@ -13,5 +15,3 @@ declare global {
     interface IntrinsicElements extends ThreeElements {}
   }
 }
-
-export {};
