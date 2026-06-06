@@ -13,7 +13,9 @@
  *   Expiration Time: <iso>
  */
 
-import { verify as naclVerify, decode as naclDecode, decodeUTF8 } from 'tweetnacl-util';
+import nacl from 'tweetnacl';
+import { decodeUTF8, decodeBase64 } from 'tweetnacl-util';
+import bs58 from 'bs58';
 
 export interface SiwsMessageFields {
   domain: string;
