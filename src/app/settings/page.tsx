@@ -11,7 +11,7 @@ export default function SettingsPage() {
   const [autosaves, setAutosaves] = useState<{ id: string; name: string; updatedAt: number }[]>([]);
 
   useEffect(() => {
-    const stored = (typeof document !== 'undefined' && document.cookie.match(/(?:^|; )dcb-locale=([^;]+)/)?.[1]) as Locale | undefined;
+    const stored = (typeof document !== 'undefined' && document.cookie.match(/(?:^|; )lang=([^;]+)/)?.[1]) as Locale | undefined;
     if (stored && LOCALES.includes(stored)) setLocale(stored);
   }, []);
 
