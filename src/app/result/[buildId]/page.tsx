@@ -138,21 +138,22 @@ function Header() {
 }
 
 function Scorecard({ report }: { report: RatingReport }) {
+  const t = useT();
   return (
     <section className="panel p-6">
       <div className="grid gap-6 md:grid-cols-3">
         <div>
-          <p className="label">Overall score</p>
+          <p className="label">{t('result.score')}</p>
           <p className="mt-1 text-6xl font-bold tabular-nums">{report.score}</p>
           <p className="text-sm text-fg-muted">/ 100</p>
         </div>
         <div>
-          <p className="label">Uptime Tier</p>
+          <p className="label">{t('result.tier')}</p>
           <p className={cn('mt-1 text-6xl font-bold', tierColor(report.tier))}>{report.tier}</p>
           <p className="text-sm text-fg-muted">{tierLabel(report.tier)}</p>
         </div>
         <div>
-          <p className="label">Cert level</p>
+          <p className="label">{t('result.level')}</p>
           <p className={cn('mt-1 text-6xl font-bold', levelColor(report.level))}>{report.level}</p>
           <p className="text-sm text-fg-muted">{report.certifiable ? 'Certifiable' : 'Not certifiable'}</p>
         </div>
