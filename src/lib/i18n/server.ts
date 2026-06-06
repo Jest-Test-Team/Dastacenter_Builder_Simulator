@@ -6,10 +6,10 @@
 import { cookies, headers } from 'next/headers';
 import { DEFAULT_LOCALE, isLocale, type Locale } from './index';
 
-export function getServerLocale(): Locale {
-  const c = cookies().get('lang')?.value;
+export async function getServerLocale(): Promise<Locale> {
+  const c = (await cookies()).get('lang')?.value;
   if (isLocale(c)) return c;
-  const accept = headers().get('accept-language') ?? '';
+  const accept = (await headers()).get('accept-language') ?? '';
   const primary = accept.split(',')[0]?.split(';')[0]?.trim();
   if (isLocale(primary)) return primary;
   if (primary === 'zh-TW' || primary === 'zh-Hant') return 'zh-TW';
