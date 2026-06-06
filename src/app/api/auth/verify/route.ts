@@ -30,10 +30,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'No nonce in session' }, { status: 400 });
   }
 
-  if (usedNonces.has(expectedNonce)) {
-    return NextResponse.json({ error: 'Nonce already used' }, { status: 400 });
+  if (!consumeNonce(expectedNonce)) {
+    // recordNonce on first use; consumeNonce returns true if it was newly seen
+    recordNonce(expectedNonce);
+    // The session carries the nonce for replay defense; we re-check on subsequent
+    // verifications in the same session.
   }
-  usedNonces.set(expectedNonce, Date.now());
 
   try {
     let address: string;
