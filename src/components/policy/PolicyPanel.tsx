@@ -39,7 +39,7 @@ export function PolicyPanel({ open, onClose }: { open: boolean; onClose: () => v
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between border-b p-4">
-          <h2 className="flex items-center gap-2 font-semibold">
+          <h2 id="policy-panel-title" className="flex items-center gap-2 font-semibold">
             <Shield className="h-5 w-5" />
             Policy & Security
           </h2>
