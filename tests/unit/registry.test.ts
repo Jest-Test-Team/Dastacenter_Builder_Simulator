@@ -27,7 +27,7 @@ describe('block registry', () => {
   });
 
   it('getBlock returns the definition for a known id', () => {
-    const b = getBlock('it.server.generic');
+    const b = getBlock('server_rack');
     expect(b).toBeDefined();
     expect(b?.category).toBe('it');
   });
