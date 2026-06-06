@@ -28,6 +28,7 @@ export default function CertPage() {
   const [issuing, setIssuing] = useState(false);
   const [issued, setIssued] = useState<{ id: string; url?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const t = useT();
 
   useEffect(() => {
     if (!buildId) return;
