@@ -74,10 +74,9 @@ export function verifySiwsSignature(message: string, signatureBase64: string): b
     const fields = parseSiwsMessage(message);
     if (!fields) return false;
     const msg = decodeUTF8(message);
-    const sig = naclDecode(signatureBase64);
-    // Solana pubkey is base58; for simplicity, we accept it directly.
-    // The caller (server route) should also resolve it from a known wallet adapter event.
-    return naclVerify(sig, msg, naclDecode(fields.address));
+    const sig = decodeBase64(signatureBase64);
+    const pub = bs58.decode(fields.address);
+    return nacl.sign.detached.verify(msg, sig, pub);
   } catch {
     return false;
   }
