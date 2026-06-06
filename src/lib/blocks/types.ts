@@ -110,3 +110,40 @@ export const BlockInstanceSchema = z.object({
   metadata: z.record(z.unknown()).default({}),
 });
 export type BlockInstance = z.infer<typeof BlockInstanceSchema>;
+
+/**
+ * Top-level build state. The 3D builder, the simulation mode, and the
+ * scoring engine all read from this same shape.
+ */
+export const BuildStateSchema = z.object({
+  buildId: z.string().default(''),
+  name: z.string().default('Untitled build'),
+  scenarioId: z.string().default('free'),
+  /** id -> instance */
+  voxels: z.record(z.string(), BlockInstanceSchema).default({}),
+  /** CellKey -> instance id (spatial index). */
+  byCell: z.record(z.string(), z.string()).default({}),
+  /** BlockType id -> count remaining in inventory. */
+  inventory: z.record(z.string(), z.number().int().nonnegative()).default({}),
+  /** Created/updated timestamps (ms epoch). */
+  createdAt: z.number().default(0),
+  updatedAt: z.number().default(0),
+  /** Tag for sharing (e.g. encoded share token). */
+  shareToken: z.string().optional(),
+});
+export type BuildState = z.infer<typeof BuildStateSchema>;
+
+/** Returns a fresh, fully-defaulted BuildState. */
+export function emptyState(): BuildState {
+  const now = Date.now();
+  return {
+    buildId: '',
+    name: 'Untitled build',
+    scenarioId: 'free',
+    voxels: {},
+    byCell: {},
+    inventory: {},
+    createdAt: now,
+    updatedAt: now,
+  };
+}
