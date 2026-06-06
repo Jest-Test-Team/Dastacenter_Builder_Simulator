@@ -1,9 +1,7 @@
-/**
- * React 19 RC types do not declare a global `JSX` namespace —
- * they use `React.JSX`. R3F 8 still augments the global namespace.
- * We re-declare a global `JSX` namespace (the way React 18 did) and
- * re-export every R3F intrinsic element so `tsc --noEmit` is happy.
- */
+// Ambient JSX augmentation for React 19 + R3F 8.
+// React 19 types use React.JSX, but R3F 8 augments the global JSX namespace.
+// Without this shim, every <mesh>, <group>, <boxGeometry> in TSX raises
+// "Property 'X' does not exist on type 'JSX.IntrinsicElements'".
 
 import type { ThreeElements } from '@react-three/fiber';
 
