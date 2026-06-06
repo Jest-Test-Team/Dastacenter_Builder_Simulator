@@ -19,6 +19,8 @@ export function WalletPicker() {
   const { connect, connectors, isPending, error } = useConnect();
   const { disconnect } = useDisconnect();
   const [copied, setCopied] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const connectAny = connect as any;
 
   if (!isConnected) {
     return (
