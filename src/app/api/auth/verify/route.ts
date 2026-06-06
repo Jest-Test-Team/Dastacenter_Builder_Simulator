@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSession } from '@/lib/wallet/session';
 import { verifySiweMessage } from '@/lib/wallet/siwe';
 import { verifySiwsSignature, parseSiwsMessage } from '@/lib/wallet/siws';
-import { usedNonces } from '../nonce/route';
+import { consumeNonce, recordNonce } from '../nonce-store';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
