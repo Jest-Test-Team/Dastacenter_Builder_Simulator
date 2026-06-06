@@ -69,7 +69,7 @@ export function Hotbar() {
               isActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50',
               count <= 0 && 'opacity-50',
             )}
-            title={def.displayName}
+            title={labels.block(def).displayName}
           >
             <span className="text-xl" style={{ color: def.color }}>
               {def.icon}
