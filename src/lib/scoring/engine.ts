@@ -150,7 +150,7 @@ function clamp(v: number, min: number, max: number) {
 
 function severityRank(a: Issue, b: Issue) {
   const order: Record<Severity, number> = { critical: 0, error: 1, warn: 2, info: 3 };
-  return order[a.severity] - order[b.severity];
+  return (order[a.severity] ?? 99) - (order[b.severity] ?? 99);
 }
 
 // ----------------------------------------------------------------------------
