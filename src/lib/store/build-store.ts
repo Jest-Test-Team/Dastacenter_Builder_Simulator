@@ -19,6 +19,7 @@ import type { TemporalState } from 'zundo';
 import {
   type BlockInstance,
   type BlockDef,
+  type BuildState as PureBuildState,
   getBlock,
   CATEGORIES,
   BLOCK_REGISTRY,
@@ -34,22 +35,12 @@ export interface CameraState {
   zoom: number;
 }
 
-export interface BuildState {
+export interface BuildState extends PureBuildState {
   // Identity
-  buildId: string;
-  scenarioId: string;
   scenarioName: string;
 
   // World
   gridSize: GridSize;
-  voxels: Record<string, BlockInstance>; // key by instance id
-  byCell: Record<string, string>; // cell key -> instance id
-
-  // Inventory: how many of each block type the user can place
-  inventory: Record<string, number>;
-
-  // Policies (5-function framework + deterrence + ESG + privacy)
-  policies: PolicyState;
 
   // UI
   mode: BuildMode;
@@ -58,12 +49,6 @@ export interface BuildState {
   activeBlockType: string | null; // for placement
   rotation: 0 | 1 | 2 | 3;
   camera: CameraState;
-
-  // Metadata
-  name: string;
-  createdAt: number;
-  updatedAt: number;
-  shareToken?: string;
 }
 
 export interface BuildActions {
