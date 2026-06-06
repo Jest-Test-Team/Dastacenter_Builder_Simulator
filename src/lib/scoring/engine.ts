@@ -258,7 +258,7 @@ function ruleAxis(ruleId: string): keyof RatingBreakdown | null {
 // ----------------------------------------------------------------------------
 
 function deriveTier(issues: Issue[], state: BuildState): UptimeTier {
-  const has = (id: string) => state.voxels && countByType(state)[id] > 0;
+  const has = (id: string) => (countByType(state)[id] ?? 0) > 0;
   // Tier IV requires 2N power, 2N cooling, fault-isolated paths
   const has2N = has('utility_feed') && has('ups') && has('generator');
   // Tier III requires concurrent maintainability: at least one utility feed + UPS + generator
