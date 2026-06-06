@@ -183,16 +183,18 @@ function levelColor(l: RatingReport['level']) {
 }
 
 function tierLabel(t: RatingReport['tier']) {
-  return {
+  const tr = useT();
+  return tr(`tier.${t}`) !== `tier.${t}` ? tr(`tier.${t}`) : ({
     IV: 'Fault tolerant',
     III: 'Concurrently maintainable',
     II: 'Redundant components',
     I: 'Basic capacity',
     F: 'Fails compliance',
-  }[t];
+  } as Record<string, string>)[t];
 }
 
 function Breakdown({ report }: { report: RatingReport }) {
+  const t = useT();
   return (
     <section className="panel p-5">
       <h2 className="flex items-center gap-2 text-lg font-semibold">
@@ -200,12 +202,12 @@ function Breakdown({ report }: { report: RatingReport }) {
         Breakdown
       </h2>
       <ul className="mt-4 space-y-2">
-        <Bar label="Redundancy" value={report.breakdown.redundancy} icon={<ShieldCheck className="h-4 w-4" />} />
-        <Bar label="Power" value={report.breakdown.power} icon={<Zap className="h-4 w-4" />} />
-        <Bar label="Cooling" value={report.breakdown.cooling} icon={<Info className="h-4 w-4" />} />
-        <Bar label="Safety" value={report.breakdown.safety} icon={<AlertTriangle className="h-4 w-4" />} />
-        <Bar label="Efficiency" value={report.breakdown.efficiency} icon={<TrendingUp className="h-4 w-4" />} />
-        <Bar label="Security" value={report.breakdown.security} icon={<Lock className="h-4 w-4" />} />
+        <Bar label={t('breakdown.redundancy')} value={report.breakdown.redundancy} icon={<ShieldCheck className="h-4 w-4" />} />
+        <Bar label={t('breakdown.power')} value={report.breakdown.power} icon={<Zap className="h-4 w-4" />} />
+        <Bar label={t('breakdown.cooling')} value={report.breakdown.cooling} icon={<Info className="h-4 w-4" />} />
+        <Bar label={t('breakdown.safety')} value={report.breakdown.safety} icon={<AlertTriangle className="h-4 w-4" />} />
+        <Bar label={t('breakdown.efficiency')} value={report.breakdown.efficiency} icon={<TrendingUp className="h-4 w-4" />} />
+        <Bar label={t('breakdown.security')} value={report.breakdown.security} icon={<Lock className="h-4 w-4" />} />
       </ul>
     </section>
   );
