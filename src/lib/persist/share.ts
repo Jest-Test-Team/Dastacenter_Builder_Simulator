@@ -57,6 +57,12 @@ export async function decodeShareToken(token: string): Promise<BuildSnapshot | n
 }
 
 function stripForShare(s: Partial<BuildSnapshot> & Partial<BuildState>): BuildSnapshot {
+  const live = s as Partial<BuildSnapshot> & {
+    scenarioName?: string;
+    gridSize?: { w: number; h: number; d: number };
+    camera?: { position: [number, number, number]; target: [number, number, number]; zoom: number };
+    policies?: BuildSnapshot['policies'];
+  };
   return {
     buildId: s.buildId ?? '',
     name: s.name ?? 'Untitled build',
@@ -67,16 +73,16 @@ function stripForShare(s: Partial<BuildSnapshot> & Partial<BuildState>): BuildSn
     createdAt: s.createdAt ?? 0,
     updatedAt: s.updatedAt ?? 0,
     shareToken: s.shareToken,
-    policies: s.policies ?? {},
+    policies: (live.policies ?? {}) as BuildSnapshot['policies'],
     // UI fields, reset to defaults
-    scenarioName: s.scenarioName ?? '',
-    gridSize: s.gridSize ?? { w: 32, h: 8, d: 32 },
+    scenarioName: live.scenarioName ?? '',
+    gridSize: live.gridSize ?? { w: 32, h: 8, d: 32 },
     mode: 'build',
     selectedInstanceId: null,
     hoveredCell: null,
     activeBlockType: null,
     rotation: 0,
-    camera: s.camera ?? { position: [16, 16, 16], target: [0, 0, 0], zoom: 1 },
+    camera: live.camera ?? { position: [16, 16, 16], target: [0, 0, 0], zoom: 1 },
   };
 }
 
