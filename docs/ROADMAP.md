@@ -29,7 +29,7 @@
 - Mobile-first controls (touch place, pinch zoom, two-finger orbit).
 - New block categories: sustainability (solar, wind, fuel cell),
   quantum-ready (cryogenic dilution fridges), modular.
-- Plugin API for community block types (JSON schema, hot-loaded).
+- [x] Plugin API for community block types (JSON schema, hot-loaded).
 - Public dashboard: leaderboard, average PUE by region, etc.
 
 ## v2.0 (6–12 months after)

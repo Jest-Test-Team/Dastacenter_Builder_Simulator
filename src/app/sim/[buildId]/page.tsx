@@ -5,14 +5,17 @@
 
 'use client';
 
-import { Canvas, useFrame } from '@react-three/fiber';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { OrbitControls } from '@react-three/drei';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useBuildStore } from '@/lib/store/build-store';
 import { useLoadBuild, useSaveBuild } from '@/lib/persist';
+import { downloadBuildJson } from '@/lib/export/build-export';
 import type { RatingReport } from '@/lib/scoring/engine';
+import { WalletPicker } from '@/components/wallet/WalletPicker';
+import { useT } from '@/lib/i18n/client';
+import { useAccount } from 'wagmi';
 import {
   ArrowLeft,
   Play,
@@ -26,11 +29,15 @@ import {
   DollarSign,
   Leaf,
   Droplets,
+  Download,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Group } from 'three';
 import { projectOperations, type OperationsProjection } from '@/lib/simulation';
-import { VoxelWorld } from '@/components/builder/VoxelWorld';
+
+const SimulationCanvas = dynamic(
+  () => import('@/components/sim/SimulationCanvas').then((module) => module.SimulationCanvas),
+  { ssr: false },
+);
 
 type SimEvent = {
   id: number;
@@ -62,11 +69,13 @@ export default function SimPage() {
   const params = useParams<{ buildId: string }>();
   const router = useRouter();
   const buildId = params?.buildId ?? '';
+  const t = useT();
+  const { address, isConnected, chain } = useAccount();
   useLoadBuild(buildId || null);
   const snapshot = useBuildStore((state) => state);
   const save = useSaveBuild();
 
-  const [t, setT] = useState(0);
+  const [simulationTime, setSimulationTime] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(1);
   const [events, setEvents] = useState<SimEvent[]>([]);
@@ -87,12 +96,22 @@ export default function SimPage() {
     router.push(`/result/${buildId}`);
   }
 
+  function handleDownloadWorks() {
+    if (!address) return;
+    downloadBuildJson({
+      snapshot: useBuildStore.getState().exportSnapshot(),
+      walletAddress: address,
+      chainId: chain?.id,
+      chainName: chain?.name,
+    });
+  }
+
   // Time loop
   useEffect(() => {
     if (!playing) return;
     const id = window.setInterval(() => {
       elapsedRef.current += speed;
-      setT(elapsedRef.current);
+      setSimulationTime(elapsedRef.current);
       // Random event spawn
       if (Math.random() < 0.04 * speed) {
         const tmpl = EVENT_TEMPLATES[Math.floor(Math.random() * EVENT_TEMPLATES.length)]!;
@@ -128,6 +147,16 @@ export default function SimPage() {
           </span>
         </div>
         <div className="flex items-center gap-2">
+          <WalletPicker />
+          <button
+            onClick={handleDownloadWorks}
+            disabled={!isConnected}
+            title={!isConnected ? t('sim.downloadWorks.hint') : undefined}
+            className="btn-ghost disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Download className="h-4 w-4" />
+            {t('sim.downloadWorks')}
+          </button>
           <button onClick={() => setPlaying((p) => !p)} className="btn-ghost">
             {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </button>
@@ -154,17 +183,14 @@ export default function SimPage() {
 
       <div className="grid flex-1 grid-cols-[1fr_320px]">
         <div className="relative bg-bg-subtle">
-          <Canvas camera={{ position: [16, 16, 16], fov: 50 }} dpr={[1, 2]}>
-            <ambientLight intensity={0.4} />
-            <directionalLight position={[10, 20, 5]} intensity={1} />
-            <OrbitControls />
-            <SiteGround />
-            <VoxelWorld />
-            <NPCs count={6} t={t} />
-            <Fence />
-          </Canvas>
+          <SimulationCanvas elapsedSeconds={simulationTime} />
 
-          <HUD powerLoad={powerLoad} tempC={tempC} t={t} report={projection.report} />
+          <HUD
+            powerLoad={powerLoad}
+            tempC={tempC}
+            t={simulationTime}
+            report={projection.report}
+          />
         </div>
 
         <aside className="flex flex-col border-l border-border bg-bg-panel">
@@ -284,79 +310,6 @@ function formatCompactUsd(value: number): string {
     notation: 'compact',
     maximumFractionDigits: 1,
   }).format(value);
-}
-
-function SiteGround() {
-  return (
-    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.5, 0]}>
-      <planeGeometry args={[200, 200]} />
-      <meshStandardMaterial color="#1a2030" />
-    </mesh>
-  );
-}
-
-function NPCs({ count, t }: { count: number; t: number }) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const refs = useRef<Array<Group | null>>([]);
-  const seeds = useMemo(
-    () =>
-      Array.from({ length: count }, (_, i) => ({
-        x: 4 + ((i * 3.7) % 30),
-        z: 4 + ((i * 5.1) % 30),
-        speed: 0.3 + (i % 3) * 0.1,
-      })),
-    [count],
-  );
-  useFrame(() => {
-    refs.current.forEach((ref, i) => {
-      if (!ref) return;
-      const s = seeds[i]!;
-      ref.position.x = Math.cos((t * s.speed + i) * 0.5) * 6 + s.x;
-      ref.position.z = Math.sin((t * s.speed + i) * 0.5) * 6 + s.z;
-    });
-  });
-  return (
-    <>
-      {seeds.map((_, i) => (
-        <group
-          key={i}
-          ref={(el: Group | null) => {
-            refs.current[i] = el;
-          }}
-        >
-          <mesh position={[0, 0.5, 0]}>
-            <capsuleGeometry args={[0.2, 0.6, 4, 8]} />
-            <meshStandardMaterial color="#5fa8d3" />
-          </mesh>
-          <mesh position={[0, 1.0, 0]}>
-            <sphereGeometry args={[0.15, 8, 8]} />
-            <meshStandardMaterial color="#f0c8a0" />
-          </mesh>
-        </group>
-      ))}
-    </>
-  );
-}
-
-function Fence() {
-  const lines = useMemo(() => {
-    const out: { x: number; z: number; rot: number }[] = [];
-    for (let x = 0; x < 32; x += 2) out.push({ x: x, z: 0, rot: 0 });
-    for (let x = 0; x < 32; x += 2) out.push({ x: x, z: 32, rot: 0 });
-    for (let z = 0; z < 32; z += 2) out.push({ x: 0, z, rot: Math.PI / 2 });
-    for (let z = 0; z < 32; z += 2) out.push({ x: 32, z, rot: Math.PI / 2 });
-    return out;
-  }, []);
-  return (
-    <>
-      {lines.map((l, i) => (
-        <mesh key={i} position={[l.x, 0.5, l.z]} rotation={[0, l.rot, 0]}>
-          <boxGeometry args={[0.05, 1, 0.05]} />
-          <meshStandardMaterial color="#888" />
-        </mesh>
-      ))}
-    </>
-  );
 }
 
 function HUD({

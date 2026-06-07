@@ -1,13 +1,15 @@
 /**
- * Mode bar — top of builder: build/sim/inspect modes, undo/redo, save, finish.
+ * Mode bar — top of builder: build/sim/inspect modes, undo/redo, export, finish.
  */
 
 'use client';
 
 import { useBuildStore, useBuildHistory } from '@/lib/store/build-store';
-import { useSaveBuild } from '@/lib/persist';
+import { downloadBuildJson } from '@/lib/export/build-export';
+import { WalletPicker } from '@/components/wallet/WalletPicker';
 import { useRouter } from 'next/navigation';
-import { Undo2, Redo2, Save, Award, Trash2, PlayCircle, FlaskConical } from 'lucide-react';
+import { useAccount } from 'wagmi';
+import { Undo2, Redo2, Award, Trash2, PlayCircle, FlaskConical, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useT } from '@/lib/i18n/client';
 
@@ -17,18 +19,18 @@ export function ModeBar() {
   const setMode = useBuildStore((s) => s.setMode);
   const clearAll = useBuildStore((s) => s.clearAll);
   const buildId = useBuildStore((s) => s.buildId);
-  const save = useSaveBuild();
   const { pastCount, futureCount, undo, redo } = useBuildHistory();
+  const { address, isConnected, chain } = useAccount();
   const t = useT();
 
-  async function navigateAfterSave(path: string) {
-    await save();
-    router.push(path);
-  }
-
-  async function handleFinish() {
-    const state = useBuildStore.getState();
-    await navigateAfterSave(`/result/${state.buildId}`);
+  function handleDownloadWorks() {
+    if (!address) return;
+    downloadBuildJson({
+      snapshot: useBuildStore.getState().exportSnapshot(),
+      walletAddress: address,
+      chainId: chain?.id,
+      chainName: chain?.name,
+    });
   }
 
   return (
@@ -42,7 +44,7 @@ export function ModeBar() {
         />
         <ModeButton
           active={mode === 'sim'}
-          onClick={() => void navigateAfterSave(`/sim/${buildId}`)}
+          onClick={() => router.push(`/sim/${buildId}`)}
           icon={<FlaskConical className="h-4 w-4" />}
           label={t('builder.mode.simulate')}
         />
@@ -69,6 +71,18 @@ export function ModeBar() {
 
       <div className="flex-1" />
 
+      <WalletPicker />
+
+      <button
+        onClick={handleDownloadWorks}
+        disabled={!isConnected}
+        title={!isConnected ? t('sim.downloadWorks.hint') : undefined}
+        className="btn-ghost disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <Download className="h-4 w-4" />
+        {t('sim.downloadWorks')}
+      </button>
+
       <button
         onClick={() => {
           if (confirm(t('builder.clear.confirm'))) clearAll();
@@ -80,12 +94,7 @@ export function ModeBar() {
         {t('builder.clear')}
       </button>
 
-      <button onClick={save} className="btn-ghost" title={t('builder.save')}>
-        <Save className="h-4 w-4" />
-        {t('builder.save')}
-      </button>
-
-      <button onClick={() => void handleFinish()} className="btn">
+      <button onClick={() => router.push(`/result/${buildId}`)} className="btn">
         <Award className="h-4 w-4" />
         {t('builder.finish')}
       </button>

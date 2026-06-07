@@ -47,6 +47,8 @@ for the full cheat sheet.
 - **Curriculum** — 8 modules, ~5 hours of standards-cited learning content.
 - **Share** — LZ-string-compressed snapshot in a URL.
 - **Autosave** — IndexedDB, debounced 1.5 s.
+- **Community block plugins** — data-only, namespaced JSON manifests validated
+  locally and hot-loaded into the palette, renderer, inventory, and scoring context.
 - **Wallet auth** — MetaMask, WalletConnect, Coinbase, Phantom (EVM) via
   wagmi; SIWE for EVM. SIWS for Solana via tweetnacl + bs58.
 - **i18n** — English (default), 繁體中文, 日本語.
@@ -68,7 +70,7 @@ for the full cheat sheet.
 | Scoring     | Pure functions, fully deterministic (no Date.now/Random in core)    |
 | Cert        | SVG, generated client-side; QR via `qrcode.react`                   |
 | Credly      | Server route only (Basic Auth) — opt-in, never in client bundle     |
-| Tests       | Vitest + Testing Library (jsdom) — 39 tests, all green              |
+| Tests       | Vitest + Testing Library (jsdom) — 45 tests, all green              |
 | Styling     | Tailwind + CSS variables (no UI framework)                          |
 | i18n        | Custom in-house (3 locales: en, zh-TW, ja)                          |
 | Analytics   | PostHog, lazy-loaded, consent-gated                                 |
@@ -140,10 +142,12 @@ docs/
 | ----------------------- | ------------------------------------------------- |
 | `npm run dev`           | Local dev server on :3000                         |
 | `npm run build`         | Production build                                  |
+| `npm run build:verify`  | Isolated production build (`.next-verify`)        |
 | `npm run start`         | Run production build                              |
+| `npm run start:verify`  | Run the isolated verification build               |
 | `npm run lint`          | Next.js + TypeScript ESLint                       |
 | `npm run typecheck`     | `tsc --noEmit` (strict, noUncheckedIndexedAccess) |
-| `npm test`              | Vitest (jsdom) — 39 tests, all green              |
+| `npm test`              | Vitest (jsdom) — 45 tests, all green              |
 | `npm run test:watch`    | Vitest watch                                      |
 | `npm run test:coverage` | Vitest + v8 coverage                              |
 | `npm run format`        | Prettier write                                    |

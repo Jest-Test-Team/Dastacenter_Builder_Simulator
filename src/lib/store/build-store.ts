@@ -14,6 +14,7 @@
 import { create } from 'zustand';
 import { temporal } from 'zundo';
 import { useStore } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
 import { nanoid } from 'nanoid';
 import type { TemporalState } from 'zundo';
 import {
@@ -22,7 +23,7 @@ import {
   type BuildState as PureBuildState,
   getBlock,
   CATEGORIES,
-  BLOCK_REGISTRY,
+  getAllBlocks,
 } from '@/lib/blocks';
 import { cellKey, type Cell, type GridSize, DEFAULT_GRID_SIZE } from '@/lib/grid';
 import { defaultPolicyState, type PolicyState, type PolicyKey } from '@/lib/scoring/policy';
@@ -102,7 +103,7 @@ export type BuildStore = BuildState & BuildActions;
 
 function defaultInventory(): Record<string, number> {
   const inv: Record<string, number> = {};
-  for (const b of BLOCK_REGISTRY) {
+  for (const b of getAllBlocks()) {
     inv[b.id] = b.defaultInventory;
   }
   return inv;
@@ -341,13 +342,16 @@ export const useBuildStore = create<BuildStore>()(
 
 /** Hook for undo/redo controls. */
 export function useBuildHistory() {
-  return useStore(useBuildStore.temporal, (s: TemporalState<BuildState>) => ({
-    pastCount: s.pastStates.length,
-    futureCount: s.futureStates.length,
-    undo: s.undo,
-    redo: s.redo,
-    clear: s.clear,
-  }));
+  return useStore(
+    useBuildStore.temporal,
+    useShallow((s: TemporalState<BuildState>) => ({
+      pastCount: s.pastStates.length,
+      futureCount: s.futureStates.length,
+      undo: s.undo,
+      redo: s.redo,
+      clear: s.clear,
+    })),
+  );
 }
 
 /** Helper: get a block instance by cell. */

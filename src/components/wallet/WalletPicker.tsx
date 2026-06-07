@@ -12,8 +12,10 @@ import { useState } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { Wallet, X, LogOut, Copy, Check } from 'lucide-react';
 import { cn, shortAddress } from '@/lib/utils';
+import { useT } from '@/lib/i18n/client';
 
 export function WalletPicker() {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const { address, isConnected, chain } = useAccount();
   const { connect, connectors, isPending, error } = useConnect();
@@ -27,7 +29,7 @@ export function WalletPicker() {
       <>
         <button onClick={() => setOpen(true)} className="btn">
           <Wallet className="h-4 w-4" />
-          Connect wallet
+          {t('wallet.connect')}
         </button>
         {open && <WalletModal onClose={() => setOpen(false)} connectors={connectors} connect={connectAny} isPending={isPending} error={error} />}
       </>

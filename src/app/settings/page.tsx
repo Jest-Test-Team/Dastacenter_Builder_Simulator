@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Trash2, Download, Eye, EyeOff } from 'lucide-react';
+import { Trash2, Download, Eye, EyeOff, Blocks, Upload } from 'lucide-react';
 import { useConsent } from '@/lib/analytics';
 import { LOCALES, LOCALE_LABELS, type Locale, DEFAULT_LOCALE } from '@/lib/i18n';
 import { useSettings } from '@/lib/persist';
+import { useBlockPlugins } from '@/lib/plugins/block-plugins';
 
 export default function SettingsPage() {
   const { consent, setConsent, hasHydrated } = useConsent();
@@ -12,6 +13,11 @@ export default function SettingsPage() {
   const [autosaves, setAutosaves] = useState<{ id: string; name: string; updatedAt: number }[]>([]);
   const reducedMotion = useSettings((state) => state.reducedMotion);
   const setSetting = useSettings((state) => state.setSetting);
+  const plugins = useBlockPlugins((state) => state.plugins);
+  const pluginError = useBlockPlugins((state) => state.error);
+  const installPlugin = useBlockPlugins((state) => state.installJson);
+  const removePlugin = useBlockPlugins((state) => state.remove);
+  const clearPluginError = useBlockPlugins((state) => state.clearError);
 
   useEffect(() => {
     const stored = (typeof document !== 'undefined' &&
@@ -68,6 +74,18 @@ export default function SettingsPage() {
       URL.revokeObjectURL(url);
     } catch {
       /* ignore */
+    }
+  }
+
+  async function importPlugin(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    clearPluginError();
+    try {
+      await installPlugin(await file.text());
+    } catch {
+      // The plugin store exposes the validation error in the panel.
     }
   }
 
@@ -170,6 +188,66 @@ export default function SettingsPage() {
               <Trash2 className="h-4 w-4" />
               Delete all
             </button>
+          </div>
+        </section>
+
+        <section className="panel mt-6 p-5">
+          <div className="flex items-center gap-2">
+            <Blocks className="h-5 w-5" />
+            <h2 className="font-semibold">Community block plugins</h2>
+          </div>
+          <p className="mt-1 text-sm text-fg-muted">
+            Install a namespaced JSON manifest. Plugin blocks stay on this device and are validated
+            before they enter the palette, renderer, inventory, or scoring engine.
+          </p>
+          {pluginError && (
+            <div
+              role="alert"
+              className="mt-3 rounded border border-danger/40 bg-danger/10 p-3 text-sm text-danger"
+            >
+              {pluginError}
+            </div>
+          )}
+          {plugins.length > 0 && (
+            <ul className="mt-3 space-y-2">
+              {plugins.map((plugin) => (
+                <li
+                  key={plugin.id}
+                  className="flex items-center justify-between rounded border border-border p-3 text-sm"
+                >
+                  <div>
+                    <div className="font-medium">{plugin.name}</div>
+                    <div className="text-xs text-fg-muted">
+                      {plugin.id} · v{plugin.version} · {plugin.blocks.length} block
+                      {plugin.blocks.length === 1 ? '' : 's'}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => void removePlugin(plugin.id).catch(() => undefined)}
+                    className="icon-btn text-danger"
+                    aria-label={`Remove ${plugin.name}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="mt-4 flex flex-wrap gap-2">
+            <label className="btn-ghost cursor-pointer text-sm">
+              <Upload className="h-4 w-4" />
+              Install JSON
+              <input
+                type="file"
+                accept="application/json,.json"
+                onChange={importPlugin}
+                className="sr-only"
+              />
+            </label>
+            <a href="/examples/block-plugin.json" download className="btn-ghost text-sm">
+              <Download className="h-4 w-4" />
+              Example manifest
+            </a>
           </div>
         </section>
 

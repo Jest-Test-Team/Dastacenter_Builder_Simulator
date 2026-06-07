@@ -4,16 +4,16 @@
 
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 import { useBuildStore } from '@/lib/store/build-store';
 import {
   CATEGORIES,
   CATEGORY_LABELS,
   getBlocksByCategory,
-  isValidBlockType,
   type BlockCategory,
   type BlockDef,
 } from '@/lib/blocks';
+import { useBlockPlugins } from '@/lib/plugins/block-plugins';
 import { cn } from '@/lib/utils';
 import { Search, X } from 'lucide-react';
 import { useT } from '@/lib/i18n/client';
@@ -24,8 +24,10 @@ export function BlockPalette() {
   const [query, setQuery] = useState('');
   const t = useT();
   const labels = useBlockLabel();
+  const pluginRevision = useBlockPlugins((state) => state.revision);
 
-  const blocks = useMemo(() => {
+  const blocks = (() => {
+    void pluginRevision;
     const all = getBlocksByCategory(activeCategory);
     if (!query.trim()) return all;
     const q = query.toLowerCase();
@@ -38,7 +40,7 @@ export function BlockPalette() {
         b.tags.some((tt) => tt.toLowerCase().includes(q))
       );
     });
-  }, [activeCategory, query, labels]);
+  })();
 
   return (
     <aside className="panel flex h-full w-72 flex-col border-r">

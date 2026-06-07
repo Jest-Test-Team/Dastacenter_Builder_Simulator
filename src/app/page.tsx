@@ -14,16 +14,14 @@ import {
   Network,
   BookOpen,
   PlayCircle,
-  Wallet,
-  ArrowRight,
 } from 'lucide-react';
-import { LocaleSwitcher } from '@/components/i18n/LocaleSwitcher';
-import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
+import { LandingHeader } from '@/components/wallet/LandingHeader';
+import { LandingWalletBanner } from '@/components/wallet/LandingWalletBanner';
 
 export default function HomePage() {
   return (
     <div className="min-h-screen overflow-y-auto bg-bg">
-      <Header />
+      <LandingHeader />
 
       <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-6 py-16">
         <section className="grid gap-8 md:grid-cols-2 md:items-center">
@@ -51,10 +49,7 @@ export default function HomePage() {
                 Read the curriculum
               </Link>
             </div>
-            <p className="mt-3 flex items-center gap-2 text-sm text-fg-muted">
-              <Wallet className="h-4 w-4" /> Sign in with MetaMask or Phantom.
-              No email needed.
-            </p>
+            <LandingWalletBanner />
           </div>
 
           <div className="panel aspect-video overflow-hidden p-2">
@@ -153,27 +148,6 @@ const STANDARDS = [
   'CCPA',
   'PIPL',
 ];
-
-function Header() {
-  return (
-    <header className="border-b border-border bg-bg-panel/80 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
-          <span className="text-2xl">🖥️</span>
-          <span>Datacenter Builder</span>
-        </Link>
-        <nav className="flex items-center gap-1">
-          <LocaleSwitcher current={DEFAULT_LOCALE satisfies Locale} />
-          <Link href="/learn" className="btn-ghost text-sm">Curriculum</Link>
-          <Link href="/build/free" className="btn text-sm">
-            Build
-            <ArrowRight className="h-4 w-4" />
-          </Link>
-        </nav>
-      </div>
-    </header>
-  );
-}
 
 function FeatureCard({
   icon,

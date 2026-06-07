@@ -10,6 +10,7 @@ import { WagmiProvider } from 'wagmi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { wagmiConfig } from '@/lib/wallet/wagmi';
 import { useSettings } from '@/lib/persist';
+import { useBlockPlugins } from '@/lib/plugins/block-plugins';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -19,15 +20,15 @@ const queryClient = new QueryClient({
 
 export function Providers({ children }: { children: ReactNode }) {
   const hydrate = useSettings((s) => s.hydrate);
+  const hydratePlugins = useBlockPlugins((state) => state.hydrate);
   useEffect(() => {
     void hydrate();
-  }, [hydrate]);
+    void hydratePlugins();
+  }, [hydrate, hydratePlugins]);
 
   return (
     <WagmiProvider config={wagmiConfig}>
-      <QueryClientProvider client={queryClient}>
-        {children}
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </WagmiProvider>
   );
 }

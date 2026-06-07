@@ -15,14 +15,14 @@ import {
   set as idbSet,
   del as idbDel,
   keys as idbKeys,
-  createStore as idbCreateStore,
 } from 'idb-keyval';
 import type { BuildSnapshot } from '@/lib/store/build-store';
 import { useBuildStore } from '@/lib/store/build-store';
-
-const buildStore = idbCreateStore('dcb-builder', 'builds');
-const progressStore = idbCreateStore('dcb-builder', 'progress');
-const settingsStore = idbCreateStore('dcb-builder', 'settings');
+import {
+  buildStore,
+  ensureDatabaseReady,
+  settingsStore,
+} from '@/lib/persist/database';
 
 export interface PersistedBuild {
   id: string;
@@ -39,6 +39,7 @@ export interface PersistedBuild {
 }
 
 export async function saveBuildToIDB(snapshot: BuildSnapshot): Promise<void> {
+  await ensureDatabaseReady();
   const record: PersistedBuild = {
     id: snapshot.buildId,
     name: snapshot.name,
@@ -52,11 +53,13 @@ export async function saveBuildToIDB(snapshot: BuildSnapshot): Promise<void> {
 }
 
 export async function loadBuildFromIDB(id: string): Promise<PersistedBuild | null> {
+  await ensureDatabaseReady();
   const record = (await idbGet<PersistedBuild>(id, buildStore)) ?? null;
   return record;
 }
 
 export async function listBuildsFromIDB(): Promise<PersistedBuild[]> {
+  await ensureDatabaseReady();
   const allKeys = (await idbKeys(buildStore)) as string[];
   const records: PersistedBuild[] = [];
   for (const k of allKeys) {
@@ -67,6 +70,7 @@ export async function listBuildsFromIDB(): Promise<PersistedBuild[]> {
 }
 
 export async function deleteBuildFromIDB(id: string): Promise<void> {
+  await ensureDatabaseReady();
   await idbDel(id, buildStore);
 }
 
@@ -99,9 +103,12 @@ export const useSettings = create<
   ...DEFAULT_SETTINGS,
   setSetting: (k, v) => {
     set({ [k]: v } as Partial<Settings>);
-    void idbSet('settings', { ...useSettings.getState(), [k]: v }, settingsStore);
+    void ensureDatabaseReady().then(() =>
+      idbSet('settings', { ...useSettings.getState(), [k]: v }, settingsStore),
+    );
   },
   hydrate: async () => {
+    await ensureDatabaseReady();
     const stored = (await idbGet<Settings>('settings', settingsStore)) ?? null;
     if (stored) set({ ...DEFAULT_SETTINGS, ...stored });
   },

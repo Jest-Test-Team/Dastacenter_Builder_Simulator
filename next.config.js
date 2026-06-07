@@ -25,6 +25,7 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   reactStrictMode: true,
   poweredByHeader: false,
   experimental: {
@@ -39,9 +40,7 @@ const nextConfig = {
     ],
   },
   async headers() {
-    return [
-      { source: '/(.*)', headers: securityHeaders },
-    ];
+    return [{ source: '/(.*)', headers: securityHeaders }];
   },
   webpack: (config) => {
     config.module.rules.push({
