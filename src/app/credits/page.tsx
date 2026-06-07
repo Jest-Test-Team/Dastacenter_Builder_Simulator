@@ -21,7 +21,11 @@ export default function CreditsPage() {
           data-center standards.
         </p>
         <ul className="panel mt-8 divide-y divide-border p-5">
-          {PROJECTS.map((project) => <li key={project} className="py-3 first:pt-0 last:pb-0">{project}</li>)}
+          {PROJECTS.map((project) => (
+            <li key={project} className="py-3 first:pt-0 last:pb-0">
+              {project}
+            </li>
+          ))}
         </ul>
         <p className="mt-6 text-sm text-fg-muted">
           Product scoring is educational guidance, not certification by the cited standards bodies.

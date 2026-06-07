@@ -34,9 +34,24 @@ export function ModeBar() {
   return (
     <div className="panel flex items-center gap-2 border-b px-3 py-2">
       <div className="flex items-center gap-1">
-        <ModeButton active={mode === 'build'} onClick={() => setMode('build')} icon={<PlayCircle className="h-4 w-4" />} label={t('builder.mode.build')} />
-        <ModeButton active={mode === 'sim'} onClick={() => void navigateAfterSave(`/sim/${buildId}`)} icon={<FlaskConical className="h-4 w-4" />} label={t('builder.mode.simulate')} />
-        <ModeButton active={mode === 'inspect'} onClick={() => setMode('inspect')} icon={<Award className="h-4 w-4" />} label={t('builder.mode.inspect')} />
+        <ModeButton
+          active={mode === 'build'}
+          onClick={() => setMode('build')}
+          icon={<PlayCircle className="h-4 w-4" />}
+          label={t('builder.mode.build')}
+        />
+        <ModeButton
+          active={mode === 'sim'}
+          onClick={() => void navigateAfterSave(`/sim/${buildId}`)}
+          icon={<FlaskConical className="h-4 w-4" />}
+          label={t('builder.mode.simulate')}
+        />
+        <ModeButton
+          active={mode === 'inspect'}
+          onClick={() => setMode('inspect')}
+          icon={<Award className="h-4 w-4" />}
+          label={t('builder.mode.inspect')}
+        />
       </div>
 
       <div className="mx-2 h-6 w-px bg-border" />
@@ -115,12 +130,7 @@ function IconButton({
   children: React.ReactNode;
 }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      className="icon-btn"
-    >
+    <button onClick={onClick} disabled={disabled} title={title} className="icon-btn">
       {children}
     </button>
   );

@@ -13,7 +13,9 @@ export default function StatusHistoryPage() {
             Production incidents will be listed here after the public service launches.
           </p>
         </div>
-        <Link href="/status" className="btn-ghost mt-6">Back to current status</Link>
+        <Link href="/status" className="btn-ghost mt-6">
+          Back to current status
+        </Link>
       </main>
     </div>
   );

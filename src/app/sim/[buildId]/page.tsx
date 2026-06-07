@@ -13,13 +13,29 @@ import Link from 'next/link';
 import { useBuildStore } from '@/lib/store/build-store';
 import { useLoadBuild, useSaveBuild } from '@/lib/persist';
 import { score } from '@/lib/scoring/engine';
-import { ArrowLeft, Play, Pause, FastForward, AlertTriangle, Activity, Zap, Thermometer } from 'lucide-react';
+import {
+  ArrowLeft,
+  Play,
+  Pause,
+  FastForward,
+  AlertTriangle,
+  Activity,
+  Zap,
+  Thermometer,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 type SimEvent = {
   id: number;
   t: number;
-  type: 'intrusion' | 'power_outage' | 'cooling_fault' | 'fire_drill' | 'audit' | 'dga_overheat' | 'normal';
+  type:
+    | 'intrusion'
+    | 'power_outage'
+    | 'cooling_fault'
+    | 'fire_drill'
+    | 'audit'
+    | 'dga_overheat'
+    | 'normal';
   message: string;
   severity: 'info' | 'warn' | 'critical';
   resolved: boolean;
@@ -159,7 +175,9 @@ export default function SimPage() {
                   <AlertTriangle className="mt-0.5 h-3 w-3" />
                   <div className="flex-1">
                     <div className="font-medium">{e.message}</div>
-                    <div className="text-[10px] opacity-70">t={e.t} • {e.type}</div>
+                    <div className="text-[10px] opacity-70">
+                      t={e.t} • {e.type}
+                    </div>
                   </div>
                 </li>
               ))}
@@ -182,11 +200,16 @@ function SiteGround() {
   );
 }
 
-function NPCs({ count, t }: { count: number; t: number; }) {
+function NPCs({ count, t }: { count: number; t: number }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const refs = useRef<Array<any>>([]);
   const seeds = useMemo(
-    () => Array.from({ length: count }, (_, i) => ({ x: 4 + (i * 3.7) % 30, z: 4 + (i * 5.1) % 30, speed: 0.3 + (i % 3) * 0.1 })),
+    () =>
+      Array.from({ length: count }, (_, i) => ({
+        x: 4 + ((i * 3.7) % 30),
+        z: 4 + ((i * 5.1) % 30),
+        speed: 0.3 + (i % 3) * 0.1,
+      })),
     [count],
   );
   useFrame(() => {
@@ -201,7 +224,12 @@ function NPCs({ count, t }: { count: number; t: number; }) {
     <>
       {seeds.map((_, i) => (
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        <group key={i} ref={(el: any) => { refs.current[i] = el; }}>
+        <group
+          key={i}
+          ref={(el: any) => {
+            refs.current[i] = el;
+          }}
+        >
           <mesh position={[0, 0.5, 0]}>
             <capsuleGeometry args={[0.2, 0.6, 4, 8]} />
             <meshStandardMaterial color="#5fa8d3" />
@@ -237,7 +265,17 @@ function Fence() {
   );
 }
 
-function HUD({ powerLoad, tempC, t, report }: { powerLoad: number; tempC: number; t: number; report: ReturnType<typeof score>; }) {
+function HUD({
+  powerLoad,
+  tempC,
+  t,
+  report,
+}: {
+  powerLoad: number;
+  tempC: number;
+  t: number;
+  report: ReturnType<typeof score>;
+}) {
   return (
     <div className="pointer-events-none absolute left-4 top-4 flex flex-col gap-2">
       <div className="panel flex items-center gap-3 p-2 text-xs">

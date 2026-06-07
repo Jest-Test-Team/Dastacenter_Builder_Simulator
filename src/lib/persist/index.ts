@@ -10,7 +10,13 @@
 
 import { useCallback, useEffect } from 'react';
 import { create } from 'zustand';
-import { get as idbGet, set as idbSet, del as idbDel, keys as idbKeys, createStore as idbCreateStore } from 'idb-keyval';
+import {
+  get as idbGet,
+  set as idbSet,
+  del as idbDel,
+  keys as idbKeys,
+  createStore as idbCreateStore,
+} from 'idb-keyval';
 import type { BuildSnapshot } from '@/lib/store/build-store';
 import { useBuildStore } from '@/lib/store/build-store';
 
@@ -84,10 +90,12 @@ const DEFAULT_SETTINGS: Settings = {
   telemetryOptIn: false,
 };
 
-export const useSettings = create<Settings & {
-  setSetting: <K extends keyof Settings>(k: K, v: Settings[K]) => void;
-  hydrate: () => Promise<void>;
-}>((set) => ({
+export const useSettings = create<
+  Settings & {
+    setSetting: <K extends keyof Settings>(k: K, v: Settings[K]) => void;
+    hydrate: () => Promise<void>;
+  }
+>((set) => ({
   ...DEFAULT_SETTINGS,
   setSetting: (k, v) => {
     set({ [k]: v } as Partial<Settings>);

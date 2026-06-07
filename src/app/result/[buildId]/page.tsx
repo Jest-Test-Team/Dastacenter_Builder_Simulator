@@ -10,11 +10,7 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import {
-  type RatingReport,
-  score,
-  type Issue,
-} from '@/lib/scoring';
+import { type RatingReport, score, type Issue } from '@/lib/scoring';
 import { useBuildStore } from '@/lib/store/build-store';
 import { loadBuildFromIDB } from '@/lib/persist';
 import {
@@ -80,9 +76,7 @@ export default function ResultPage() {
           </p>
           <ul className="mt-4 space-y-2">
             {report.issues.length === 0 ? (
-              <li className="panel p-4 text-center text-fg-muted">
-                No issues found. Nicely done.
-              </li>
+              <li className="panel p-4 text-center text-fg-muted">No issues found. Nicely done.</li>
             ) : (
               report.issues.map((iss, i) => <IssueRow key={i} issue={iss} />)
             )}
@@ -93,7 +87,8 @@ export default function ResultPage() {
           <div>
             <p className="text-sm text-fg-muted">
               PUE estimate: <span className="font-mono">{report.pue}</span> · WUE:{' '}
-              <span className="font-mono">{report.wue} L/kWh</span> · Rule pack v{report.rulePackVersion}
+              <span className="font-mono">{report.wue} L/kWh</span> · Rule pack v
+              {report.rulePackVersion}
             </p>
           </div>
           <div className="flex gap-3">
@@ -140,8 +135,7 @@ function Scorecard({ report }: { report: RatingReport }) {
   const t = useT();
   const tierKey = `tier.${report.tier}`;
   const translatedTier = t(tierKey);
-  const tierDescription =
-    translatedTier !== tierKey ? translatedTier : TIER_LABELS[report.tier];
+  const tierDescription = translatedTier !== tierKey ? translatedTier : TIER_LABELS[report.tier];
   return (
     <section className="panel p-6">
       <div className="grid gap-6 md:grid-cols-3">
@@ -158,7 +152,9 @@ function Scorecard({ report }: { report: RatingReport }) {
         <div>
           <p className="label">{t('result.level')}</p>
           <p className={cn('mt-1 text-6xl font-bold', levelColor(report.level))}>{report.level}</p>
-          <p className="text-sm text-fg-muted">{report.certifiable ? 'Certifiable' : 'Not certifiable'}</p>
+          <p className="text-sm text-fg-muted">
+            {report.certifiable ? 'Certifiable' : 'Not certifiable'}
+          </p>
         </div>
       </div>
     </section>
@@ -202,12 +198,36 @@ function Breakdown({ report }: { report: RatingReport }) {
         Breakdown
       </h2>
       <ul className="mt-4 space-y-2">
-        <Bar label={t('breakdown.redundancy')} value={report.breakdown.redundancy} icon={<ShieldCheck className="h-4 w-4" />} />
-        <Bar label={t('breakdown.power')} value={report.breakdown.power} icon={<Zap className="h-4 w-4" />} />
-        <Bar label={t('breakdown.cooling')} value={report.breakdown.cooling} icon={<Info className="h-4 w-4" />} />
-        <Bar label={t('breakdown.safety')} value={report.breakdown.safety} icon={<AlertTriangle className="h-4 w-4" />} />
-        <Bar label={t('breakdown.efficiency')} value={report.breakdown.efficiency} icon={<TrendingUp className="h-4 w-4" />} />
-        <Bar label={t('breakdown.security')} value={report.breakdown.security} icon={<Lock className="h-4 w-4" />} />
+        <Bar
+          label={t('breakdown.redundancy')}
+          value={report.breakdown.redundancy}
+          icon={<ShieldCheck className="h-4 w-4" />}
+        />
+        <Bar
+          label={t('breakdown.power')}
+          value={report.breakdown.power}
+          icon={<Zap className="h-4 w-4" />}
+        />
+        <Bar
+          label={t('breakdown.cooling')}
+          value={report.breakdown.cooling}
+          icon={<Info className="h-4 w-4" />}
+        />
+        <Bar
+          label={t('breakdown.safety')}
+          value={report.breakdown.safety}
+          icon={<AlertTriangle className="h-4 w-4" />}
+        />
+        <Bar
+          label={t('breakdown.efficiency')}
+          value={report.breakdown.efficiency}
+          icon={<TrendingUp className="h-4 w-4" />}
+        />
+        <Bar
+          label={t('breakdown.security')}
+          value={report.breakdown.security}
+          icon={<Lock className="h-4 w-4" />}
+        />
       </ul>
     </section>
   );
@@ -256,7 +276,9 @@ function Achievements({ report }: { report: RatingReport }) {
                 <span className="text-2xl">{a.icon}</span>
                 <div>
                   <p className="font-medium">{t(titleKey) !== titleKey ? t(titleKey) : a.title}</p>
-                  <p className="text-xs text-fg-muted">{t(descKey) !== descKey ? t(descKey) : a.description}</p>
+                  <p className="text-xs text-fg-muted">
+                    {t(descKey) !== descKey ? t(descKey) : a.description}
+                  </p>
                 </div>
               </li>
             );
@@ -282,7 +304,7 @@ function IssueRow({ issue }: { issue: Issue }) {
         {icon}
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-fg-muted">{issue.ruleId}</span>
+            <span className="font-mono text-xs text-fg-muted">{issue.ruleId}</span>
             {issue.standard && <span className="badge">{issue.standard}</span>}
           </div>
           <p className="mt-1 text-sm">{issue.message}</p>
