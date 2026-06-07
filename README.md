@@ -10,7 +10,30 @@ CN PUE**. A SVG certificate is generated client-side and, with the user's
 consent, pushed to **Credly** as a portable digital badge.
 
 ---
+##  demo img 
 
+
+### 2. building scene ui
+
+<img width="1634" height="915" alt="Screenshot 2026-06-07 at 10 36 02 AM" src="https://github.com/user-attachments/assets/dd6a882f-eac6-4ea9-8132-0d7ae0d867fe" />
+
+### 2. building simulation scene ui ( with dynamuc little hobbies walking around
+
+<img width="1541" height="950" alt="Screenshot 2026-06-07 at 10 36 27 AM" src="https://github.com/user-attachments/assets/41950145-cc78-4fe4-be33-0e0dda3d1b33" />
+
+### 3. rating scene
+<img width="1634" height="915" alt="Screenshot 2026-06-07 at 10 36 02 AM" src="https://github.com/user-attachments/assets/8cf5305f-08bd-4dea-88a6-b5ab35df0681" />
+
+### 4.download works  (must connected to a wallet)
+
+<img width="732" height="493" alt="Screenshot 2026-06-07 at 10 37 06 AM" src="https://github.com/user-attachments/assets/bbbde663-67cc-48e2-8955-ed45223ad555" />
+
+<img width="363" height="98" alt="Screenshot 2026-06-07 at 10 37 19 AM" src="https://github.com/user-attachments/assets/7ca15404-9c2e-4e18-ab32-853311e26708" />
+
+ <img width="698" height="389" alt="Screenshot 2026-06-07 at 10 37 11 AM" src="https://github.com/user-attachments/assets/da3d2c18-549e-42fd-8511-c8a100e9ac0a" />
+
+
+---
 ## Quick start
 
 ```bash
