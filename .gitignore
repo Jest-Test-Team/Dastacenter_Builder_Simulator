@@ -9,6 +9,11 @@ node_modules/
 out/
 build/
 dist/
+.open-next/
+
+# Cloudflare
+.cloudflare/
+.wrangler/
 
 # Production
 *.tsbuildinfo
