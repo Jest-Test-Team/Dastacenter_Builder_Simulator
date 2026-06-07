@@ -24,6 +24,7 @@ import {
   Thermometer,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { Group } from 'three';
 
 type SimEvent = {
   id: number;
@@ -202,7 +203,7 @@ function SiteGround() {
 
 function NPCs({ count, t }: { count: number; t: number }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const refs = useRef<Array<any>>([]);
+  const refs = useRef<Array<Group | null>>([]);
   const seeds = useMemo(
     () =>
       Array.from({ length: count }, (_, i) => ({
@@ -223,10 +224,9 @@ function NPCs({ count, t }: { count: number; t: number }) {
   return (
     <>
       {seeds.map((_, i) => (
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         <group
           key={i}
-          ref={(el: any) => {
+          ref={(el: Group | null) => {
             refs.current[i] = el;
           }}
         >
