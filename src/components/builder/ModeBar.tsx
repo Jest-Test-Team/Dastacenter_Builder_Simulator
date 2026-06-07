@@ -20,10 +20,12 @@ export function ModeBar() {
   const mode = useBuildStore((s) => s.mode);
   const setMode = useBuildStore((s) => s.setMode);
   const clearAll = useBuildStore((s) => s.clearAll);
+  const loadBuild = useBuildStore((s) => s.loadBuild);
   const buildId = useBuildStore((s) => s.buildId);
   const { pastCount, futureCount, undo, redo } = useBuildHistory();
   const { address, isConnected, chain } = useAccount();
   const t = useT();
+  const [importing, setImporting] = useState(false);
 
   function handleDownloadWorks() {
     if (!address) return;
@@ -33,6 +35,43 @@ export function ModeBar() {
       chainId: chain?.id,
       chainName: chain?.name,
     });
+  }
+
+  function handleImportWorks() {
+    if (!address) return;
+    setImporting(true);
+
+    const input = createFileInput(async (file) => {
+      const result = await importBuildFromFile(file, address);
+
+      if (!result.success) {
+        alert(`${t('builder.import.error')}: ${result.error}`);
+        setImporting(false);
+        return;
+      }
+
+      if (result.walletMismatch) {
+        const confirmed = confirm(
+          t('builder.import.walletMismatch').replace(
+            '{wallet}',
+            shortAddress(result.exportedWallet ?? ''),
+          ),
+        );
+        if (!confirmed) {
+          setImporting(false);
+          return;
+        }
+      }
+
+      if (result.snapshot) {
+        loadBuild(result.snapshot);
+        alert(t('builder.import.success'));
+      }
+
+      setImporting(false);
+    });
+
+    input.click();
   }
 
   return (
