@@ -71,7 +71,8 @@ export function projectOperations(
   const operationsPerShift = hasInfrastructure
     ? Math.max(1, Math.ceil(rackEquivalents / 24), Math.ceil(report.totalITLoadKW / 1_000))
     : 0;
-  const facilitiesPerShift = facilitiesAssets > 0 ? Math.max(1, Math.ceil(facilitiesAssets / 16)) : 0;
+  const facilitiesPerShift =
+    facilitiesAssets > 0 ? Math.max(1, Math.ceil(facilitiesAssets / 16)) : 0;
   const securityEnabled =
     securityAssets > 0 ||
     build.policies['physical.guard_patrols'] === true ||
@@ -86,9 +87,10 @@ export function projectOperations(
 
   const renewablePercent = clamp(numberPolicy(build, 'esg.renewable_percent'), 0, 100);
   const pue = report.pue > 0 ? report.pue : 1;
-  const facilityPowerKw = report.totalITLoadKW > 0
-    ? report.totalITLoadKW * pue
-    : Math.max(0, report.totalFacilityPowerKW);
+  const facilityPowerKw =
+    report.totalITLoadKW > 0
+      ? report.totalITLoadKW * pue
+      : Math.max(0, report.totalFacilityPowerKW);
   const annualItEnergyKwh = report.totalITLoadKW * assumptions.operatingHoursPerYear;
   const annualFacilityEnergyKwh = facilityPowerKw * assumptions.operatingHoursPerYear;
   const annualGridEnergyKwh = annualFacilityEnergyKwh * (1 - renewablePercent / 100);

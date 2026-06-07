@@ -105,7 +105,10 @@ export default function SimPage() {
       setPowerLoad((current) => {
         const baseline = projection.facilityPowerKw;
         if (baseline === 0) return 0;
-        return Math.max(baseline * 0.8, Math.min(baseline * 1.2, current + (Math.random() - 0.5) * 5));
+        return Math.max(
+          baseline * 0.8,
+          Math.min(baseline * 1.2, current + (Math.random() - 0.5) * 5),
+        );
       });
       setTempC((c) => Math.max(15, Math.min(40, c + (Math.random() - 0.5) * 0.3)));
     }, 800);
@@ -202,8 +205,8 @@ export default function SimPage() {
               ))}
           </ul>
           <div className="border-t p-3 text-[10px] text-fg-muted">
-            L2 projection assumptions: 24/7 operation, $0.12/kWh, 0.4 kg CO₂e/kWh grid,
-            and $95k loaded annual staff cost.
+            L2 projection assumptions: 24/7 operation, $0.12/kWh, 0.4 kg CO₂e/kWh grid, and $95k
+            loaded annual staff cost.
           </div>
         </aside>
       </div>
@@ -269,7 +272,9 @@ function ProjectionMetric({
 }
 
 function formatCompact(value: number): string {
-  return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+  return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(
+    value,
+  );
 }
 
 function formatCompactUsd(value: number): string {
