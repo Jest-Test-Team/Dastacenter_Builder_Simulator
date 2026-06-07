@@ -4,13 +4,15 @@
 
 'use client';
 
+import { useState } from 'react';
 import { useBuildStore, useBuildHistory } from '@/lib/store/build-store';
 import { downloadBuildJson } from '@/lib/export/build-export';
+import { importBuildFromFile, createFileInput } from '@/lib/export/build-import';
 import { WalletPicker } from '@/components/wallet/WalletPicker';
 import { useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
-import { Undo2, Redo2, Award, Trash2, PlayCircle, FlaskConical, Download } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { Undo2, Redo2, Award, Trash2, PlayCircle, FlaskConical, Download, Upload } from 'lucide-react';
+import { cn, shortAddress } from '@/lib/utils';
 import { useT } from '@/lib/i18n/client';
 
 export function ModeBar() {
