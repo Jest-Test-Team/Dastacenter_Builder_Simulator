@@ -6,10 +6,10 @@
 
 import { useBuildStore, useBuildHistory } from '@/lib/store/build-store';
 import { useSaveBuild } from '@/lib/persist';
-import { score } from '@/lib/scoring';
 import { useRouter } from 'next/navigation';
 import { Undo2, Redo2, Save, Award, Trash2, PlayCircle, FlaskConical } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useT } from '@/lib/i18n/client';
 
 export function ModeBar() {
   const router = useRouter();
@@ -19,29 +19,48 @@ export function ModeBar() {
   const buildId = useBuildStore((s) => s.buildId);
   const save = useSaveBuild();
   const { pastCount, futureCount, undo, redo } = useBuildHistory();
+  const t = useT();
 
-  function handleFinish() {
+  async function navigateAfterSave(path: string) {
+    await save();
+    router.push(path);
+  }
+
+  async function handleFinish() {
     const state = useBuildStore.getState();
-    const report = score(state);
-    save();
-    router.push(`/result/${state.buildId}`);
+    await navigateAfterSave(`/result/${state.buildId}`);
   }
 
   return (
     <div className="panel flex items-center gap-2 border-b px-3 py-2">
       <div className="flex items-center gap-1">
-        <ModeButton active={mode === 'build'} onClick={() => setMode('build')} icon={<PlayCircle className="h-4 w-4" />} label="Build" />
-        <ModeButton active={mode === 'sim'} onClick={() => router.push(`/sim/${buildId}`)} icon={<FlaskConical className="h-4 w-4" />} label="Simulate" />
-        <ModeButton active={mode === 'inspect'} onClick={() => setMode('inspect')} icon={<Award className="h-4 w-4" />} label="Inspect" />
+        <ModeButton
+          active={mode === 'build'}
+          onClick={() => setMode('build')}
+          icon={<PlayCircle className="h-4 w-4" />}
+          label={t('builder.mode.build')}
+        />
+        <ModeButton
+          active={mode === 'sim'}
+          onClick={() => void navigateAfterSave(`/sim/${buildId}`)}
+          icon={<FlaskConical className="h-4 w-4" />}
+          label={t('builder.mode.simulate')}
+        />
+        <ModeButton
+          active={mode === 'inspect'}
+          onClick={() => setMode('inspect')}
+          icon={<Award className="h-4 w-4" />}
+          label={t('builder.mode.inspect')}
+        />
       </div>
 
       <div className="mx-2 h-6 w-px bg-border" />
 
       <div className="flex items-center gap-1">
-        <IconButton onClick={undo} disabled={pastCount === 0} title="Undo (Cmd+Z)">
+        <IconButton onClick={undo} disabled={pastCount === 0} title={t('builder.undo')}>
           <Undo2 className="h-4 w-4" />
         </IconButton>
-        <IconButton onClick={redo} disabled={futureCount === 0} title="Redo (Cmd+Shift+Z)">
+        <IconButton onClick={redo} disabled={futureCount === 0} title={t('builder.redo')}>
           <Redo2 className="h-4 w-4" />
         </IconButton>
       </div>
@@ -52,23 +71,23 @@ export function ModeBar() {
 
       <button
         onClick={() => {
-          if (confirm('Clear the entire build? This can be undone.')) clearAll();
+          if (confirm(t('builder.clear.confirm'))) clearAll();
         }}
         className="btn-ghost"
-        title="Clear all"
+        title={t('builder.clear')}
       >
         <Trash2 className="h-4 w-4" />
-        Clear
+        {t('builder.clear')}
       </button>
 
-      <button onClick={save} className="btn-ghost" title="Save (auto-saves too)">
+      <button onClick={save} className="btn-ghost" title={t('builder.save')}>
         <Save className="h-4 w-4" />
-        Save
+        {t('builder.save')}
       </button>
 
-      <button onClick={handleFinish} className="btn">
+      <button onClick={() => void handleFinish()} className="btn">
         <Award className="h-4 w-4" />
-        Finish & Rate
+        {t('builder.finish')}
       </button>
     </div>
   );
@@ -111,12 +130,7 @@ function IconButton({
   children: React.ReactNode;
 }) {
   return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-      className="icon-btn"
-    >
+    <button onClick={onClick} disabled={disabled} title={title} className="icon-btn">
       {children}
     </button>
   );

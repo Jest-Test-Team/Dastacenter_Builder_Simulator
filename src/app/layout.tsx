@@ -1,5 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { Providers } from './providers';
+import { WebVitalsReporter } from '@/components/perf/WebVitalsReporter';
+import { SkipLink } from '@/components/a11y/SkipLink';
+import { ConsentBanner } from '@/components/analytics/ConsentBanner';
+import { getServerLocale } from '@/lib/i18n/server';
 import './globals.css';
 
 export const metadata: Metadata = {
@@ -26,11 +30,17 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getServerLocale();
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body>
-        <Providers>{children}</Providers>
+        <SkipLink />
+        <Providers>
+          {children}
+          <WebVitalsReporter />
+          <ConsentBanner />
+        </Providers>
       </body>
     </html>
   );

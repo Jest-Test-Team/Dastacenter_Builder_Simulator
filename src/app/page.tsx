@@ -17,13 +17,15 @@ import {
   Wallet,
   ArrowRight,
 } from 'lucide-react';
+import { LocaleSwitcher } from '@/components/i18n/LocaleSwitcher';
+import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
 
 export default function HomePage() {
   return (
     <div className="min-h-screen overflow-y-auto bg-bg">
       <Header />
 
-      <main className="mx-auto max-w-6xl px-6 py-16">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-6 py-16">
         <section className="grid gap-8 md:grid-cols-2 md:items-center">
           <div>
             <h1 className="text-4xl font-bold leading-tight md:text-5xl">
@@ -123,7 +125,10 @@ export default function HomePage() {
           Built for engineers, students, and certification-track professionals.
           <br />
           Open source · <Link href="/legal/terms" className="underline">Terms</Link>{' · '}
-          <Link href="/legal/privacy" className="underline">Privacy</Link>
+          <Link href="/legal/privacy" className="underline">Privacy</Link>{' · '}
+          <Link href="/settings" className="underline">Settings</Link>{' · '}
+          <Link href="/credits" className="underline">Credits</Link>{' · '}
+          <Link href="/help" className="underline">Help</Link>
         </p>
       </footer>
     </div>
@@ -158,6 +163,7 @@ function Header() {
           <span>Datacenter Builder</span>
         </Link>
         <nav className="flex items-center gap-1">
+          <LocaleSwitcher current={DEFAULT_LOCALE satisfies Locale} />
           <Link href="/learn" className="btn-ghost text-sm">Curriculum</Link>
           <Link href="/build/free" className="btn text-sm">
             Build

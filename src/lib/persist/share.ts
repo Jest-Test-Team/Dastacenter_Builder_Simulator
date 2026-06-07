@@ -10,12 +10,17 @@
  */
 
 import type { BuildSnapshot } from '@/lib/store/build-store';
+import type { BuildState } from '@/lib/blocks';
 
 const MAX_URL_SIZE = 1800; // safe under 2KB browser limit
 
+/** A snapshot is any BuildState (pure or live). We tolerate UI fields
+ *  being absent by falling back to safe defaults in stripForShare. */
+export type ShareInput = BuildSnapshot | BuildState;
+
 /** Encode a build snapshot to a URL-safe string. */
-export async function encodeBuildToShareToken(snapshot: BuildSnapshot): Promise<string> {
-  const json = JSON.stringify(stripForShare(snapshot));
+export async function encodeBuildToShareToken(snapshot: ShareInput): Promise<string> {
+  const json = JSON.stringify(stripForShare(snapshot as BuildSnapshot));
   // Try LZ-string compression first
   try {
     const LZ = (await import('lz-string')).default;
@@ -51,33 +56,43 @@ export async function decodeShareToken(token: string): Promise<BuildSnapshot | n
   }
 }
 
-function stripForShare(s: BuildSnapshot): BuildSnapshot {
+function stripForShare(s: Partial<BuildSnapshot> & Partial<BuildState>) {
+  const live = s as Partial<BuildSnapshot> & {
+    scenarioName?: string;
+    gridSize?: { w: number; h: number; d: number };
+    camera?: { position: [number, number, number]; target: [number, number, number]; zoom: number };
+    policies?: BuildSnapshot['policies'];
+  };
   return {
-    ...s,
-    policies: s.policies,
-    voxels: s.voxels,
-    byCell: s.byCell,
-    gridSize: s.gridSize,
-    scenarioId: s.scenarioId,
-    scenarioName: s.scenarioName,
-    name: s.name,
-    createdAt: s.createdAt,
-    updatedAt: s.updatedAt,
-    buildId: s.buildId,
-    // reset UI
+    buildId: s.buildId ?? '',
+    name: s.name ?? 'Untitled build',
+    scenarioId: s.scenarioId ?? 'free',
+    voxels: s.voxels ?? {},
+    byCell: s.byCell ?? {},
+    inventory: s.inventory ?? {},
+    createdAt: s.createdAt ?? 0,
+    updatedAt: s.updatedAt ?? 0,
+    shareToken: s.shareToken,
+    policies: (live.policies ?? {}) as BuildSnapshot['policies'],
+    // UI fields, reset to defaults
+    scenarioName: live.scenarioName ?? '',
+    gridSize: live.gridSize ?? { w: 32, h: 8, d: 32 },
     mode: 'build',
     selectedInstanceId: null,
     hoveredCell: null,
     activeBlockType: null,
     rotation: 0,
-    inventory: s.inventory,
-    camera: s.camera,
+    camera: live.camera ?? { position: [16, 16, 16], target: [0, 0, 0], zoom: 1 },
   };
 }
 
 /** Build a shareable URL for a given origin. */
-export async function buildShareUrl(snapshot: BuildSnapshot, origin?: string): Promise<string> {
+export async function buildShareUrl(
+  snapshot: BuildSnapshot,
+  origin?: string,
+  path = '/build/free',
+): Promise<string> {
   const token = await encodeBuildToShareToken(snapshot);
   const o = origin ?? (typeof window !== 'undefined' ? window.location.origin : '');
-  return `${o}/build/free?share=${encodeURIComponent(token)}`;
+  return `${o}${path}?share=${encodeURIComponent(token)}`;
 }

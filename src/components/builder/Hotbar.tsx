@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { useBuildStore } from '@/lib/store/build-store';
 import { getBlock, isValidBlockType } from '@/lib/blocks';
 import { cn } from '@/lib/utils';
+import { useBlockLabel } from '@/lib/i18n/blocks';
 
 const HOTBAR_SIZE = 9;
 
@@ -16,6 +17,7 @@ export function Hotbar() {
   const activeType = useBuildStore((s) => s.activeBlockType);
   const setActiveType = useBuildStore((s) => s.setActiveBlockType);
   const inventory = useBuildStore((s) => s.inventory);
+  const labels = useBlockLabel();
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -67,7 +69,7 @@ export function Hotbar() {
               isActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50',
               count <= 0 && 'opacity-50',
             )}
-            title={def.displayName}
+            title={labels.block(def).displayName}
           >
             <span className="text-xl" style={{ color: def.color }}>
               {def.icon}

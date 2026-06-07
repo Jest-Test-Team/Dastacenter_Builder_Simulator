@@ -83,13 +83,20 @@ export interface BuildActions {
   // Meta
   rename: (name: string) => void;
   setScenario: (id: string, name: string) => void;
+  startBuild: (
+    scenarioId: string,
+    scenarioName: string,
+    inventory?: Record<string, number>,
+  ) => void;
 
   // Bulk
   loadBuild: (snapshot: BuildSnapshot) => void;
   exportSnapshot: () => BuildSnapshot;
 }
 
-export type BuildSnapshot = Omit<BuildState, never>;
+/** Snapshot of a build that can be persisted or shared.
+ *  Uses the pure data BuildState (no UI fields). */
+export type BuildSnapshot = PureBuildState;
 
 export type BuildStore = BuildState & BuildActions;
 
@@ -163,7 +170,14 @@ export const useBuildStore = create<BuildStore>()(
 
         const { gridSize, byCell, inventory } = get();
         for (const c of cells) {
-          if (c.x < 0 || c.x >= gridSize.w || c.y < 0 || c.y >= gridSize.h || c.z < 0 || c.z >= gridSize.d) {
+          if (
+            c.x < 0 ||
+            c.x >= gridSize.w ||
+            c.y < 0 ||
+            c.y >= gridSize.h ||
+            c.z < 0 ||
+            c.z >= gridSize.d
+          ) {
             return { ok: false, reason: 'Out of bounds' };
           }
           if (byCell[cellKey(c)]) {
@@ -234,7 +248,7 @@ export const useBuildStore = create<BuildStore>()(
       rotateBlock: (instanceId) => {
         const inst = get().voxels[instanceId];
         if (!inst) return;
-        const nextRot = (((inst.rotation + 1) % 4) as 0 | 1 | 2 | 3);
+        const nextRot = ((inst.rotation + 1) % 4) as 0 | 1 | 2 | 3;
         const type = inst.type;
         get().removeBlock(instanceId);
         get().placeBlock(type, inst.position, nextRot);
@@ -252,7 +266,9 @@ export const useBuildStore = create<BuildStore>()(
       },
 
       decrementInventory: (type, n = 1) =>
-        set((s) => ({ inventory: { ...s.inventory, [type]: Math.max(0, (s.inventory[type] ?? 0) - n) } })),
+        set((s) => ({
+          inventory: { ...s.inventory, [type]: Math.max(0, (s.inventory[type] ?? 0) - n) },
+        })),
 
       incrementInventory: (type, n = 1) =>
         set((s) => ({ inventory: { ...s.inventory, [type]: (s.inventory[type] ?? 0) + n } })),
@@ -272,6 +288,13 @@ export const useBuildStore = create<BuildStore>()(
 
       rename: (name) => set({ name, updatedAt: Date.now() }),
       setScenario: (id, name) => set({ scenarioId: id, scenarioName: name, updatedAt: Date.now() }),
+      startBuild: (scenarioId, scenarioName, inventory) => {
+        set(() => ({
+          ...createInitial(scenarioId, scenarioName),
+          inventory: { ...defaultInventory(), ...(inventory ?? {}) },
+        }));
+        useBuildStore.temporal.getState().clear();
+      },
 
       loadBuild: (snapshot) => set(() => ({ ...snapshot, updatedAt: Date.now() })),
 
@@ -300,15 +323,16 @@ export const useBuildStore = create<BuildStore>()(
     }),
     {
       // Only track world + policies in history (skip UI)
-      partialize: (state) => ({
-        voxels: state.voxels,
-        byCell: state.byCell,
-        inventory: state.inventory,
-        policies: state.policies,
-        name: state.name,
-        scenarioId: state.scenarioId,
-        scenarioName: state.scenarioName,
-      }) as BuildState,
+      partialize: (state) =>
+        ({
+          voxels: state.voxels,
+          byCell: state.byCell,
+          inventory: state.inventory,
+          policies: state.policies,
+          name: state.name,
+          scenarioId: state.scenarioId,
+          scenarioName: state.scenarioName,
+        }) as BuildState,
       limit: 100,
       equality: (a, b) => a === b,
     },

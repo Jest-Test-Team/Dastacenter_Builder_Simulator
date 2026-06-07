@@ -16,6 +16,7 @@ import { useBuildStore } from '@/lib/store/build-store';
 import { score, type RatingReport } from '@/lib/scoring';
 import { Award, Download, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { CertificateSvg } from '@/components/cert/CertificateSvg';
+import { useT } from '@/lib/i18n/client';
 
 export default function CertPage() {
   const params = useParams<{ buildId: string }>();
@@ -27,6 +28,7 @@ export default function CertPage() {
   const [issuing, setIssuing] = useState(false);
   const [issued, setIssued] = useState<{ id: string; url?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const t = useT();
 
   useEffect(() => {
     if (!buildId) return;
@@ -100,7 +102,7 @@ export default function CertPage() {
       <main className="mx-auto max-w-5xl px-6 py-10">
         <h1 className="flex items-center gap-2 text-2xl font-bold">
           <Award className="h-6 w-6 text-warn" />
-          Your certificate
+          {t('cert.title')}
         </h1>
         <p className="mt-1 text-fg-muted">
           Share it, download it, or publish to Credly. The QR code lets anyone verify.
@@ -117,7 +119,7 @@ export default function CertPage() {
 
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           <section className="panel p-5">
-            <h2 className="font-semibold">Download</h2>
+            <h2 className="font-semibold">{t('cert.download')}</h2>
             <p className="mt-1 text-sm text-fg-muted">
               Save your certificate for your portfolio.
             </p>
@@ -132,7 +134,7 @@ export default function CertPage() {
           </section>
 
           <section className="panel p-5">
-            <h2 className="font-semibold">Publish to Credly</h2>
+            <h2 className="font-semibold">{t('cert.publish')}</h2>
             <p className="mt-1 text-sm text-fg-muted">
               Receive the badge in your email. Free, opt-in.
             </p>

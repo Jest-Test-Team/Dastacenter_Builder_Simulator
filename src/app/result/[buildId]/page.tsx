@@ -7,21 +7,15 @@
 
 'use client';
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState, type ReactNode } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import {
-  type RatingReport,
-  score,
-  type Issue,
-} from '@/lib/scoring';
+import { type RatingReport, score, type Issue } from '@/lib/scoring';
 import { useBuildStore } from '@/lib/store/build-store';
-import { useLoadBuild } from '@/lib/persist';
 import { loadBuildFromIDB } from '@/lib/persist';
 import {
   Award,
   ArrowRight,
-  CheckCircle2,
   XCircle,
   AlertTriangle,
   Info,
@@ -32,24 +26,22 @@ import {
   Lock,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useT } from '@/lib/i18n/client';
 
 export default function ResultPage() {
   const params = useParams<{ buildId: string }>();
-  const router = useRouter();
   const buildId = params?.buildId;
-  useLoadBuild(buildId ?? null);
   const [report, setReport] = useState<RatingReport | null>(null);
+  const t = useT();
 
   useEffect(() => {
     if (!buildId) return;
     void (async () => {
-      // Ensure the store is loaded
       const rec = await loadBuildFromIDB(buildId);
       if (rec) {
         useBuildStore.getState().loadBuild(rec.snapshot);
         setReport(score(rec.snapshot));
       } else {
-        // try scoring current state
         setReport(score(useBuildStore.getState()));
       }
     })();
@@ -77,16 +69,14 @@ export default function ResultPage() {
         <section className="mt-10">
           <h2 className="flex items-center gap-2 text-xl font-semibold">
             <AlertTriangle className="h-5 w-5 text-warn" />
-            Issues ({report.issues.length})
+            {t('result.issues')} ({report.issues.length})
           </h2>
           <p className="mt-1 text-sm text-fg-muted">
             Each issue cites its source standard. Click an issue to see how to fix it.
           </p>
           <ul className="mt-4 space-y-2">
             {report.issues.length === 0 ? (
-              <li className="panel p-4 text-center text-fg-muted">
-                No issues found. Nicely done.
-              </li>
+              <li className="panel p-4 text-center text-fg-muted">No issues found. Nicely done.</li>
             ) : (
               report.issues.map((iss, i) => <IssueRow key={i} issue={iss} />)
             )}
@@ -97,17 +87,21 @@ export default function ResultPage() {
           <div>
             <p className="text-sm text-fg-muted">
               PUE estimate: <span className="font-mono">{report.pue}</span> · WUE:{' '}
-              <span className="font-mono">{report.wue} L/kWh</span> · Rule pack v{report.rulePackVersion}
+              <span className="font-mono">{report.wue} L/kWh</span> · Rule pack v
+              {report.rulePackVersion}
             </p>
           </div>
           <div className="flex gap-3">
-            <Link href={`/build/${useBuildStore.getState().scenarioId}`} className="btn-ghost">
-              Back to builder
+            <Link
+              href={`/build/${useBuildStore.getState().scenarioId}?buildId=${buildId}`}
+              className="btn-ghost"
+            >
+              {t('result.retry')}
             </Link>
             {report.certifiable ? (
               <Link href={`/cert/${buildId}`} className="btn">
                 <Award className="h-4 w-4" />
-                Claim Certificate
+                {t('result.claim')}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             ) : (
@@ -138,23 +132,29 @@ function Header() {
 }
 
 function Scorecard({ report }: { report: RatingReport }) {
+  const t = useT();
+  const tierKey = `tier.${report.tier}`;
+  const translatedTier = t(tierKey);
+  const tierDescription = translatedTier !== tierKey ? translatedTier : TIER_LABELS[report.tier];
   return (
     <section className="panel p-6">
       <div className="grid gap-6 md:grid-cols-3">
         <div>
-          <p className="label">Overall score</p>
+          <p className="label">{t('result.score')}</p>
           <p className="mt-1 text-6xl font-bold tabular-nums">{report.score}</p>
           <p className="text-sm text-fg-muted">/ 100</p>
         </div>
         <div>
-          <p className="label">Uptime Tier</p>
+          <p className="label">{t('result.tier')}</p>
           <p className={cn('mt-1 text-6xl font-bold', tierColor(report.tier))}>{report.tier}</p>
-          <p className="text-sm text-fg-muted">{tierLabel(report.tier)}</p>
+          <p className="text-sm text-fg-muted">{tierDescription}</p>
         </div>
         <div>
-          <p className="label">Cert level</p>
+          <p className="label">{t('result.level')}</p>
           <p className={cn('mt-1 text-6xl font-bold', levelColor(report.level))}>{report.level}</p>
-          <p className="text-sm text-fg-muted">{report.certifiable ? 'Certifiable' : 'Not certifiable'}</p>
+          <p className="text-sm text-fg-muted">
+            {report.certifiable ? 'Certifiable' : 'Not certifiable'}
+          </p>
         </div>
       </div>
     </section>
@@ -181,17 +181,16 @@ function levelColor(l: RatingReport['level']) {
   }[l];
 }
 
-function tierLabel(t: RatingReport['tier']) {
-  return {
-    IV: 'Fault tolerant',
-    III: 'Concurrently maintainable',
-    II: 'Redundant components',
-    I: 'Basic capacity',
-    F: 'Fails compliance',
-  }[t];
-}
+const TIER_LABELS: Record<RatingReport['tier'], string> = {
+  IV: 'Fault tolerant',
+  III: 'Concurrently maintainable',
+  II: 'Redundant components',
+  I: 'Basic capacity',
+  F: 'Fails compliance',
+};
 
 function Breakdown({ report }: { report: RatingReport }) {
+  const t = useT();
   return (
     <section className="panel p-5">
       <h2 className="flex items-center gap-2 text-lg font-semibold">
@@ -199,12 +198,36 @@ function Breakdown({ report }: { report: RatingReport }) {
         Breakdown
       </h2>
       <ul className="mt-4 space-y-2">
-        <Bar label="Redundancy" value={report.breakdown.redundancy} icon={<ShieldCheck className="h-4 w-4" />} />
-        <Bar label="Power" value={report.breakdown.power} icon={<Zap className="h-4 w-4" />} />
-        <Bar label="Cooling" value={report.breakdown.cooling} icon={<Info className="h-4 w-4" />} />
-        <Bar label="Safety" value={report.breakdown.safety} icon={<AlertTriangle className="h-4 w-4" />} />
-        <Bar label="Efficiency" value={report.breakdown.efficiency} icon={<TrendingUp className="h-4 w-4" />} />
-        <Bar label="Security" value={report.breakdown.security} icon={<Lock className="h-4 w-4" />} />
+        <Bar
+          label={t('breakdown.redundancy')}
+          value={report.breakdown.redundancy}
+          icon={<ShieldCheck className="h-4 w-4" />}
+        />
+        <Bar
+          label={t('breakdown.power')}
+          value={report.breakdown.power}
+          icon={<Zap className="h-4 w-4" />}
+        />
+        <Bar
+          label={t('breakdown.cooling')}
+          value={report.breakdown.cooling}
+          icon={<Info className="h-4 w-4" />}
+        />
+        <Bar
+          label={t('breakdown.safety')}
+          value={report.breakdown.safety}
+          icon={<AlertTriangle className="h-4 w-4" />}
+        />
+        <Bar
+          label={t('breakdown.efficiency')}
+          value={report.breakdown.efficiency}
+          icon={<TrendingUp className="h-4 w-4" />}
+        />
+        <Bar
+          label={t('breakdown.security')}
+          value={report.breakdown.security}
+          icon={<Lock className="h-4 w-4" />}
+        />
       </ul>
     </section>
   );
@@ -234,27 +257,32 @@ function Bar({ label, value, icon }: { label: string; value: number; icon: React
 }
 
 function Achievements({ report }: { report: RatingReport }) {
+  const t = useT();
   return (
     <section className="panel p-5">
       <h2 className="flex items-center gap-2 text-lg font-semibold">
         <Award className="h-5 w-5" />
-        Achievements ({report.achievements.length})
+        {t('result.achievements')} ({report.achievements.length})
       </h2>
       {report.achievements.length === 0 ? (
-        <p className="mt-4 text-sm text-fg-muted">
-          No achievements yet. Build more controls and try again.
-        </p>
+        <p className="mt-4 text-sm text-fg-muted">{t('result.achievements.empty')}</p>
       ) : (
         <ul className="mt-4 grid grid-cols-1 gap-2">
-          {report.achievements.map((a) => (
-            <li key={a.id} className="flex items-start gap-3 rounded border border-border p-2">
-              <span className="text-2xl">{a.icon}</span>
-              <div>
-                <p className="font-medium">{a.title}</p>
-                <p className="text-xs text-fg-muted">{a.description}</p>
-              </div>
-            </li>
-          ))}
+          {report.achievements.map((a) => {
+            const titleKey = `ach.${a.id}`;
+            const descKey = `ach.${a.id}.desc`;
+            return (
+              <li key={a.id} className="flex items-start gap-3 rounded border border-border p-2">
+                <span className="text-2xl">{a.icon}</span>
+                <div>
+                  <p className="font-medium">{t(titleKey) !== titleKey ? t(titleKey) : a.title}</p>
+                  <p className="text-xs text-fg-muted">
+                    {t(descKey) !== descKey ? t(descKey) : a.description}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
         </ul>
       )}
     </section>
@@ -276,7 +304,7 @@ function IssueRow({ issue }: { issue: Issue }) {
         {icon}
         <div className="flex-1">
           <div className="flex items-center gap-2">
-            <span className="text-xs font-mono text-fg-muted">{issue.ruleId}</span>
+            <span className="font-mono text-xs text-fg-muted">{issue.ruleId}</span>
             {issue.standard && <span className="badge">{issue.standard}</span>}
           </div>
           <p className="mt-1 text-sm">{issue.message}</p>

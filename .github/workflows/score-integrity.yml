@@ -1,0 +1,33 @@
+name: Score integrity
+
+# This workflow re-runs the scoring engine in a clean checkout on
+# every push to main. If the score of a known build snapshot ever
+# changes, the build fails — protecting the certificate from
+# silent regressions.
+
+on:
+  push:
+    branches: [main, dev]
+    paths:
+      - 'src/lib/scoring/**'
+      - 'src/lib/blocks/**'
+      - 'tests/integration/score-integrity.test.ts'
+      - '.github/workflows/score-integrity.yml'
+  pull_request:
+    paths:
+      - 'src/lib/scoring/**'
+      - 'src/lib/blocks/**'
+      - 'tests/integration/score-integrity.test.ts'
+      - '.github/workflows/score-integrity.yml'
+  workflow_dispatch:
+
+jobs:
+  score-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: 'npm' }
+      - run: npm ci --legacy-peer-deps
+      - name: Re-score 5 canonical builds
+        run: npx vitest run tests/integration/score-integrity.test.ts

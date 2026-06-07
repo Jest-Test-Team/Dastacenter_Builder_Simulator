@@ -11,14 +11,38 @@ import { useParams, useRouter } from 'next/navigation';
 import { OrbitControls } from '@react-three/drei';
 import Link from 'next/link';
 import { useBuildStore } from '@/lib/store/build-store';
-import { score } from '@/lib/scoring/engine';
-import { ArrowLeft, Play, Pause, FastForward, AlertTriangle, Activity, Zap, Thermometer } from 'lucide-react';
+import { useLoadBuild, useSaveBuild } from '@/lib/persist';
+import type { RatingReport } from '@/lib/scoring/engine';
+import {
+  ArrowLeft,
+  Play,
+  Pause,
+  FastForward,
+  AlertTriangle,
+  Activity,
+  Zap,
+  Thermometer,
+  Users,
+  DollarSign,
+  Leaf,
+  Droplets,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { Group } from 'three';
+import { projectOperations, type OperationsProjection } from '@/lib/simulation';
+import { VoxelWorld } from '@/components/builder/VoxelWorld';
 
 type SimEvent = {
   id: number;
   t: number;
-  type: 'intrusion' | 'power_outage' | 'cooling_fault' | 'fire_drill' | 'audit' | 'dga_overheat' | 'normal';
+  type:
+    | 'intrusion'
+    | 'power_outage'
+    | 'cooling_fault'
+    | 'fire_drill'
+    | 'audit'
+    | 'dga_overheat'
+    | 'normal';
   message: string;
   severity: 'info' | 'warn' | 'critical';
   resolved: boolean;
@@ -38,44 +62,64 @@ export default function SimPage() {
   const params = useParams<{ buildId: string }>();
   const router = useRouter();
   const buildId = params?.buildId ?? '';
-  const snapshot = useBuildStore.getState();
+  useLoadBuild(buildId || null);
+  const snapshot = useBuildStore((state) => state);
+  const save = useSaveBuild();
 
   const [t, setT] = useState(0);
   const [playing, setPlaying] = useState(true);
   const [speed, setSpeed] = useState(1);
   const [events, setEvents] = useState<SimEvent[]>([]);
   const nextIdRef = useRef(0);
+  const elapsedRef = useRef(0);
   const [powerLoad, setPowerLoad] = useState(0);
   const [tempC, setTempC] = useState(22);
 
-  // Initial scoring snapshot (deterministic)
-  const initialReport = useMemo(() => score(snapshot), []);
+  const projection = useMemo(() => projectOperations(snapshot), [snapshot]);
+
+  useEffect(() => {
+    setPowerLoad(projection.facilityPowerKw);
+    setTempC(22 + (100 - projection.report.breakdown.cooling) / 20);
+  }, [projection]);
+
+  async function finishSimulation() {
+    await save();
+    router.push(`/result/${buildId}`);
+  }
 
   // Time loop
   useEffect(() => {
     if (!playing) return;
     const id = window.setInterval(() => {
-      setT((prev) => prev + speed);
+      elapsedRef.current += speed;
+      setT(elapsedRef.current);
       // Random event spawn
       if (Math.random() < 0.04 * speed) {
         const tmpl = EVENT_TEMPLATES[Math.floor(Math.random() * EVENT_TEMPLATES.length)]!;
         setEvents((evs) => [
           ...evs.slice(-19),
-          { ...tmpl, id: nextIdRef.current++, t: t, resolved: false },
+          { ...tmpl, id: nextIdRef.current++, t: elapsedRef.current, resolved: false },
         ]);
       }
       // Live gauges: oscillate around baseline
-      setPowerLoad((p) => Math.max(0, p + (Math.random() - 0.5) * 5));
+      setPowerLoad((current) => {
+        const baseline = projection.facilityPowerKw;
+        if (baseline === 0) return 0;
+        return Math.max(
+          baseline * 0.8,
+          Math.min(baseline * 1.2, current + (Math.random() - 0.5) * 5),
+        );
+      });
       setTempC((c) => Math.max(15, Math.min(40, c + (Math.random() - 0.5) * 0.3)));
     }, 800);
     return () => window.clearInterval(id);
-  }, [playing, speed, t]);
+  }, [playing, projection.facilityPowerKw, speed]);
 
   return (
     <div className="flex h-screen flex-col">
       <header className="flex items-center justify-between border-b border-border bg-bg-panel px-4 py-2">
         <div className="flex items-center gap-3">
-          <Link href={`/build/free?share=${buildId}`} className="btn-ghost">
+          <Link href={`/build/${snapshot.scenarioId}?buildId=${buildId}`} className="btn-ghost">
             <ArrowLeft className="h-4 w-4" />
             Back to build
           </Link>
@@ -102,7 +146,7 @@ export default function SimPage() {
               </button>
             ))}
           </div>
-          <button onClick={() => router.push(`/result/${buildId}`)} className="btn">
+          <button onClick={() => void finishSimulation()} className="btn">
             Finish & score
           </button>
         </div>
@@ -115,17 +159,19 @@ export default function SimPage() {
             <directionalLight position={[10, 20, 5]} intensity={1} />
             <OrbitControls />
             <SiteGround />
+            <VoxelWorld />
             <NPCs count={6} t={t} />
             <Fence />
           </Canvas>
 
-          <HUD powerLoad={powerLoad} tempC={tempC} t={t} report={initialReport} />
+          <HUD powerLoad={powerLoad} tempC={tempC} t={t} report={projection.report} />
         </div>
 
         <aside className="flex flex-col border-l border-border bg-bg-panel">
+          <OperationsPanel projection={projection} />
           <div className="border-b p-3">
             <h2 className="text-sm font-semibold">Event log</h2>
-            <p className="text-xs text-fg-muted">Live incidents from the deterministic run.</p>
+            <p className="text-xs text-fg-muted">Live incidents from this simulation run.</p>
           </div>
           <ul className="flex-1 overflow-y-auto p-2">
             {events.length === 0 && (
@@ -151,18 +197,93 @@ export default function SimPage() {
                   <AlertTriangle className="mt-0.5 h-3 w-3" />
                   <div className="flex-1">
                     <div className="font-medium">{e.message}</div>
-                    <div className="text-[10px] opacity-70">t={e.t} • {e.type}</div>
+                    <div className="text-[10px] opacity-70">
+                      t={e.t} • {e.type}
+                    </div>
                   </div>
                 </li>
               ))}
           </ul>
           <div className="border-t p-3 text-[10px] text-fg-muted">
-            Simulation L1: time-of-day + random events. Player does not intervene here.
+            L2 projection assumptions: 24/7 operation, $0.12/kWh, 0.4 kg CO₂e/kWh grid, and $95k
+            loaded annual staff cost.
           </div>
         </aside>
       </div>
     </div>
   );
+}
+
+function OperationsPanel({ projection }: { projection: OperationsProjection }) {
+  return (
+    <section className="border-b p-3" aria-labelledby="operations-heading">
+      <h2 id="operations-heading" className="text-sm font-semibold">
+        Annual operations projection
+      </h2>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <ProjectionMetric
+          icon={<DollarSign className="h-3.5 w-3.5 text-warn" />}
+          label="OPEX"
+          value={formatCompactUsd(projection.annualOpexUsd)}
+        />
+        <ProjectionMetric
+          icon={<Users className="h-3.5 w-3.5 text-primary" />}
+          label="Staffing"
+          value={`${projection.staffing.totalFte} FTE`}
+        />
+        <ProjectionMetric
+          icon={<Leaf className="h-3.5 w-3.5 text-success" />}
+          label="Carbon"
+          value={`${formatCompact(projection.annualCarbonTonnes)} t`}
+        />
+        <ProjectionMetric
+          icon={<Droplets className="h-3.5 w-3.5 text-primary" />}
+          label="Water"
+          value={`${formatCompact(projection.annualWaterLiters)} L`}
+        />
+      </div>
+      <div className="mt-2 text-[10px] text-fg-muted">
+        {projection.staffing.operationsPerShift} ops · {projection.staffing.facilitiesPerShift}{' '}
+        facilities · {projection.staffing.securityPerShift} security per shift ·{' '}
+        {projection.renewablePercent}% renewable
+      </div>
+    </section>
+  );
+}
+
+function ProjectionMetric({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded border border-border bg-bg-subtle p-2">
+      <div className="flex items-center gap-1 text-[10px] text-fg-muted">
+        {icon}
+        {label}
+      </div>
+      <div className="mt-1 font-mono text-xs font-semibold">{value}</div>
+    </div>
+  );
+}
+
+function formatCompact(value: number): string {
+  return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(
+    value,
+  );
+}
+
+function formatCompactUsd(value: number): string {
+  return new Intl.NumberFormat('en', {
+    style: 'currency',
+    currency: 'USD',
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(value);
 }
 
 function SiteGround() {
@@ -174,11 +295,16 @@ function SiteGround() {
   );
 }
 
-function NPCs({ count, t }: { count: number; t: number; }) {
+function NPCs({ count, t }: { count: number; t: number }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const refs = useRef<Array<any>>([]);
+  const refs = useRef<Array<Group | null>>([]);
   const seeds = useMemo(
-    () => Array.from({ length: count }, (_, i) => ({ x: 4 + (i * 3.7) % 30, z: 4 + (i * 5.1) % 30, speed: 0.3 + (i % 3) * 0.1 })),
+    () =>
+      Array.from({ length: count }, (_, i) => ({
+        x: 4 + ((i * 3.7) % 30),
+        z: 4 + ((i * 5.1) % 30),
+        speed: 0.3 + (i % 3) * 0.1,
+      })),
     [count],
   );
   useFrame(() => {
@@ -192,8 +318,12 @@ function NPCs({ count, t }: { count: number; t: number; }) {
   return (
     <>
       {seeds.map((_, i) => (
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        <group key={i} ref={(el: any) => { refs.current[i] = el; }}>
+        <group
+          key={i}
+          ref={(el: Group | null) => {
+            refs.current[i] = el;
+          }}
+        >
           <mesh position={[0, 0.5, 0]}>
             <capsuleGeometry args={[0.2, 0.6, 4, 8]} />
             <meshStandardMaterial color="#5fa8d3" />
@@ -229,7 +359,17 @@ function Fence() {
   );
 }
 
-function HUD({ powerLoad, tempC, t, report }: { powerLoad: number; tempC: number; t: number; report: ReturnType<typeof score>; }) {
+function HUD({
+  powerLoad,
+  tempC,
+  t,
+  report,
+}: {
+  powerLoad: number;
+  tempC: number;
+  t: number;
+  report: RatingReport;
+}) {
   return (
     <div className="pointer-events-none absolute left-4 top-4 flex flex-col gap-2">
       <div className="panel flex items-center gap-3 p-2 text-xs">

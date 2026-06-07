@@ -8,9 +8,15 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { create } from 'zustand';
-import { get as idbGet, set as idbSet, del as idbDel, keys as idbKeys, createStore as idbCreateStore } from 'idb-keyval';
+import {
+  get as idbGet,
+  set as idbSet,
+  del as idbDel,
+  keys as idbKeys,
+  createStore as idbCreateStore,
+} from 'idb-keyval';
 import type { BuildSnapshot } from '@/lib/store/build-store';
 import { useBuildStore } from '@/lib/store/build-store';
 
@@ -37,7 +43,7 @@ export async function saveBuildToIDB(snapshot: BuildSnapshot): Promise<void> {
     id: snapshot.buildId,
     name: snapshot.name,
     scenarioId: snapshot.scenarioId,
-    scenarioName: snapshot.scenarioName,
+    scenarioName: (snapshot as { scenarioName?: string }).scenarioName ?? '',
     createdAt: snapshot.createdAt,
     updatedAt: snapshot.updatedAt,
     snapshot,
@@ -84,10 +90,12 @@ const DEFAULT_SETTINGS: Settings = {
   telemetryOptIn: false,
 };
 
-export const useSettings = create<Settings & {
-  setSetting: <K extends keyof Settings>(k: K, v: Settings[K]) => void;
-  hydrate: () => Promise<void>;
-}>((set) => ({
+export const useSettings = create<
+  Settings & {
+    setSetting: <K extends keyof Settings>(k: K, v: Settings[K]) => void;
+    hydrate: () => Promise<void>;
+  }
+>((set) => ({
   ...DEFAULT_SETTINGS,
   setSetting: (k, v) => {
     set({ [k]: v } as Partial<Settings>);
@@ -125,10 +133,10 @@ export function useAutoSave(enabled = true) {
 
 /** Hook that wires the manual "save" button. */
 export function useSaveBuild() {
-  return async () => {
+  return useCallback(async () => {
     const snap = useBuildStore.getState().exportSnapshot();
     await saveBuildToIDB(snap);
-  };
+  }, []);
 }
 
 /** Hook that loads a build by id on mount. */
