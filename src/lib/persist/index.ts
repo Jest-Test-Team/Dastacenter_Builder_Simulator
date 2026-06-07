@@ -8,7 +8,7 @@
 
 'use client';
 
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { create } from 'zustand';
 import { get as idbGet, set as idbSet, del as idbDel, keys as idbKeys, createStore as idbCreateStore } from 'idb-keyval';
 import type { BuildSnapshot } from '@/lib/store/build-store';
@@ -125,10 +125,10 @@ export function useAutoSave(enabled = true) {
 
 /** Hook that wires the manual "save" button. */
 export function useSaveBuild() {
-  return async () => {
+  return useCallback(async () => {
     const snap = useBuildStore.getState().exportSnapshot();
     await saveBuildToIDB(snap);
-  };
+  }, []);
 }
 
 /** Hook that loads a build by id on mount. */

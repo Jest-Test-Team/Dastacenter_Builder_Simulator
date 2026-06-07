@@ -83,6 +83,7 @@ export interface BuildActions {
   // Meta
   rename: (name: string) => void;
   setScenario: (id: string, name: string) => void;
+  startBuild: (scenarioId: string, scenarioName: string, inventory?: Record<string, number>) => void;
 
   // Bulk
   loadBuild: (snapshot: BuildSnapshot) => void;
@@ -274,6 +275,13 @@ export const useBuildStore = create<BuildStore>()(
 
       rename: (name) => set({ name, updatedAt: Date.now() }),
       setScenario: (id, name) => set({ scenarioId: id, scenarioName: name, updatedAt: Date.now() }),
+      startBuild: (scenarioId, scenarioName, inventory) => {
+        set(() => ({
+          ...createInitial(scenarioId, scenarioName),
+          inventory: { ...defaultInventory(), ...(inventory ?? {}) },
+        }));
+        useBuildStore.temporal.getState().clear();
+      },
 
       loadBuild: (snapshot) => set(() => ({ ...snapshot, updatedAt: Date.now() })),
 

@@ -7,8 +7,8 @@
 
 'use client';
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useState, type ReactNode } from 'react';
+import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import {
   type RatingReport,
@@ -21,7 +21,6 @@ import { loadBuildFromIDB } from '@/lib/persist';
 import {
   Award,
   ArrowRight,
-  CheckCircle2,
   XCircle,
   AlertTriangle,
   Info,
@@ -36,7 +35,6 @@ import { useT } from '@/lib/i18n/client';
 
 export default function ResultPage() {
   const params = useParams<{ buildId: string }>();
-  const router = useRouter();
   const buildId = params?.buildId;
   useLoadBuild(buildId ?? null);
   const [report, setReport] = useState<RatingReport | null>(null);
@@ -101,7 +99,10 @@ export default function ResultPage() {
             </p>
           </div>
           <div className="flex gap-3">
-            <Link href={`/build/${useBuildStore.getState().scenarioId}`} className="btn-ghost">
+            <Link
+              href={`/build/${useBuildStore.getState().scenarioId}?buildId=${buildId}`}
+              className="btn-ghost"
+            >
               {t('result.retry')}
             </Link>
             {report.certifiable ? (
@@ -139,6 +140,10 @@ function Header() {
 
 function Scorecard({ report }: { report: RatingReport }) {
   const t = useT();
+  const tierKey = `tier.${report.tier}`;
+  const translatedTier = t(tierKey);
+  const tierDescription =
+    translatedTier !== tierKey ? translatedTier : TIER_LABELS[report.tier];
   return (
     <section className="panel p-6">
       <div className="grid gap-6 md:grid-cols-3">
@@ -150,7 +155,7 @@ function Scorecard({ report }: { report: RatingReport }) {
         <div>
           <p className="label">{t('result.tier')}</p>
           <p className={cn('mt-1 text-6xl font-bold', tierColor(report.tier))}>{report.tier}</p>
-          <p className="text-sm text-fg-muted">{tierLabel(report.tier)}</p>
+          <p className="text-sm text-fg-muted">{tierDescription}</p>
         </div>
         <div>
           <p className="label">{t('result.level')}</p>
@@ -182,16 +187,13 @@ function levelColor(l: RatingReport['level']) {
   }[l];
 }
 
-function tierLabel(t: RatingReport['tier']) {
-  const tr = useT();
-  return tr(`tier.${t}`) !== `tier.${t}` ? tr(`tier.${t}`) : ({
-    IV: 'Fault tolerant',
-    III: 'Concurrently maintainable',
-    II: 'Redundant components',
-    I: 'Basic capacity',
-    F: 'Fails compliance',
-  } as Record<string, string>)[t];
-}
+const TIER_LABELS: Record<RatingReport['tier'], string> = {
+  IV: 'Fault tolerant',
+  III: 'Concurrently maintainable',
+  II: 'Redundant components',
+  I: 'Basic capacity',
+  F: 'Fails compliance',
+};
 
 function Breakdown({ report }: { report: RatingReport }) {
   const t = useT();
