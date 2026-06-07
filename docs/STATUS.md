@@ -5,33 +5,33 @@
 
 ## Phase progress
 
-| Phase | Title | Status | Notes |
-| --- | --- | --- | --- |
-| **P0** | Project bootstrap | ✅ done | Next 15 + TS strict + Tailwind + ESLint + Prettier + analyzer |
-| **P1** | Grid + block system | ✅ done | `lib/grid` + `lib/blocks/{types,registry}` |
-| **P2** | 3D builder (R3F) | ✅ done | `BuilderCanvas`, `VoxelWorld` (instanced), `PlacementPreview`, `SiteEnvironment` |
-| **P3** | Palette / hotbar / modes | ✅ done | `BlockPalette`, `Hotbar`, `ModeBar` |
-| **P4** | Build store + utils | ✅ done | Zustand + zundo + `lib/utils` |
-| **P5** | Wallet auth (no email) | ✅ done | wagmi + solana + SIWE + SIWS + iron-session + 4 auth routes |
-| **P6** | Persistence + sharing | ✅ done | idb-keyval + LZ-string share tokens |
-| **P7** | Scoring engine | ✅ done | 60+ rules, 8 axes, deterministic |
-| **P8** | Curriculum content | ✅ done | 8 modules in `lib/content/modules.ts` |
-| **P9** | Result/scorecard UI | ✅ done | `/result/[buildId]` with bars, issues, achievements |
-| **P10** | Cert (SVG + QR) | ✅ done | `/cert/[buildId]` + `CertificateSvg` |
-| **P11** | Credly integration | ✅ done | Server route, Basic Auth, level→template mapping |
-| **P12** | SimCity-like simulation | ✅ done | `/sim/[buildId]`, NPCs, events, gauges |
-| **P13** | Policy panel UI | ✅ done | `PolicyPanel` wired to builder via right drawer |
-| **P14** | Security viz | ✅ done | `CctvCoverage` cones, `SecurityFrameworkPanel` dashboard |
-| **P15** | Unit tests | ✅ done | 35 tests: grid, registry, scoring, score integrity, share, SIWS, perf |
-| **P16** | Performance budget | ✅ done | Dynamic imports, `WebVitalsReporter`, CSP/HSTS, perf budget test |
-| **P17** | Accessibility | ✅ done | SkipLink, focus trap, reduced motion, ARIA, `KeyboardCheatsheet` |
-| **P18** | i18n (en/zh-TW/ja) | ✅ done | In-house i18n + `LocaleSwitcher` + 3 message bundles |
-| **P19** | Analytics with consent | ✅ done | `ConsentBanner`, `useConsent`, opt-in PostHog |
-| **P20** | Docs (per-phase) | ✅ done | `docs/PHASE-P{0..24}.md` generated |
-| **P21** | DevOps (CI, deploy) | ✅ done | GitHub Actions, Vercel config, health endpoint, robots.txt, sitemap |
-| **P22** | Marketing site | ✅ done | `/pricing`, `/about`, `/status`, `/contact` |
-| **P23** | Legal/compliance | ✅ done | ToS, Privacy, Cookies, DPA, AI policy templates |
-| **P24** | Launch checklist | ✅ done | `docs/LAUNCH.md` (T-7d, T-24h, T-1h, T+0, post-launch), runbook |
+| Phase   | Title                    | Status  | Notes                                                                            |
+| ------- | ------------------------ | ------- | -------------------------------------------------------------------------------- |
+| **P0**  | Project bootstrap        | ✅ done | Next 15 + TS strict + Tailwind + ESLint + Prettier + analyzer                    |
+| **P1**  | Grid + block system      | ✅ done | `lib/grid` + `lib/blocks/{types,registry}`                                       |
+| **P2**  | 3D builder (R3F)         | ✅ done | `BuilderCanvas`, `VoxelWorld` (instanced), `PlacementPreview`, `SiteEnvironment` |
+| **P3**  | Palette / hotbar / modes | ✅ done | `BlockPalette`, `Hotbar`, `ModeBar`                                              |
+| **P4**  | Build store + utils      | ✅ done | Zustand + zundo + `lib/utils`                                                    |
+| **P5**  | Wallet auth (no email)   | ✅ done | wagmi + solana + SIWE + SIWS + iron-session + 4 auth routes                      |
+| **P6**  | Persistence + sharing    | ✅ done | idb-keyval + LZ-string share tokens                                              |
+| **P7**  | Scoring engine           | ✅ done | 60+ rules, 8 axes, deterministic                                                 |
+| **P8**  | Curriculum content       | ✅ done | 8 modules in `lib/content/modules.ts`                                            |
+| **P9**  | Result/scorecard UI      | ✅ done | `/result/[buildId]` with bars, issues, achievements                              |
+| **P10** | Cert (SVG + QR)          | ✅ done | `/cert/[buildId]` + `CertificateSvg`                                             |
+| **P11** | Credly integration       | ✅ done | Server route, Basic Auth, level→template mapping                                 |
+| **P12** | SimCity-like simulation  | ✅ done | `/sim/[buildId]`, NPCs, events, gauges                                           |
+| **P13** | Policy panel UI          | ✅ done | `PolicyPanel` wired to builder via right drawer                                  |
+| **P14** | Security viz             | ✅ done | `CctvCoverage` cones, `SecurityFrameworkPanel` dashboard                         |
+| **P15** | Unit tests               | ✅ done | 35 tests: grid, registry, scoring, score integrity, share, SIWS, perf            |
+| **P16** | Performance budget       | ✅ done | Dynamic imports, `WebVitalsReporter`, CSP/HSTS, perf budget test                 |
+| **P17** | Accessibility            | ✅ done | SkipLink, focus trap, reduced motion, ARIA, `KeyboardCheatsheet`                 |
+| **P18** | i18n (en/zh-TW/ja)       | ✅ done | In-house i18n + `LocaleSwitcher` + 3 message bundles                             |
+| **P19** | Analytics with consent   | ✅ done | `ConsentBanner`, `useConsent`, opt-in PostHog                                    |
+| **P20** | Docs (per-phase)         | ✅ done | `docs/PHASE-P{0..24}.md` generated                                               |
+| **P21** | DevOps (CI, deploy)      | ✅ done | GitHub Actions, Vercel config, health endpoint, robots.txt, sitemap              |
+| **P22** | Marketing site           | ✅ done | `/pricing`, `/about`, `/status`, `/contact`                                      |
+| **P23** | Legal/compliance         | ✅ done | ToS, Privacy, Cookies, DPA, AI policy templates                                  |
+| **P24** | Launch checklist         | ✅ done | `docs/LAUNCH.md` (T-7d, T-24h, T-1h, T+0, post-launch), runbook                  |
 
 Legend: ✅ done · 🟡 partial · ⏳ pending
 

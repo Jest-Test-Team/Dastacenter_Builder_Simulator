@@ -14,7 +14,8 @@ export default function SettingsPage() {
   const setSetting = useSettings((state) => state.setSetting);
 
   useEffect(() => {
-    const stored = (typeof document !== 'undefined' && document.cookie.match(/(?:^|; )lang=([^;]+)/)?.[1]) as Locale | undefined;
+    const stored = (typeof document !== 'undefined' &&
+      document.cookie.match(/(?:^|; )lang=([^;]+)/)?.[1]) as Locale | undefined;
     if (stored && LOCALES.includes(stored)) setLocale(stored);
   }, []);
 
@@ -24,7 +25,11 @@ export default function SettingsPage() {
         const { listBuildsFromIDB } = await import('@/lib/persist');
         const all = await listBuildsFromIDB();
         setAutosaves(
-          all.map((b) => ({ id: b.id, name: b.scenarioName || b.name || b.id, updatedAt: b.updatedAt })),
+          all.map((b) => ({
+            id: b.id,
+            name: b.scenarioName || b.name || b.id,
+            updatedAt: b.updatedAt,
+          })),
         );
       } catch {
         setAutosaves([]);
@@ -72,7 +77,7 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-bold">Settings</h1>
         <p className="mt-2 text-fg-muted">Locale, analytics consent, and your local data.</p>
 
-        <section className="mt-8 panel p-5">
+        <section className="panel mt-8 p-5">
           <h2 className="font-semibold">Language</h2>
           <p className="mt-1 text-sm text-fg-muted">Affects UI text. Page reloads after change.</p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -89,7 +94,7 @@ export default function SettingsPage() {
           </div>
         </section>
 
-        <section className="mt-6 panel p-5">
+        <section className="panel mt-6 p-5">
           <h2 className="font-semibold">Motion</h2>
           <p className="mt-1 text-sm text-fg-muted">
             Disable non-essential camera damping and animated transitions. Your operating-system
@@ -105,11 +110,11 @@ export default function SettingsPage() {
           </label>
         </section>
 
-        <section className="mt-6 panel p-5">
+        <section className="panel mt-6 p-5">
           <h2 className="font-semibold">Analytics &amp; telemetry</h2>
           <p className="mt-1 text-sm text-fg-muted">
-            We do not run any third-party scripts by default. If you opt in, we collect
-            anonymous page views and Web Vitals. You can change this at any time.
+            We do not run any third-party scripts by default. If you opt in, we collect anonymous
+            page views and Web Vitals. You can change this at any time.
           </p>
           {hasHydrated ? (
             <div className="mt-3 flex flex-wrap gap-2">
@@ -135,7 +140,7 @@ export default function SettingsPage() {
           )}
         </section>
 
-        <section className="mt-6 panel p-5">
+        <section className="panel mt-6 p-5">
           <h2 className="font-semibold">Local data</h2>
           <p className="mt-1 text-sm text-fg-muted">
             Your builds are stored in this browser&apos;s IndexedDB. {autosaves.length} build
@@ -144,7 +149,10 @@ export default function SettingsPage() {
           {autosaves.length > 0 && (
             <ul className="mt-3 max-h-40 overflow-y-auto text-sm">
               {autosaves.slice(0, 20).map((b) => (
-                <li key={b.id} className="flex items-center justify-between border-b border-border py-1 last:border-0">
+                <li
+                  key={b.id}
+                  className="flex items-center justify-between border-b border-border py-1 last:border-0"
+                >
                   <span className="truncate">{b.name}</span>
                   <span className="ml-2 shrink-0 font-mono text-xs text-fg-muted">
                     {new Date(b.updatedAt).toLocaleString()}
@@ -167,8 +175,13 @@ export default function SettingsPage() {
 
         <p className="mt-10 text-xs text-fg-muted">
           v{process.env.NEXT_PUBLIC_APP_VERSION ?? '0.1.0'} ·{' '}
-          <a className="underline" href="/legal/privacy">Privacy</a> ·{' '}
-          <a className="underline" href="/legal/cookies">Cookies</a>
+          <a className="underline" href="/legal/privacy">
+            Privacy
+          </a>{' '}
+          ·{' '}
+          <a className="underline" href="/legal/cookies">
+            Cookies
+          </a>
         </p>
       </main>
     </div>

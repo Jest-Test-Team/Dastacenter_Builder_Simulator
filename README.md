@@ -40,7 +40,7 @@ for the full cheat sheet.
 - **Verifiable certificate** — client-side SVG, QR code, downloadable,
   opt-in Credly push.
 - **SimCity-like sim** — NPCs walk the build, scheduled events fire, power
-  + temperature gauges oscillate. Re-uses the same build state.
+  - temperature gauges oscillate. Re-uses the same build state.
 - **Security viz** — CCTV coverage cones (inspect mode), live 5-function
   framework dashboard.
 - **Curriculum** — 8 modules, ~5 hours of standards-cited learning content.
@@ -55,22 +55,22 @@ for the full cheat sheet.
 
 ## Stack
 
-| Layer | Tech |
-| --- | --- |
-| Framework | Next.js 15 (App Router, RSC + client) |
-| 3D | React Three Fiber + drei + three.js |
-| State | Zustand + zundo (temporal) |
-| Wallet | wagmi (EVM) + Solana wallet adapters |
-| Auth | SIWE (EVM) + custom SIWS (Solana) via iron-session httpOnly cookies |
-| Persistence | IndexedDB (idb-keyval) — fully client-side |
-| Sharing | LZ-string-encoded snapshot in URL |
-| Scoring | Pure functions, fully deterministic (no Date.now/Random in core) |
-| Cert | SVG, generated client-side; QR via `qrcode.react` |
-| Credly | Server route only (Basic Auth) — opt-in, never in client bundle |
-| Tests | Vitest + Testing Library (jsdom) — 35 tests, all green |
-| Styling | Tailwind + CSS variables (no UI framework) |
-| i18n | Custom in-house (3 locales: en, zh-TW, ja) |
-| Analytics | PostHog, lazy-loaded, consent-gated |
+| Layer       | Tech                                                                |
+| ----------- | ------------------------------------------------------------------- |
+| Framework   | Next.js 15 (App Router, RSC + client)                               |
+| 3D          | React Three Fiber + drei + three.js                                 |
+| State       | Zustand + zundo (temporal)                                          |
+| Wallet      | wagmi (EVM) + Solana wallet adapters                                |
+| Auth        | SIWE (EVM) + custom SIWS (Solana) via iron-session httpOnly cookies |
+| Persistence | IndexedDB (idb-keyval) — fully client-side                          |
+| Sharing     | LZ-string-encoded snapshot in URL                                   |
+| Scoring     | Pure functions, fully deterministic (no Date.now/Random in core)    |
+| Cert        | SVG, generated client-side; QR via `qrcode.react`                   |
+| Credly      | Server route only (Basic Auth) — opt-in, never in client bundle     |
+| Tests       | Vitest + Testing Library (jsdom) — 35 tests, all green              |
+| Styling     | Tailwind + CSS variables (no UI framework)                          |
+| i18n        | Custom in-house (3 locales: en, zh-TW, ja)                          |
+| Analytics   | PostHog, lazy-loaded, consent-gated                                 |
 
 ## Project structure
 
@@ -135,19 +135,19 @@ docs/
 
 ## Scripts
 
-| Command | What it does |
-| --- | --- |
-| `npm run dev` | Local dev server on :3000 |
-| `npm run build` | Production build |
-| `npm run start` | Run production build |
-| `npm run lint` | Next.js + TypeScript ESLint |
-| `npm run typecheck` | `tsc --noEmit` (strict, noUncheckedIndexedAccess) |
-| `npm test` | Vitest (jsdom) — 35 tests, all green |
-| `npm run test:watch` | Vitest watch |
-| `npm run test:coverage` | Vitest + v8 coverage |
-| `npm run format` | Prettier write |
-| `npm run format:check` | Prettier check |
-| `npm run analyze` | `next build` with bundle analyzer |
+| Command                 | What it does                                      |
+| ----------------------- | ------------------------------------------------- |
+| `npm run dev`           | Local dev server on :3000                         |
+| `npm run build`         | Production build                                  |
+| `npm run start`         | Run production build                              |
+| `npm run lint`          | Next.js + TypeScript ESLint                       |
+| `npm run typecheck`     | `tsc --noEmit` (strict, noUncheckedIndexedAccess) |
+| `npm test`              | Vitest (jsdom) — 35 tests, all green              |
+| `npm run test:watch`    | Vitest watch                                      |
+| `npm run test:coverage` | Vitest + v8 coverage                              |
+| `npm run format`        | Prettier write                                    |
+| `npm run format:check`  | Prettier check                                    |
+| `npm run analyze`       | `next build` with bundle analyzer                 |
 
 ## Standards citations
 

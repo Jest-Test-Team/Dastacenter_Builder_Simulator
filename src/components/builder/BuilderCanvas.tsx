@@ -54,13 +54,7 @@ export function BuilderCanvas({
       className="h-full w-full"
     >
       <Suspense fallback={null}>
-        <PerspectiveCamera
-          makeDefault
-          position={camera.position}
-          fov={50}
-          near={0.1}
-          far={500}
-        />
+        <PerspectiveCamera makeDefault position={camera.position} fov={50} near={0.1} far={500} />
         <OrbitControls
           target={camera.target}
           enableDamping={!reducedMotion}
