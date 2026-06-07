@@ -4,11 +4,14 @@ import { useEffect, useState } from 'react';
 import { Trash2, Download, Eye, EyeOff } from 'lucide-react';
 import { useConsent } from '@/lib/analytics';
 import { LOCALES, LOCALE_LABELS, type Locale, DEFAULT_LOCALE } from '@/lib/i18n';
+import { useSettings } from '@/lib/persist';
 
 export default function SettingsPage() {
   const { consent, setConsent, hasHydrated } = useConsent();
   const [locale, setLocale] = useState<Locale>(DEFAULT_LOCALE);
   const [autosaves, setAutosaves] = useState<{ id: string; name: string; updatedAt: number }[]>([]);
+  const reducedMotion = useSettings((state) => state.reducedMotion);
+  const setSetting = useSettings((state) => state.setSetting);
 
   useEffect(() => {
     const stored = (typeof document !== 'undefined' && document.cookie.match(/(?:^|; )lang=([^;]+)/)?.[1]) as Locale | undefined;
@@ -84,6 +87,22 @@ export default function SettingsPage() {
               </button>
             ))}
           </div>
+        </section>
+
+        <section className="mt-6 panel p-5">
+          <h2 className="font-semibold">Motion</h2>
+          <p className="mt-1 text-sm text-fg-muted">
+            Disable non-essential camera damping and animated transitions. Your operating-system
+            reduced-motion preference is always respected.
+          </p>
+          <label className="mt-3 flex cursor-pointer items-center justify-between gap-4 rounded border border-border p-3">
+            <span className="text-sm font-medium">Reduce motion</span>
+            <input
+              type="checkbox"
+              checked={reducedMotion}
+              onChange={(event) => setSetting('reducedMotion', event.target.checked)}
+            />
+          </label>
         </section>
 
         <section className="mt-6 panel p-5">

@@ -16,6 +16,7 @@ import { VoxelWorld } from './VoxelWorld';
 import { PlacementPreview } from './PlacementPreview';
 import { SiteEnvironment } from './SiteEnvironment';
 import { CctvCoverage } from './CctvCoverage';
+import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
 
 export interface BuilderCanvasProps {
   showGrid?: boolean;
@@ -30,6 +31,7 @@ export function BuilderCanvas({
 }: BuilderCanvasProps) {
   const gridSize = useBuildStore((s) => s.gridSize);
   const camera = useBuildStore((s) => s.camera);
+  const reducedMotion = useReducedMotion();
   const [dpr, setDpr] = useState<[number, number]>([1, 2]);
 
   // Reduce DPR on low-end devices
@@ -61,7 +63,7 @@ export function BuilderCanvas({
         />
         <OrbitControls
           target={camera.target}
-          enableDamping
+          enableDamping={!reducedMotion}
           dampingFactor={0.08}
           minDistance={5}
           maxDistance={120}

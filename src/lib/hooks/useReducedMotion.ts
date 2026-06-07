@@ -6,16 +6,18 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSettings } from '@/lib/persist';
 
 export function useReducedMotion(): boolean {
-  const [reduced, setReduced] = useState(false);
+  const [systemReduced, setSystemReduced] = useState(false);
+  const userReduced = useSettings((state) => state.reducedMotion);
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
     const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
-    setReduced(mq.matches);
-    const handler = (e: MediaQueryListEvent) => setReduced(e.matches);
+    setSystemReduced(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setSystemReduced(e.matches);
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, []);
-  return reduced;
+  return systemReduced || userReduced;
 }
