@@ -6,6 +6,19 @@ name: Score integrity
 # silent regressions.
 
 on:
+  push:
+    branches: [main, dev]
+    paths:
+      - 'src/lib/scoring/**'
+      - 'src/lib/blocks/**'
+      - 'tests/integration/score-integrity.test.ts'
+      - '.github/workflows/score-integrity.yml'
+  pull_request:
+    paths:
+      - 'src/lib/scoring/**'
+      - 'src/lib/blocks/**'
+      - 'tests/integration/score-integrity.test.ts'
+      - '.github/workflows/score-integrity.yml'
   workflow_dispatch:
 
 jobs:
@@ -16,16 +29,5 @@ jobs:
       - uses: actions/setup-node@v4
         with: { node-version: 20, cache: 'npm' }
       - run: npm ci --legacy-peer-deps
-      - run: npm run build
       - name: Re-score 5 canonical builds
-        run: |
-          cat > /tmp/score-check.mjs <<'EOF'
-          import { score } from './src/lib/scoring/engine.ts';
-          import { emptyState, placeBlock } from './src/lib/blocks/index.ts';
-          import { defaultPolicyState } from './src/lib/scoring/policy.ts';
-          // ...test cases
-          EOF
-          # In practice this is a Vitest snapshot test run via `npm test`
-          # which is wired up in `tests/unit/scoring.test.ts` plus new
-          # `tests/integration/score-snapshots.test.ts` (planned P15.5).
-          echo "ok"
+        run: npx vitest run tests/integration/score-integrity.test.ts

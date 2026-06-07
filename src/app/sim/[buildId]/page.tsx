@@ -75,7 +75,7 @@ export default function SimPage() {
     <div className="flex h-screen flex-col">
       <header className="flex items-center justify-between border-b border-border bg-bg-panel px-4 py-2">
         <div className="flex items-center gap-3">
-          <Link href={`/build/free?share=${buildId}`} className="btn-ghost">
+          <Link href={`/build/${snapshot.scenarioId}?buildId=${buildId}`} className="btn-ghost">
             <ArrowLeft className="h-4 w-4" />
             Back to build
           </Link>
