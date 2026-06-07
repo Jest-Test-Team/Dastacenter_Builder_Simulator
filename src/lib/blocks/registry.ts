@@ -1085,23 +1085,40 @@ const ALL_BLOCKS: BlockDef[] = [
 /** Frozen registry. Use the helpers below rather than reading directly. */
 export const BLOCK_REGISTRY: ReadonlyArray<BlockDef> = Object.freeze(ALL_BLOCKS);
 
-const BLOCK_MAP: ReadonlyMap<string, BlockDef> = new Map(
-  ALL_BLOCKS.map((b) => [b.id, b] as const),
-);
+const BLOCK_MAP: ReadonlyMap<string, BlockDef> = new Map(ALL_BLOCKS.map((b) => [b.id, b] as const));
+const PLUGIN_BLOCK_MAP = new Map<string, BlockDef>();
+
+/** Replace the runtime plugin registry after plugin manifests are validated. */
+export function replacePluginBlocks(blocks: readonly BlockDef[]): void {
+  const next = new Map<string, BlockDef>();
+  for (const block of blocks) {
+    if (BLOCK_MAP.has(block.id))
+      throw new Error(`Plugin block conflicts with built-in id: ${block.id}`);
+    if (next.has(block.id)) throw new Error(`Duplicate plugin block id: ${block.id}`);
+    next.set(block.id, Object.freeze({ ...block }));
+  }
+  PLUGIN_BLOCK_MAP.clear();
+  for (const [id, block] of next) PLUGIN_BLOCK_MAP.set(id, block);
+}
+
+/** Built-in and currently active plugin blocks. */
+export function getAllBlocks(): BlockDef[] {
+  return [...ALL_BLOCKS, ...PLUGIN_BLOCK_MAP.values()];
+}
 
 /** Look up a block by id. Returns undefined for unknown ids. */
 export function getBlock(id: string): BlockDef | undefined {
-  return BLOCK_MAP.get(id);
+  return BLOCK_MAP.get(id) ?? PLUGIN_BLOCK_MAP.get(id);
 }
 
 /** All blocks in a category. */
 export function getBlocksByCategory(category: BlockCategory): BlockDef[] {
-  return ALL_BLOCKS.filter((b) => b.category === category);
+  return getAllBlocks().filter((b) => b.category === category);
 }
 
 /** Test whether an id is a valid block type. */
 export function isValidBlockType(id: string): id is BlockDef['id'] {
-  return BLOCK_MAP.has(id);
+  return BLOCK_MAP.has(id) || PLUGIN_BLOCK_MAP.has(id);
 }
 
 /** All category ids in display order. */
@@ -1150,7 +1167,14 @@ export function canPlace(
     for (let dy = 0; dy < h; dy++) {
       for (let dz = 0; dz < d; dz++) {
         const c = { x: baseCell.x + dx, y: baseCell.y + dy, z: baseCell.z + dz };
-        if (c.x < 0 || c.y < 0 || c.z < 0 || c.x >= worldSize.x || c.y >= worldSize.y || c.z >= worldSize.z) {
+        if (
+          c.x < 0 ||
+          c.y < 0 ||
+          c.z < 0 ||
+          c.x >= worldSize.x ||
+          c.y >= worldSize.y ||
+          c.z >= worldSize.z
+        ) {
           return { ok: false, reason: 'Out of bounds' };
         }
         if (state.byCell[cellKey(c)]) {
@@ -1183,7 +1207,8 @@ export function placeBlock(
   for (let dx = 0; dx < w; dx++) {
     for (let dy = 0; dy < h; dy++) {
       for (let dz = 0; dz < d; dz++) {
-        state.byCell[cellKey({ x: opts.cell.x + dx, y: opts.cell.y + dy, z: opts.cell.z + dz })] = id;
+        state.byCell[cellKey({ x: opts.cell.x + dx, y: opts.cell.y + dy, z: opts.cell.z + dz })] =
+          id;
       }
     }
   }
@@ -1202,7 +1227,9 @@ export function removeBlock(state: BuildState, id: string): BlockInstance | null
     for (let dx = 0; dx < w; dx++) {
       for (let dy = 0; dy < h; dy++) {
         for (let dz = 0; dz < d; dz++) {
-          delete state.byCell[cellKey({ x: inst.position.x + dx, y: inst.position.y + dy, z: inst.position.z + dz })];
+          delete state.byCell[
+            cellKey({ x: inst.position.x + dx, y: inst.position.y + dy, z: inst.position.z + dz })
+          ];
         }
       }
     }

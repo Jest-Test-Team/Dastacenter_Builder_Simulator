@@ -10,23 +10,16 @@
 'use client';
 
 import { useMemo, useRef, useEffect } from 'react';
-import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { useBuildStore } from '@/lib/store/build-store';
-import { getBlock, BLOCK_REGISTRY } from '@/lib/blocks';
+import { getAllBlocks, getBlock, type BlockDef } from '@/lib/blocks';
 import { useBuildHistory } from '@/lib/store/build-store';
-
-interface CategoryInstances {
-  blockType: string;
-  mesh: THREE.InstancedMesh;
-  count: number;
-  color: THREE.Color;
-}
+import { useBlockPlugins } from '@/lib/plugins/block-plugins';
 
 export function VoxelWorld() {
   const voxels = useBuildStore((s) => s.voxels);
   const selectedId = useBuildStore((s) => s.selectedInstanceId);
-  const setSelected = useBuildStore((s) => s.setSelected);
+  const pluginRevision = useBlockPlugins((state) => state.revision);
   useBuildHistory(); // re-render on history changes
 
   // Group instances by block type
@@ -41,19 +34,17 @@ export function VoxelWorld() {
       const x = inst.position.x + w / 2;
       const y = inst.position.y + h / 2;
       const z = inst.position.z + d / 2;
-      m.compose(
-        new THREE.Vector3(x, y, z),
-        new THREE.Quaternion(),
-        new THREE.Vector3(w, h, d),
-      );
+      m.compose(new THREE.Vector3(x, y, z), new THREE.Quaternion(), new THREE.Vector3(w, h, d));
       out.get(inst.type)!.push(m);
     }
     return out;
   }, [voxels]);
+  void pluginRevision;
+  const blockDefinitions = getAllBlocks();
 
   return (
     <group>
-      {BLOCK_REGISTRY.map((def) => {
+      {blockDefinitions.map((def) => {
         const matrices = grouped.get(def.id) ?? [];
         if (matrices.length === 0) return null;
         return <CategoryInstanced key={def.id} def={def} matrices={matrices} />;
@@ -63,13 +54,7 @@ export function VoxelWorld() {
   );
 }
 
-function CategoryInstanced({
-  def,
-  matrices,
-}: {
-  def: (typeof BLOCK_REGISTRY)[number];
-  matrices: THREE.Matrix4[];
-}) {
+function CategoryInstanced({ def, matrices }: { def: BlockDef; matrices: THREE.Matrix4[] }) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const setSelected = useBuildStore((s) => s.setSelected);
 

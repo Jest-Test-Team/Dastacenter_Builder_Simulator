@@ -8,7 +8,7 @@
 | Phase   | Title                    | Status  | Notes                                                                            |
 | ------- | ------------------------ | ------- | -------------------------------------------------------------------------------- |
 | **P0**  | Project bootstrap        | ✅ done | Next 15 + TS strict + Tailwind + ESLint + Prettier + analyzer                    |
-| **P1**  | Grid + block system      | ✅ done | `lib/grid` + `lib/blocks/{types,registry}`                                       |
+| **P1**  | Grid + block system      | ✅ done | Grid, built-in registry, validated hot-loaded block plugins                      |
 | **P2**  | 3D builder (R3F)         | ✅ done | `BuilderCanvas`, `VoxelWorld` (instanced), `PlacementPreview`, `SiteEnvironment` |
 | **P3**  | Palette / hotbar / modes | ✅ done | `BlockPalette`, `Hotbar`, `ModeBar`                                              |
 | **P4**  | Build store + utils      | ✅ done | Zustand + zundo + `lib/utils`                                                    |
@@ -22,7 +22,7 @@
 | **P12** | SimCity-like simulation  | ✅ done | Rendered build, NPCs, events, gauges, L2 staffing/OPEX/carbon/water              |
 | **P13** | Policy panel UI          | ✅ done | `PolicyPanel` wired to builder via right drawer                                  |
 | **P14** | Security viz             | ✅ done | `CctvCoverage` cones, `SecurityFrameworkPanel` dashboard                         |
-| **P15** | Unit tests               | ✅ done | 39 tests: grid, registry, scoring, simulation, integrity, share, SIWS, perf      |
+| **P15** | Unit tests               | ✅ done | 45 tests: grid, registry/plugins, scoring, simulation, integrity, share, SIWS    |
 | **P16** | Performance budget       | ✅ done | Dynamic imports, `WebVitalsReporter`, CSP/HSTS, perf budget test                 |
 | **P17** | Accessibility            | ✅ done | SkipLink, focus trap, reduced motion, ARIA, `KeyboardCheatsheet`                 |
 | **P18** | i18n (en/zh-TW/ja)       | ✅ done | In-house i18n + `LocaleSwitcher` + 3 message bundles                             |
@@ -35,18 +35,18 @@
 
 Legend: ✅ done · 🟡 partial · ⏳ pending
 
-**All 25 repository implementation phases have a working baseline. 39/39 tests pass and the production build is green. Public launch is not yet cleared because the external and operational items below remain open.**
+**All 25 repository implementation phases have a working baseline. 45/45 tests pass and the production build is green. Public launch is not yet cleared because the external and operational items below remain open.**
 
 ## Build artifacts
 
-- **Routes:** 23 (14 product + 5 legal + 4 marketing)
+- **Routes:** 28 generated routes in the current production build
 - **API routes:** 8 (auth×4, credly, health, vitals, walletconnect not used)
 - **Components:** ~25 (builder, policy, wallet, cert, i18n, a11y, analytics, perf)
 - **Lib modules:** ~20 (grid, blocks, store, scoring, persist, wallet, credly, content, i18n, analytics, observability, hooks, utils)
-- **Tests:** 39 across 8 files
+- **Tests:** 45 across 9 files
 - **Docs:** 7 top-level + 25 per-phase + 2 incident files
 - **Initial JS bundle:** 102 kB shared + per-route (target < 250 kB) ✅
-- **Largest route:** `/sim/[buildId]` 365 kB (R3F + drei) — within budget
+- **Largest first-load route:** `/cert/[buildId]` 166 kB; simulation WebGL is client-only and lazy-loaded
 - **Typecheck:** clean
 - **Lint:** clean (warnings only, no errors)
 - **CI:** GitHub Actions, Vercel preview
@@ -89,8 +89,8 @@ Repository work still required for the documented post-MVP roadmap:
 - Stripe billing and public build gallery.
 - WCAG 2.2 AA audit fixes and mobile-first touch controls.
 - Sustainability, quantum-ready, and modular block catalogs.
-- Plugin API, public dashboard, AI co-designer, live operations twin, marketplace,
-  white-label packaging, federated simulation, expanded translations, hardware
+- Public dashboard, AI co-designer, live operations twin, marketplace, white-label
+  packaging, federated simulation, expanded translations, hardware
   integrations, and a public REST API.
 
 External launch dependencies that cannot be completed from this repository alone:

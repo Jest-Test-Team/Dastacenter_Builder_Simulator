@@ -25,6 +25,7 @@ const securityHeaders = [
 ];
 
 const nextConfig = {
+  distDir: process.env.NEXT_DIST_DIR || '.next',
   reactStrictMode: true,
   poweredByHeader: false,
   experimental: {
@@ -39,15 +40,31 @@ const nextConfig = {
     ],
   },
   async headers() {
-    return [
-      { source: '/(.*)', headers: securityHeaders },
-    ];
+    return [{ source: '/(.*)', headers: securityHeaders }];
   },
-  webpack: (config) => {
+  webpack: (config, { isServer }) => {
     config.module.rules.push({
       test: /\.(glsl|vs|fs|vert|frag)$/,
       type: 'asset/source',
     });
+
+    // Ignore optional dependencies that WalletConnect/pino tries to load
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      'pino-pretty': false,
+      encoding: false,
+    };
+
+    // Ignore node-specific modules in client bundle
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
+
     return config;
   },
 };

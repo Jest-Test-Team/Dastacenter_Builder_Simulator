@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "id": "example-solar",
+  "name": "Example Solar Blocks",
+  "version": "1.0.0",
+  "author": "Datacenter Builder Simulator",
+  "blocks": [
+    {
+      "id": "example-solar.rooftop-pv",
+      "category": "power",
+      "displayName": "Rooftop PV Array",
+      "shortName": "PV Array",
+      "description": "A community-defined rooftop photovoltaic array.",
+      "size": [2, 1, 2],
+      "color": "#2563eb",
+      "tags": ["solar", "renewable", "plugin"],
+      "powerDraw": -25,
+      "heatLoad": 0,
+      "tierRole": "none",
+      "ports": [{ "kind": "power", "direction": "out", "capacity": 25 }],
+      "standards": ["Community extension"],
+      "decorative": false,
+      "defaultInventory": 8,
+      "order": 90,
+      "icon": "PV"
+    }
+  ]
+}
