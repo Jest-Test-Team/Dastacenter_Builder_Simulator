@@ -1,12 +1,6 @@
 # Cloudflare Pages configuration
 # Docs: https://developers.cloudflare.com/pages/configuration/build-configuration/
 
-# Standard Next.js build (recommended)
 [build]
-  command = "npm run build"
-  output_directory = ".next"
-
-# Alternative: OpenNext Cloudflare adapter
-# [build]
-#   command = "npx @opennextjs/cloudflare"
-#   output_directory = ".open-next/worker"
+  command = "npm run build:cloudflare"
+  output_directory = ".open-next"
