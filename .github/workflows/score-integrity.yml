@@ -6,8 +6,6 @@ name: Score integrity
 # silent regressions.
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
 
 jobs:
