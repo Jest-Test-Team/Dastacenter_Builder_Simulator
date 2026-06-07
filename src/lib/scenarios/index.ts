@@ -189,7 +189,7 @@ export function defaultScenario(): Scenario {
  * Build a default inventory by applying scenario overrides on top of
  * the registry's `defaultInventory`. Returns a fresh map.
  */
-export function scenarioInventory(scenario: Scenario, all: BlockDef[]): Record<string, number> {
+export function scenarioInventory(scenario: Scenario, all: readonly BlockDef[]): Record<string, number> {
   const out: Record<string, number> = {};
   for (const b of all) out[b.id] = b.defaultInventory;
   for (const [id, n] of Object.entries(scenario.inventory)) out[id] = n;
