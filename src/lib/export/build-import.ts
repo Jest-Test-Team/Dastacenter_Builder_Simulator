@@ -39,9 +39,9 @@ export async function importBuildFromFile(
     }
 
     // Check wallet match (warning only, not blocking)
-    const walletMismatch =
-      currentWalletAddress &&
-      data.wallet.address.toLowerCase() !== currentWalletAddress.toLowerCase();
+    const walletMismatch = currentWalletAddress
+      ? data.wallet.address.toLowerCase() !== currentWalletAddress.toLowerCase()
+      : undefined;
 
     return {
       success: true,
