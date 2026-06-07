@@ -115,9 +115,19 @@ export function ModeBar() {
       <WalletPicker />
 
       <button
+        onClick={handleImportWorks}
+        disabled={!isConnected || importing}
+        title={!isConnected ? t('builder.import.hint') : undefined}
+        className="btn-ghost disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        <Upload className="h-4 w-4" />
+        {importing ? 'Importing...' : t('builder.import')}
+      </button>
+
+      <button
         onClick={handleDownloadWorks}
         disabled={!isConnected}
-        title={!isConnected ? t('sim.downloadWorks.hint') : undefined}
+        title={!isConnected ? t('builder.export.hint') : undefined}
         className="btn-ghost disabled:cursor-not-allowed disabled:opacity-50"
       >
         <Download className="h-4 w-4" />
