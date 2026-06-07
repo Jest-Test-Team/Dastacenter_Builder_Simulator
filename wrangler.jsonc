@@ -1,10 +1,14 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "datacenter-simulator",
+  "main": ".open-next/worker.js",
   "compatibility_date": "2026-06-07",
   "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
   "observability": {
     "enabled": true
-  },
-  "pages_build_output_dir": ".open-next/worker"
+  }
 }
