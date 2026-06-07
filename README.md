@@ -67,7 +67,7 @@ for the full cheat sheet.
 | Scoring | Pure functions, fully deterministic (no Date.now/Random in core) |
 | Cert | SVG, generated client-side; QR via `qrcode.react` |
 | Credly | Server route only (Basic Auth) — opt-in, never in client bundle |
-| Tests | Vitest + Testing Library (jsdom) — 30 tests, all green |
+| Tests | Vitest + Testing Library (jsdom) — 35 tests, all green |
 | Styling | Tailwind + CSS variables (no UI framework) |
 | i18n | Custom in-house (3 locales: en, zh-TW, ja) |
 | Analytics | PostHog, lazy-loaded, consent-gated |
@@ -142,7 +142,7 @@ docs/
 | `npm run start` | Run production build |
 | `npm run lint` | Next.js + TypeScript ESLint |
 | `npm run typecheck` | `tsc --noEmit` (strict, noUncheckedIndexedAccess) |
-| `npm test` | Vitest (jsdom) — 30 tests, all green |
+| `npm test` | Vitest (jsdom) — 35 tests, all green |
 | `npm run test:watch` | Vitest watch |
 | `npm run test:coverage` | Vitest + v8 coverage |
 | `npm run format` | Prettier write |
