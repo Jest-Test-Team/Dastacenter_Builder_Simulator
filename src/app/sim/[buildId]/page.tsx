@@ -22,9 +22,15 @@ import {
   Activity,
   Zap,
   Thermometer,
+  Users,
+  DollarSign,
+  Leaf,
+  Droplets,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Group } from 'three';
+import { projectOperations, type OperationsProjection } from '@/lib/simulation';
+import { VoxelWorld } from '@/components/builder/VoxelWorld';
 
 type SimEvent = {
   id: number;
@@ -65,11 +71,16 @@ export default function SimPage() {
   const [speed, setSpeed] = useState(1);
   const [events, setEvents] = useState<SimEvent[]>([]);
   const nextIdRef = useRef(0);
+  const elapsedRef = useRef(0);
   const [powerLoad, setPowerLoad] = useState(0);
   const [tempC, setTempC] = useState(22);
 
-  // Initial scoring snapshot (deterministic)
-  const initialReport = useMemo(() => score(snapshot), [snapshot]);
+  const projection = useMemo(() => projectOperations(snapshot), [snapshot]);
+
+  useEffect(() => {
+    setPowerLoad(projection.facilityPowerKw);
+    setTempC(22 + (100 - projection.report.breakdown.cooling) / 20);
+  }, [projection]);
 
   async function finishSimulation() {
     await save();
@@ -80,21 +91,26 @@ export default function SimPage() {
   useEffect(() => {
     if (!playing) return;
     const id = window.setInterval(() => {
-      setT((prev) => prev + speed);
+      elapsedRef.current += speed;
+      setT(elapsedRef.current);
       // Random event spawn
       if (Math.random() < 0.04 * speed) {
         const tmpl = EVENT_TEMPLATES[Math.floor(Math.random() * EVENT_TEMPLATES.length)]!;
         setEvents((evs) => [
           ...evs.slice(-19),
-          { ...tmpl, id: nextIdRef.current++, t: t, resolved: false },
+          { ...tmpl, id: nextIdRef.current++, t: elapsedRef.current, resolved: false },
         ]);
       }
       // Live gauges: oscillate around baseline
-      setPowerLoad((p) => Math.max(0, p + (Math.random() - 0.5) * 5));
+      setPowerLoad((current) => {
+        const baseline = projection.facilityPowerKw;
+        if (baseline === 0) return 0;
+        return Math.max(baseline * 0.8, Math.min(baseline * 1.2, current + (Math.random() - 0.5) * 5));
+      });
       setTempC((c) => Math.max(15, Math.min(40, c + (Math.random() - 0.5) * 0.3)));
     }, 800);
     return () => window.clearInterval(id);
-  }, [playing, speed, t]);
+  }, [playing, projection.facilityPowerKw, speed]);
 
   return (
     <div className="flex h-screen flex-col">
@@ -140,14 +156,16 @@ export default function SimPage() {
             <directionalLight position={[10, 20, 5]} intensity={1} />
             <OrbitControls />
             <SiteGround />
+            <VoxelWorld />
             <NPCs count={6} t={t} />
             <Fence />
           </Canvas>
 
-          <HUD powerLoad={powerLoad} tempC={tempC} t={t} report={initialReport} />
+          <HUD powerLoad={powerLoad} tempC={tempC} t={t} report={projection.report} />
         </div>
 
         <aside className="flex flex-col border-l border-border bg-bg-panel">
+          <OperationsPanel projection={projection} />
           <div className="border-b p-3">
             <h2 className="text-sm font-semibold">Event log</h2>
             <p className="text-xs text-fg-muted">Live incidents from this simulation run.</p>
@@ -184,12 +202,83 @@ export default function SimPage() {
               ))}
           </ul>
           <div className="border-t p-3 text-[10px] text-fg-muted">
-            Simulation L1: time-of-day + random events. Player does not intervene here.
+            L2 projection assumptions: 24/7 operation, $0.12/kWh, 0.4 kg CO₂e/kWh grid,
+            and $95k loaded annual staff cost.
           </div>
         </aside>
       </div>
     </div>
   );
+}
+
+function OperationsPanel({ projection }: { projection: OperationsProjection }) {
+  return (
+    <section className="border-b p-3" aria-labelledby="operations-heading">
+      <h2 id="operations-heading" className="text-sm font-semibold">
+        Annual operations projection
+      </h2>
+      <div className="mt-3 grid grid-cols-2 gap-2">
+        <ProjectionMetric
+          icon={<DollarSign className="h-3.5 w-3.5 text-warn" />}
+          label="OPEX"
+          value={formatCompactUsd(projection.annualOpexUsd)}
+        />
+        <ProjectionMetric
+          icon={<Users className="h-3.5 w-3.5 text-primary" />}
+          label="Staffing"
+          value={`${projection.staffing.totalFte} FTE`}
+        />
+        <ProjectionMetric
+          icon={<Leaf className="h-3.5 w-3.5 text-success" />}
+          label="Carbon"
+          value={`${formatCompact(projection.annualCarbonTonnes)} t`}
+        />
+        <ProjectionMetric
+          icon={<Droplets className="h-3.5 w-3.5 text-primary" />}
+          label="Water"
+          value={`${formatCompact(projection.annualWaterLiters)} L`}
+        />
+      </div>
+      <div className="mt-2 text-[10px] text-fg-muted">
+        {projection.staffing.operationsPerShift} ops · {projection.staffing.facilitiesPerShift}{' '}
+        facilities · {projection.staffing.securityPerShift} security per shift ·{' '}
+        {projection.renewablePercent}% renewable
+      </div>
+    </section>
+  );
+}
+
+function ProjectionMetric({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
+  return (
+    <div className="rounded border border-border bg-bg-subtle p-2">
+      <div className="flex items-center gap-1 text-[10px] text-fg-muted">
+        {icon}
+        {label}
+      </div>
+      <div className="mt-1 font-mono text-xs font-semibold">{value}</div>
+    </div>
+  );
+}
+
+function formatCompact(value: number): string {
+  return new Intl.NumberFormat('en', { notation: 'compact', maximumFractionDigits: 1 }).format(value);
+}
+
+function formatCompactUsd(value: number): string {
+  return new Intl.NumberFormat('en', {
+    style: 'currency',
+    currency: 'USD',
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(value);
 }
 
 function SiteGround() {
