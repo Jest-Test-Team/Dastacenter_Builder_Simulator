@@ -19,10 +19,10 @@
 | **P9**  | Result/scorecard UI      | ✅ done | `/result/[buildId]` with bars, issues, achievements                              |
 | **P10** | Cert (SVG + QR)          | ✅ done | `/cert/[buildId]` + `CertificateSvg`                                             |
 | **P11** | Credly integration       | ✅ done | Server route, Basic Auth, level→template mapping                                 |
-| **P12** | SimCity-like simulation  | ✅ done | `/sim/[buildId]`, NPCs, events, gauges                                           |
+| **P12** | SimCity-like simulation  | ✅ done | Rendered build, NPCs, events, gauges, L2 staffing/OPEX/carbon/water              |
 | **P13** | Policy panel UI          | ✅ done | `PolicyPanel` wired to builder via right drawer                                  |
 | **P14** | Security viz             | ✅ done | `CctvCoverage` cones, `SecurityFrameworkPanel` dashboard                         |
-| **P15** | Unit tests               | ✅ done | 35 tests: grid, registry, scoring, score integrity, share, SIWS, perf            |
+| **P15** | Unit tests               | ✅ done | 39 tests: grid, registry, scoring, simulation, integrity, share, SIWS, perf      |
 | **P16** | Performance budget       | ✅ done | Dynamic imports, `WebVitalsReporter`, CSP/HSTS, perf budget test                 |
 | **P17** | Accessibility            | ✅ done | SkipLink, focus trap, reduced motion, ARIA, `KeyboardCheatsheet`                 |
 | **P18** | i18n (en/zh-TW/ja)       | ✅ done | In-house i18n + `LocaleSwitcher` + 3 message bundles                             |
@@ -35,7 +35,7 @@
 
 Legend: ✅ done · 🟡 partial · ⏳ pending
 
-**All 25 repository implementation phases have a working baseline. 35/35 tests pass and the production build is green. Public launch is not yet cleared because the external and operational items below remain open.**
+**All 25 repository implementation phases have a working baseline. 39/39 tests pass and the production build is green. Public launch is not yet cleared because the external and operational items below remain open.**
 
 ## Build artifacts
 
@@ -43,7 +43,7 @@ Legend: ✅ done · 🟡 partial · ⏳ pending
 - **API routes:** 8 (auth×4, credly, health, vitals, walletconnect not used)
 - **Components:** ~25 (builder, policy, wallet, cert, i18n, a11y, analytics, perf)
 - **Lib modules:** ~20 (grid, blocks, store, scoring, persist, wallet, credly, content, i18n, analytics, observability, hooks, utils)
-- **Tests:** 35 across 7 files
+- **Tests:** 39 across 8 files
 - **Docs:** 7 top-level + 25 per-phase + 2 incident files
 - **Initial JS bundle:** 102 kB shared + per-route (target < 250 kB) ✅
 - **Largest route:** `/sim/[buildId]` 365 kB (R3F + drei) — within budget
@@ -85,7 +85,6 @@ See `docs/LAUNCH.md`. The short list:
 
 Repository work still required for the documented post-MVP roadmap:
 
-- L2 simulation: staffing, OPEX, carbon, and water models.
 - Multiplayer co-build with Yjs and opt-in encrypted cloud sync.
 - Stripe billing and public build gallery.
 - WCAG 2.2 AA audit fixes and mobile-first touch controls.

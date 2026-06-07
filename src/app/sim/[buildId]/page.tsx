@@ -12,7 +12,7 @@ import { OrbitControls } from '@react-three/drei';
 import Link from 'next/link';
 import { useBuildStore } from '@/lib/store/build-store';
 import { useLoadBuild, useSaveBuild } from '@/lib/persist';
-import { score } from '@/lib/scoring/engine';
+import type { RatingReport } from '@/lib/scoring/engine';
 import {
   ArrowLeft,
   Play,
@@ -368,7 +368,7 @@ function HUD({
   powerLoad: number;
   tempC: number;
   t: number;
-  report: ReturnType<typeof score>;
+  report: RatingReport;
 }) {
   return (
     <div className="pointer-events-none absolute left-4 top-4 flex flex-col gap-2">

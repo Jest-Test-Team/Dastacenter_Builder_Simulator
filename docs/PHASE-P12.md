@@ -4,10 +4,14 @@
 Deliver the simcity-like simulation work so the rest of the product can build on it.
 
 ## Files added
-`app/sim/[buildId]/page.tsx` (NPCs, events, gauges, controls).
+`app/sim/[buildId]/page.tsx` (rendered build, NPCs, events, gauges, controls,
+annual operations dashboard). `lib/simulation/model.ts` contains the deterministic
+staffing, OPEX, carbon, water, and energy projection model.
 
 ## Key decisions
-Player does not intervene in sim — it's the 'watch your design operate' mode. Sim randomness is non-deterministic on purpose; the score is not affected.
+Player does not intervene in sim — it's the 'watch your design operate' mode.
+Live event randomness is non-deterministic on purpose; the score and annual
+operations projection are deterministic and are not affected by the event loop.
 
 ## Verification
 - `npm run typecheck` clean

@@ -15,7 +15,7 @@
 
 ## v1.2 (2–3 months after)
 
-- L2 simulation depth: staffing, OPEX, carbon, water.
+- [x] L2 simulation depth: staffing, OPEX, carbon, water.
 - Multiplayer co-build via Yjs (single room per build).
 - Cloud sync opt-in (per-wallet E2EE; IndexedDB still primary).
 - Stripe billing for the "Pro" tier (multi-build, save more than 5).
