@@ -11,6 +11,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { OrbitControls } from '@react-three/drei';
 import Link from 'next/link';
 import { useBuildStore } from '@/lib/store/build-store';
+import { useLoadBuild, useSaveBuild } from '@/lib/persist';
 import { score } from '@/lib/scoring/engine';
 import { ArrowLeft, Play, Pause, FastForward, AlertTriangle, Activity, Zap, Thermometer } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -38,7 +39,9 @@ export default function SimPage() {
   const params = useParams<{ buildId: string }>();
   const router = useRouter();
   const buildId = params?.buildId ?? '';
-  const snapshot = useBuildStore.getState();
+  useLoadBuild(buildId || null);
+  const snapshot = useBuildStore((state) => state);
+  const save = useSaveBuild();
 
   const [t, setT] = useState(0);
   const [playing, setPlaying] = useState(true);
@@ -49,7 +52,12 @@ export default function SimPage() {
   const [tempC, setTempC] = useState(22);
 
   // Initial scoring snapshot (deterministic)
-  const initialReport = useMemo(() => score(snapshot), []);
+  const initialReport = useMemo(() => score(snapshot), [snapshot]);
+
+  async function finishSimulation() {
+    await save();
+    router.push(`/result/${buildId}`);
+  }
 
   // Time loop
   useEffect(() => {
@@ -102,7 +110,7 @@ export default function SimPage() {
               </button>
             ))}
           </div>
-          <button onClick={() => router.push(`/result/${buildId}`)} className="btn">
+          <button onClick={() => void finishSimulation()} className="btn">
             Finish & score
           </button>
         </div>
@@ -125,7 +133,7 @@ export default function SimPage() {
         <aside className="flex flex-col border-l border-border bg-bg-panel">
           <div className="border-b p-3">
             <h2 className="text-sm font-semibold">Event log</h2>
-            <p className="text-xs text-fg-muted">Live incidents from the deterministic run.</p>
+            <p className="text-xs text-fg-muted">Live incidents from this simulation run.</p>
           </div>
           <ul className="flex-1 overflow-y-auto p-2">
             {events.length === 0 && (

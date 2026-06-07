@@ -16,7 +16,6 @@ import {
   type Issue,
 } from '@/lib/scoring';
 import { useBuildStore } from '@/lib/store/build-store';
-import { useLoadBuild } from '@/lib/persist';
 import { loadBuildFromIDB } from '@/lib/persist';
 import {
   Award,
@@ -36,7 +35,6 @@ import { useT } from '@/lib/i18n/client';
 export default function ResultPage() {
   const params = useParams<{ buildId: string }>();
   const buildId = params?.buildId;
-  useLoadBuild(buildId ?? null);
   const [report, setReport] = useState<RatingReport | null>(null);
   const t = useT();
 

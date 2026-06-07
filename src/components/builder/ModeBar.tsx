@@ -6,7 +6,6 @@
 
 import { useBuildStore, useBuildHistory } from '@/lib/store/build-store';
 import { useSaveBuild } from '@/lib/persist';
-import { score } from '@/lib/scoring';
 import { useRouter } from 'next/navigation';
 import { Undo2, Redo2, Save, Award, Trash2, PlayCircle, FlaskConical } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -22,18 +21,21 @@ export function ModeBar() {
   const { pastCount, futureCount, undo, redo } = useBuildHistory();
   const t = useT();
 
-  function handleFinish() {
+  async function navigateAfterSave(path: string) {
+    await save();
+    router.push(path);
+  }
+
+  async function handleFinish() {
     const state = useBuildStore.getState();
-    const report = score(state);
-    save();
-    router.push(`/result/${state.buildId}`);
+    await navigateAfterSave(`/result/${state.buildId}`);
   }
 
   return (
     <div className="panel flex items-center gap-2 border-b px-3 py-2">
       <div className="flex items-center gap-1">
         <ModeButton active={mode === 'build'} onClick={() => setMode('build')} icon={<PlayCircle className="h-4 w-4" />} label={t('builder.mode.build')} />
-        <ModeButton active={mode === 'sim'} onClick={() => router.push(`/sim/${buildId}`)} icon={<FlaskConical className="h-4 w-4" />} label={t('builder.mode.simulate')} />
+        <ModeButton active={mode === 'sim'} onClick={() => void navigateAfterSave(`/sim/${buildId}`)} icon={<FlaskConical className="h-4 w-4" />} label={t('builder.mode.simulate')} />
         <ModeButton active={mode === 'inspect'} onClick={() => setMode('inspect')} icon={<Award className="h-4 w-4" />} label={t('builder.mode.inspect')} />
       </div>
 
@@ -68,7 +70,7 @@ export function ModeBar() {
         {t('builder.save')}
       </button>
 
-      <button onClick={handleFinish} className="btn">
+      <button onClick={() => void handleFinish()} className="btn">
         <Award className="h-4 w-4" />
         {t('builder.finish')}
       </button>

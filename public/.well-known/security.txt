@@ -1,9 +1,5 @@
-Contact: mailto:security@Dastacenter-Builder-Simulator.example
-Contact: https://github.com/anomalyco/opencode/issues
-Expires: 2027-12-31T23:59:59z
-Preferred-Languages: en
-Canonical: https://Dastacenter-Builder-Simulator.example/.well-known/security.txt
-Encryption: https://Dastacenter-Builder-Simulator.example/.well-known/pgp-key.asc
-Policy: https://github.com/anomalyco/opencode/blob/main/SECURITY.md
-Acknowledgments: https://github.com/anomalyco/opencode/blob/main/SECURITY_ACKNOWLEDGMENTS.md
-Hiring: https://Dastacenter-Builder-Simulator.example/about
+Contact: mailto:security@datacenterbuilder.example
+Expires: 2027-06-07T00:00:00.000Z
+Preferred-Languages: en, zh-TW, ja
+Canonical: https://datacenterbuilder.example/.well-known/security.txt
+Policy: https://datacenterbuilder.example/legal/privacy
