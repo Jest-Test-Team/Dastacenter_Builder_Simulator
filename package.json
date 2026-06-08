@@ -11,7 +11,7 @@
     "build": "next build",
     "build:next": "next build",
     "build:verify": "NEXT_DIST_DIR=.next-verify next build",
-    "build:cloudflare": "opennextjs-cloudflare build",
+    "build:cloudflare": "opennextjs-cloudflare build && node scripts/strip-bracket-chunks.mjs",
     "deploy": "npm run build:cloudflare && opennextjs-cloudflare deploy",
     "preview": "npm run build:cloudflare && opennextjs-cloudflare preview",
     "start": "next start",
