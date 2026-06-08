@@ -31,15 +31,15 @@ export function PlacementPreview() {
   const mouse = useRef(new THREE.Vector2(0, 0));
   const meshRef = useRef<THREE.Mesh>(null);
 
-  // Update size + color when active type changes
+  // Update size when active type changes
   useEffect(() => {
     if (!activeType) return;
     const def = getBlock(activeType);
     if (!def) return;
-    let [w, h, d] = def.size;
-    if (rotation % 2 === 1) [w, d] = [d, w];
-    setSize([w, h, d]);
-    setColor(def.color);
+    const [w, h, d] = def.size;
+    const rw = rotation % 2 === 1 ? d : w;
+    const rd = rotation % 2 === 1 ? w : d;
+    setSize([rw, h, rd]);
   }, [activeType, rotation]);
 
   // Raycast on mouse move
