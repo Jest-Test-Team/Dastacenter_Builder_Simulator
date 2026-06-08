@@ -88,8 +88,8 @@ export function ModeBar() {
   }
 
   return (
-    <div className="panel flex items-center gap-2 border-b px-3 py-2">
-      <div className="flex items-center gap-1">
+    <div className="panel flex flex-col gap-2 border-b px-3 py-2 md:flex-row md:items-center">
+      <div className="flex min-w-0 flex-wrap items-center gap-1">
         <ModeButton
           active={mode === 'build'}
           onClick={() => setMode('build')}
@@ -110,7 +110,7 @@ export function ModeBar() {
         />
       </div>
 
-      <div className="flex items-center gap-1">
+      <div className="flex min-w-0 flex-wrap items-center gap-1">
         <ModeButton
           active={visualMode === 'thermal'}
           onClick={() => setVisualMode(visualMode === 'thermal' ? 'standard' : 'thermal')}
@@ -119,9 +119,9 @@ export function ModeBar() {
         />
       </div>
 
-      <div className="mx-2 h-6 w-px bg-border" />
+      <div className="hidden mx-2 h-6 w-px bg-border md:block" />
 
-      <div className="flex items-center gap-1">
+      <div className="flex min-w-0 flex-wrap items-center gap-1">
         <IconButton onClick={undo} disabled={pastCount === 0} title={t('builder.undo')}>
           <Undo2 className="h-4 w-4" />
         </IconButton>
@@ -130,47 +130,49 @@ export function ModeBar() {
         </IconButton>
       </div>
 
-      <div className="mx-2 h-6 w-px bg-border" />
+      <div className="hidden mx-2 h-6 w-px bg-border md:block" />
 
-      <div className="flex-1" />
+      <div className="hidden flex-1 md:block" />
 
-      <WalletPicker />
+      <div className="flex min-w-0 flex-wrap items-center gap-2 md:ml-auto">
+        <WalletPicker />
 
-      <button
-        onClick={handleImportWorks}
-        disabled={!isConnected || importing}
-        title={!isConnected ? t('builder.import.hint') : undefined}
-        className="btn-ghost disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <Upload className="h-4 w-4" />
-        {importing ? 'Importing...' : t('builder.import')}
-      </button>
+        <button
+          onClick={handleImportWorks}
+          disabled={!isConnected || importing}
+          title={!isConnected ? t('builder.import.hint') : undefined}
+          className="btn-ghost disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Upload className="h-4 w-4" />
+          {importing ? 'Importing...' : t('builder.import')}
+        </button>
 
-      <button
-        onClick={handleDownloadWorks}
-        disabled={!isConnected}
-        title={!isConnected ? t('builder.export.hint') : undefined}
-        className="btn-ghost disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        <Download className="h-4 w-4" />
-        {t('sim.downloadWorks')}
-      </button>
+        <button
+          onClick={handleDownloadWorks}
+          disabled={!isConnected}
+          title={!isConnected ? t('builder.export.hint') : undefined}
+          className="btn-ghost disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Download className="h-4 w-4" />
+          {t('sim.downloadWorks')}
+        </button>
 
-      <button
-        onClick={() => {
-          if (confirm(t('builder.clear.confirm'))) clearAll();
-        }}
-        className="btn-ghost"
-        title={t('builder.clear')}
-      >
-        <Trash2 className="h-4 w-4" />
-        {t('builder.clear')}
-      </button>
+        <button
+          onClick={() => {
+            if (confirm(t('builder.clear.confirm'))) clearAll();
+          }}
+          className="btn-ghost"
+          title={t('builder.clear')}
+        >
+          <Trash2 className="h-4 w-4" />
+          {t('builder.clear')}
+        </button>
 
-      <button onClick={() => router.push(`/result/${buildId}`)} className="btn">
-        <Award className="h-4 w-4" />
-        {t('builder.finish')}
-      </button>
+        <button onClick={() => router.push(`/result/${buildId}`)} className="btn">
+          <Award className="h-4 w-4" />
+          {t('builder.finish')}
+        </button>
+      </div>
     </div>
   );
 }
