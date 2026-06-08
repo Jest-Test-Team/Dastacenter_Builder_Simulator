@@ -58,3 +58,4 @@ storybook-static/
 *.seed
 .pnpm-store/
 /.ignore
+/.open-next

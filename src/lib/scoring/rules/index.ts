@@ -18,7 +18,7 @@
  *   - ISO27:  ISO/IEC 27001
  */
 
-import type { RuleContext, RatingBreakdown, Severity, Achievement } from '../engine';
+import type { RuleContext, RatingBreakdown, Severity } from '../engine';
 
 export interface Issue {
   ruleId: string;
@@ -45,7 +45,6 @@ export interface Rule {
 }
 
 const ok: RuleResult = { issues: [], achievements: [] };
-const noop = (): RuleResult => ok;
 
 // Helper: small issue constructor
 function i(

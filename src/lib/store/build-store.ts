@@ -26,7 +26,7 @@ import {
   getAllBlocks,
 } from '@/lib/blocks';
 import { cellKey, type Cell, type GridSize, DEFAULT_GRID_SIZE } from '@/lib/grid';
-import { defaultPolicyState, type PolicyState, type PolicyKey } from '@/lib/scoring/policy';
+import { defaultPolicyState, type PolicyKey } from '@/lib/scoring/policy';
 
 export type BuildMode = 'build' | 'sim' | 'inspect';
 
@@ -116,9 +116,9 @@ function makeId() {
 function cellsForBlock(type: string, position: Cell, rotation: 0 | 1 | 2 | 3): Cell[] {
   const def = getBlock(type);
   if (!def) return [];
-  let [w, h, d] = def.size;
-  // rotation: 1 swaps w and d
-  if (rotation % 2 === 1) [w, d] = [d, w];
+  const [sw, h, sd] = def.size;
+  const w = rotation % 2 === 1 ? sd : sw;
+  const d = rotation % 2 === 1 ? sw : sd;
   const cells: Cell[] = [];
   for (let dx = 0; dx < w; dx++) {
     for (let dy = 0; dy < h; dy++) {
@@ -190,11 +190,6 @@ export const useBuildStore = create<BuildStore>()(
           return { ok: false, reason: 'No inventory' };
         }
 
-        // For multi-cell blocks, clear cells of the new block
-        for (const c of cells) {
-          // occupied checks already done above
-        }
-
         const id = makeId();
         set((s) => {
           const newByCell: Record<string, string> = { ...s.byCell };
@@ -216,7 +211,7 @@ export const useBuildStore = create<BuildStore>()(
         if (!inst) return;
         const cells = cellsForBlock(inst.type, inst.position, inst.rotation);
         set((s) => {
-          const { [instanceId]: _, ...rest } = s.voxels;
+          const { [instanceId]: _, ...rest } = s.voxels; // eslint-disable-line @typescript-eslint/no-unused-vars
           const newByCell: Record<string, string> = { ...s.byCell };
           for (const c of cells) delete newByCell[cellKey(c)];
           const inv2 = { ...s.inventory };
@@ -256,7 +251,7 @@ export const useBuildStore = create<BuildStore>()(
       },
 
       clearAll: () => {
-        set((s) => ({
+        set(() => ({
           voxels: {},
           byCell: {},
           inventory: defaultInventory(),

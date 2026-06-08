@@ -1,0 +1,5 @@
+Contact: mailto:security@datacenterbuilder.example
+Expires: 2027-06-07T00:00:00.000Z
+Preferred-Languages: en, zh-TW, ja
+Canonical: https://datacenterbuilder.example/.well-known/security.txt
+Policy: https://datacenterbuilder.example/legal/privacy

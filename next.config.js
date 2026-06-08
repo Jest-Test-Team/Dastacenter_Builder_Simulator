@@ -67,6 +67,12 @@ const nextConfig = {
 
     return config;
   },
+  // Aggressive chunk splitting for smaller per-route bundles
+  async optimizeModules() {
+    return {
+      react: { unstable_runtimeMemoize: true },
+    };
+  },
 };
 
 const withBundleAnalyzer = require('@next/bundle-analyzer')({

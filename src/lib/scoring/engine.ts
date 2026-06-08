@@ -24,12 +24,10 @@ import {
   type BlockInstance,
   type BlockDef,
   getBlock,
-  BLOCK_REGISTRY,
 } from '@/lib/blocks';
 import { type BuildState } from '@/lib/blocks';
-import type { Cell } from '@/lib/grid';
 import { type PolicyState } from './policy';
-import { allRules, type Rule, type Issue } from './rules';
+import { allRules, type Issue } from './rules';
 
 export type Severity = 'info' | 'warn' | 'error' | 'critical';
 

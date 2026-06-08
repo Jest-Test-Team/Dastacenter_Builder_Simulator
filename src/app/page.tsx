@@ -44,6 +44,10 @@ export default function HomePage() {
                 <PlayCircle className="h-5 w-5" />
                 Start building
               </Link>
+              <Link href="/demos" className="btn-ghost text-base">
+                <Box className="h-5 w-5" />
+                Demo builds
+              </Link>
               <Link href="/learn" className="btn-ghost text-base">
                 <BookOpen className="h-5 w-5" />
                 Read the curriculum
@@ -119,7 +123,8 @@ export default function HomePage() {
         <p>
           Built for engineers, students, and certification-track professionals.
           <br />
-          Open source · <Link href="/legal/terms" className="underline">Terms</Link>{' · '}
+          Open source · <Link href="/demos" className="underline">Demos</Link>{' · '}
+          <Link href="/legal/terms" className="underline">Terms</Link>{' · '}
           <Link href="/legal/privacy" className="underline">Privacy</Link>{' · '}
           <Link href="/settings" className="underline">Settings</Link>{' · '}
           <Link href="/credits" className="underline">Credits</Link>{' · '}

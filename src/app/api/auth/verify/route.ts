@@ -3,7 +3,7 @@
  * Verifies a SIWE or SIWS message + signature and issues a session.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { getSession } from '@/lib/wallet/session';
 import { verifySiweMessage } from '@/lib/wallet/siwe';
 import { verifySiwsSignature, parseSiwsMessage } from '@/lib/wallet/siws';

@@ -5,13 +5,17 @@
 
 ## v1.1 (1 month after launch)
 
-- Curriculum reading UI (`/learn/[moduleId]`) — content already exists.
-- Solana wallet (Phantom) — auth + identity already in code.
-- 3 pre-built scenarios: greenfield hyperscale, edge micro-DC, retrofit
-  brownfield.
-- Keyboard shortcut cheatsheet (`?`).
-- Reduced-motion mode (skip camera damping).
-- 5-function security framework diagram on the policy panel.
+- [x] Curriculum reading UI (`/learn/[moduleId]`) — content already exists.
+- [x] Solana wallet (Phantom) — auth + identity already in code.
+- [x] 3 pre-built scenarios: greenfield hyperscale, edge micro-DC, retrofit brownfield.
+- [x] Keyboard shortcut cheatsheet (`?`).
+- [x] Reduced-motion mode (skip camera damping).
+- [x] 5-function security framework diagram on the policy panel.
+- [x] 3 demo seeded builds (shareable URLs) — Greenfield T3, Edge Micro, Tier IV Retrofit.
+- [x] Cert verifier page (`/verify`) for QR code scanning.
+- [x] Onboarding overlay for first-time users.
+- [x] Enhanced help/FAQ and credits pages.
+- [x] E2E smoke tests with Playwright.
 
 ## v1.2 (2–3 months after)
 
