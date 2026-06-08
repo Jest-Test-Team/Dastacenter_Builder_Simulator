@@ -97,6 +97,7 @@ export default function CertPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           buildId,
+          snapshot: useBuildStore.getState().exportSnapshot(),
           recipientEmail,
           recipientName,
           blueprintHash,

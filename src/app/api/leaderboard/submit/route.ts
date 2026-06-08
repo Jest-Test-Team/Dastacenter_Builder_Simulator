@@ -5,12 +5,14 @@ import { verifySiweMessage } from '@/lib/wallet/siwe';
 import { parseSiwsMessage, verifySiwsSignature } from '@/lib/wallet/siws';
 import { validateBlueprintSubmission } from '@/lib/leaderboard/validation';
 import { recordLeaderboardEntry } from '@/lib/leaderboard/server';
+import type { BuildSnapshot } from '@/lib/store/build-store';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 interface SubmitBody {
-  buildId: string;
+  buildId?: string;
+  snapshot: BuildSnapshot;
   blueprintHash: string;
   message: string;
   signature: string;
@@ -22,7 +24,7 @@ export async function POST(req: NextRequest) {
   if (!session.address) return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
 
   const body = (await req.json().catch(() => null)) as SubmitBody | null;
-  if (!body?.buildId || !body.blueprintHash || !body.message || !body.signature) {
+  if (!body?.snapshot || !body.blueprintHash || !body.message || !body.signature) {
     return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
   }
 
@@ -43,7 +45,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Wallet address mismatch' }, { status: 401 });
     }
 
-    const validated = await validateBlueprintSubmission(body.buildId, body.blueprintHash);
+    const validated = await validateBlueprintSubmission(body.snapshot, body.blueprintHash);
     if ('ok' in validated && !validated.ok) {
       return NextResponse.json({ error: validated.error }, { status: validated.status });
     }
