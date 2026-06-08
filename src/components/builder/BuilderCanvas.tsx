@@ -55,7 +55,7 @@ export function BuilderCanvas({
         gl.setClearColor(new THREE.Color('#0b1020'));
         scene.fog = new THREE.Fog('#0b1020', 30, 200);
       }}
-      className="h-full w-full"
+      className="h-full min-h-[56dvh] w-full md:min-h-0"
     >
       <Suspense fallback={null}>
         <PerspectiveCamera makeDefault position={camera.position} fov={50} near={0.1} far={500} />
@@ -113,8 +113,8 @@ function BuildMetricsHud({ report }: { report: ReturnType<typeof score> }) {
   const visualMode = useBuildStore((s) => s.visualMode);
   return (
     <HtmlOverlay>
-      <div className="pointer-events-none absolute left-4 top-4 w-72">
-        <div className="panel p-3 text-xs">
+      <div className="pointer-events-none absolute left-2 top-2 w-[calc(100vw-1rem)] max-w-xs md:left-4 md:top-4 md:w-72">
+        <div className="panel p-2 text-[10px] md:p-3 md:text-xs">
           <div className="flex items-center justify-between gap-2">
             <span className="font-semibold">Milestone HUD</span>
             <span className="badge">{visualMode === 'thermal' ? 'Thermal' : 'Standard'}</span>
@@ -144,7 +144,7 @@ function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded border border-border bg-bg-subtle p-2">
       <div className="text-[10px] text-fg-muted">{label}</div>
-      <div className="mt-0.5 font-mono text-sm font-semibold">{value}</div>
+      <div className="mt-0.5 break-words font-mono text-xs font-semibold md:text-sm">{value}</div>
     </div>
   );
 }

@@ -40,7 +40,8 @@
   }
 
   body {
-    overflow: hidden; /* prevent body scroll; builder manages its own */
+    overflow-x: hidden;
+    overflow-y: auto;
   }
 
   ::-webkit-scrollbar {
