@@ -18,12 +18,10 @@ export function PlacementPreview() {
   const [valid, setValid] = useState(true);
   const [pos, setPos] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
   const [size, setSize] = useState<[number, number, number]>([1, 1, 1]);
-  const [color, setColor] = useState<string>('#22c55e');
 
   const activeType = useBuildStore((s) => s.activeBlockType);
   const rotation = useBuildStore((s) => s.rotation);
   const placeBlock = useBuildStore((s) => s.placeBlock);
-  const hoveredCell = useBuildStore((s) => s.hoveredCell);
   const setHoveredCell = useBuildStore((s) => s.setHoveredCell);
   const gridSize = useBuildStore((s) => s.gridSize);
   const byCell = useBuildStore((s) => s.byCell);
