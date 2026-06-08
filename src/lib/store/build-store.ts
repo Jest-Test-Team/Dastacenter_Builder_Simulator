@@ -285,6 +285,7 @@ export const useBuildStore = create<BuildStore>()(
       setActiveBlockType: (type) => set({ activeBlockType: type }),
       setRotation: (r) => set({ rotation: r }),
       setCamera: (camera) => set((s) => ({ camera: { ...s.camera, ...camera } })),
+      setVisualMode: (visualMode) => set({ visualMode }),
 
       rename: (name) => set({ name, updatedAt: Date.now() }),
       setScenario: (id, name) => set({ scenarioId: id, scenarioName: name, updatedAt: Date.now() }),
@@ -315,6 +316,7 @@ export const useBuildStore = create<BuildStore>()(
           activeBlockType: null,
           rotation: 0,
           camera: s.camera,
+          visualMode: 'standard',
           name: s.name,
           createdAt: s.createdAt,
           updatedAt: s.updatedAt,
