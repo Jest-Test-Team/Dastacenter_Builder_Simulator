@@ -190,11 +190,6 @@ export const useBuildStore = create<BuildStore>()(
           return { ok: false, reason: 'No inventory' };
         }
 
-        // For multi-cell blocks, clear cells of the new block
-        for (const c of cells) {
-          // occupied checks already done above
-        }
-
         const id = makeId();
         set((s) => {
           const newByCell: Record<string, string> = { ...s.byCell };
