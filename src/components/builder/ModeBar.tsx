@@ -11,14 +11,27 @@ import { importBuildFromFile, createFileInput } from '@/lib/export/build-import'
 import { WalletPicker } from '@/components/wallet/WalletPicker';
 import { useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
-import { Undo2, Redo2, Award, Trash2, PlayCircle, FlaskConical, Download, Upload } from 'lucide-react';
+import {
+  Undo2,
+  Redo2,
+  Award,
+  Trash2,
+  PlayCircle,
+  FlaskConical,
+  Download,
+  Upload,
+  Snowflake,
+  Flame,
+} from 'lucide-react';
 import { cn, shortAddress } from '@/lib/utils';
 import { useT } from '@/lib/i18n/client';
 
 export function ModeBar() {
   const router = useRouter();
   const mode = useBuildStore((s) => s.mode);
+  const visualMode = useBuildStore((s) => s.visualMode);
   const setMode = useBuildStore((s) => s.setMode);
+  const setVisualMode = useBuildStore((s) => s.setVisualMode);
   const clearAll = useBuildStore((s) => s.clearAll);
   const loadBuild = useBuildStore((s) => s.loadBuild);
   const buildId = useBuildStore((s) => s.buildId);
@@ -94,6 +107,15 @@ export function ModeBar() {
           onClick={() => setMode('inspect')}
           icon={<Award className="h-4 w-4" />}
           label={t('builder.mode.inspect')}
+        />
+      </div>
+
+      <div className="flex items-center gap-1">
+        <ModeButton
+          active={visualMode === 'thermal'}
+          onClick={() => setVisualMode(visualMode === 'thermal' ? 'standard' : 'thermal')}
+          icon={visualMode === 'thermal' ? <Flame className="h-4 w-4" /> : <Snowflake className="h-4 w-4" />}
+          label={visualMode === 'thermal' ? 'Thermal View' : 'Thermal Off'}
         />
       </div>
 
