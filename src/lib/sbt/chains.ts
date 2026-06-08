@@ -44,7 +44,7 @@ export const SUPPORTED_CHAINS: Record<string, ChainConfig> = {
       decimals: 18,
     },
     faucetUrl: 'https://faucet.polygon.technology/',
-    // sbtContractAddress: '0x...', // 部署後填入
+    sbtContractAddress: process.env.NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY,
   },
 
   // Polygon Mainnet

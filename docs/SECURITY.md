@@ -26,7 +26,7 @@
   1. Valid request body with snapshot, wallet address, and SVG payload.
   2. Certifiable score from re-running the scoring engine.
   3. Configured server-side minter private key.
-  4. A deployed contract address for the selected chain.
+  4. A deployed contract address for the selected chain, ideally injected via `NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_<NETWORK>` in `.env.local`.
 
 ## Cryptographic guarantees
 

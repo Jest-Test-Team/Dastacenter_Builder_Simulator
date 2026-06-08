@@ -85,7 +85,14 @@ type SbtWalletClient = {
  */
 export function getSBTContractAddress(chainId: number): Address | null {
   const config = getChainConfig(chainId);
-  return (config?.sbtContractAddress as Address) ?? null;
+  const network = config?.network;
+  const envOverride =
+    chainId === 80002
+      ? process.env.NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY
+      : network
+        ? process.env[`NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_${network.toUpperCase().replace(/-/g, '_')}`]
+        : undefined;
+  return (envOverride || config?.sbtContractAddress || null) as Address | null;
 }
 
 /**

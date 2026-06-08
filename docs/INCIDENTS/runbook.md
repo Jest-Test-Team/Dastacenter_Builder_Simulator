@@ -27,12 +27,13 @@
 - If recent deploy, revert via Vercel: `vercel rollback`.
 - If a wallet adapter, the cause is most often a provider SDK update; pin the version.
 
-### "Credly push is failing"
+### "SBT mint relay is failing"
 
 - Check `/api/credly/issue` returns the expected error code.
-- Check `CREDLY_API_TOKEN` is not expired (rotated every 90 d).
-- Check Credly status (status.credly.com).
-- Disable the route: `CREDLY_API_TOKEN=""` and redeploy.
+- Check `SBT_MINTER_PRIVATE_KEY` is set and the wallet has enough gas.
+- Check `NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY` matches the deployed contract.
+- Check the Polygon Amoy RPC is reachable.
+- Disable the route by removing the mint env vars and redeploying.
 
 ### "Session cookie not being set"
 

@@ -18,8 +18,8 @@ async function main() {
   await sbt.deployed();
 
   console.log("✅ DatacenterCertificateSBT deployed to:", sbt.address);
-  console.log("\nAdd this to your chains.ts:");
-  console.log(`sbtContractAddress: '${sbt.address}',`);
+  console.log("\nAdd this to your .env.local:");
+  console.log(`NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY=${sbt.address}`);
 
   // Wait for block confirmations before verification
   console.log("\nWaiting for block confirmations...");

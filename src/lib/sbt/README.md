@@ -22,6 +22,10 @@ Multi-chain configuration supporting:
 - Optimism
 - Base
 
+Deployment-time contract addresses are read from environment variables first:
+- `NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY`
+- `NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_<NETWORK>` for other supported chains
+
 #### `metadata.ts`
 Metadata storage management with automatic cost optimization:
 - **IPFS**: Free (NFT.Storage) or cheap (~$0.001/file via Pinata)
@@ -68,12 +72,9 @@ npx hardhat run scripts/deploy.js --network bsc-testnet
 ```
 
 ### Update contract addresses
-After deployment, update the contract addresses in `chains.ts`:
+After deployment, set the contract address override in `.env.local`:
 ```typescript
-'polygon-amoy': {
-  // ...
-  sbtContractAddress: '0xYourDeployedAddress',
-}
+NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY=0xYourDeployedAddress
 ```
 
 ## Environment Variables
@@ -92,6 +93,10 @@ NEXT_PUBLIC_ARWEAVE_KEY=your_arweave_key
 PRIVATE_KEY=your_deployer_private_key
 POLYGON_AMOY_RPC=https://rpc-amoy.polygon.technology
 POLYGONSCAN_API_KEY=your_polygonscan_api_key
+
+# For the server-side mint relay
+SBT_MINTER_PRIVATE_KEY=your_minter_private_key
+NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY=0xYourDeployedAddress
 ```
 
 ## Usage Example

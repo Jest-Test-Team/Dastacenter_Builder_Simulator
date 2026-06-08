@@ -67,6 +67,12 @@ cp .env.example .env.local
 # 必填：Session secret（用 openssl 生成）
 SESSION_SECRET=$(openssl rand -base64 32)
 
+# 必填：SBT 鑄造錢包私鑰（必須是合約 owner）
+SBT_MINTER_PRIVATE_KEY=0x...
+
+# 建議：應用程式網址（本機測試可用 localhost）
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+
 # 必填：NFT.Storage API Key（到 https://nft.storage 註冊免費帳號）
 NEXT_PUBLIC_NFT_STORAGE_KEY=eyJ...
 
@@ -118,8 +124,8 @@ npm run deploy:amoy
 
 ```
 ✅ DatacenterCertificateSBT deployed to: 0x1234...
-Add this to your chains.ts:
-sbtContractAddress: '0x1234...',
+Add this to your .env.local:
+NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY=0x1234...
 ```
 
 ### 部署到其他網路
@@ -137,17 +143,18 @@ npm run deploy:bsc-testnet
 
 ### 更新合約地址
 
-將部署的合約地址填入 `src/lib/sbt/chains.ts`：
+將部署的合約地址填入 `.env.local`，例如：
 
-```typescript
-'polygon-amoy': {
-  chainId: 80002,
-  // ...
-  sbtContractAddress: '0xYourDeployedContractAddress',
-}
+```bash
+NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY=0xYourDeployedContractAddress
 ```
 
-對每個部署的網路重複此步驟。
+如果你之後部署其他鏈，也可以擴充成：
+
+```bash
+NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON=0x...
+NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_SEPOLIA=0x...
+```
 
 ---
 
@@ -166,6 +173,7 @@ npm run deploy:bsc-testnet
 5. 選擇測試網（如 Polygon Amoy）
 6. 點擊「Mint Certificate」
 7. 確認交易
+8. 交易成功後，頁面會顯示 tx hash、鏈上 explorer 連結與 token ID
 
 如果成功，你會看到 Token ID 和區塊鏈瀏覽器連結。
 
@@ -272,7 +280,7 @@ npx hardhat verify --network polygon-amoy <CONTRACT_ADDRESS> \
 ### Q: 測試網交易失敗怎麼辦？
 
 1. 確認錢包有足夠的測試代幣
-2. 檢查合約地址是否正確填入 `chains.ts`
+2. 檢查 `.env.local` 的 `NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY` 是否已填入部署後的地址
 3. 確認 RPC URL 可以訪問
 4. 查看瀏覽器控制台的錯誤訊息
 
@@ -288,7 +296,7 @@ npx hardhat verify --network polygon-amoy <CONTRACT_ADDRESS> \
 2. 在 `src/lib/wallet/wagmi.ts` 添加 wagmi chain 定義
 3. 在 `hardhat.config.js` 添加部署配置
 4. 部署合約到新鏈
-5. 更新合約地址
+5. 設定對應的 `NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_<NETWORK>` 環境變數
 
 ### Q: 用戶需要支付 gas 費嗎？
 

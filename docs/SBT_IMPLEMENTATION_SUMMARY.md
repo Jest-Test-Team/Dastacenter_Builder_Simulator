@@ -43,6 +43,7 @@
 - ✅ 區塊鏈瀏覽器連結
 - ✅ 原生代幣資訊
 - ✅ RPC endpoint 配置
+- ✅ 合約地址可透過 `.env.local` 的 `NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_<NETWORK>` 覆蓋
 
 ### 3. Metadata 儲存層
 
@@ -170,7 +171,7 @@ npm install
 npm run deploy:amoy
 ```
 
-記錄合約地址並更新到 `src/lib/sbt/chains.ts`
+記錄合約地址並更新到 `.env.local` 的 `NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY`
 
 ### 3. 測試
 
