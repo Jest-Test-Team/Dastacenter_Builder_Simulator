@@ -233,3 +233,7 @@ npm test` before pushing.
 ## License
 
 MIT — see `LICENSE`.
+
+## todos
+- wire the D1 binding for
+- the leaderboard and set the Credly secrets in the environment.
