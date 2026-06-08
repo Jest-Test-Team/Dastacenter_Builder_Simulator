@@ -26,7 +26,7 @@ import {
   getAllBlocks,
 } from '@/lib/blocks';
 import { cellKey, type Cell, type GridSize, DEFAULT_GRID_SIZE } from '@/lib/grid';
-import { defaultPolicyState, type PolicyState, type PolicyKey } from '@/lib/scoring/policy';
+import { defaultPolicyState, type PolicyKey } from '@/lib/scoring/policy';
 
 export type BuildMode = 'build' | 'sim' | 'inspect';
 
