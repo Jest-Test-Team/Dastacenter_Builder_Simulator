@@ -125,7 +125,7 @@ export default function DemosPage() {
                                 : 'bg-bg-subtle text-fg-muted opacity-40'
                             }`}
                           >
-                            <Icon className="h-2.5 w-2.5" />
+                            {Icon && <Icon className="h-2.5 w-2.5" />}
                             {cat}
                           </span>
                         );
