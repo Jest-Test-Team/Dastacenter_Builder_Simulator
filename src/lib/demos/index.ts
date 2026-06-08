@@ -126,7 +126,6 @@ const GREENFIELD_TIER3: BuildSnapshot = {
   buildId: 'demo-greenfield-t3',
   name: 'Greenfield Tier III Colocation',
   scenarioId: 'greenfield',
-  gridSize: { w: 32, h: 8, d: 32 },
   voxels: {
     'gf-01': { id: 'gf-01', type: 'utility_feed', position: { x: 0, y: 0, z: 0 }, rotation: 0, metadata: {} },
     'gf-02': { id: 'gf-02', type: 'transformer', position: { x: 2, y: 0, z: 0 }, rotation: 0, metadata: {} },
