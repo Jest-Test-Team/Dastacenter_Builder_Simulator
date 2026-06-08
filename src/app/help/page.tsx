@@ -11,8 +11,6 @@ import {
   BookOpen,
   Play,
   Shield,
-  Award,
-  AlertTriangle,
   Keyboard,
   Server,
   Wrench,
