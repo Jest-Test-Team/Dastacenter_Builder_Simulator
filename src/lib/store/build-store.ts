@@ -99,8 +99,22 @@ export interface BuildActions {
 }
 
 /** Snapshot of a build that can be persisted or shared.
- *  Uses the pure data BuildState (no UI fields). */
-export type BuildSnapshot = PureBuildState;
+ *  Uses the full store shape because exportSnapshot preserves scenario and UI context. */
+export type BuildSnapshot = PureBuildState &
+  Partial<
+    Pick<
+      BuildState,
+      | 'scenarioName'
+      | 'gridSize'
+      | 'mode'
+      | 'selectedInstanceId'
+      | 'hoveredCell'
+      | 'activeBlockType'
+      | 'rotation'
+      | 'camera'
+      | 'visualMode'
+    >
+  >;
 
 export type BuildStore = BuildState & BuildActions;
 

@@ -55,7 +55,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Missing nonce' }, { status: 400 });
   }
 
-  if (!consumeNonce(session.csrf)) {
+  const nonce = session.csrf;
+  if (!consumeNonce(nonce)) {
     return NextResponse.json({ error: 'Nonce already used' }, { status: 400 });
   }
   session.csrf = undefined;
@@ -64,15 +65,15 @@ export async function POST(req: NextRequest) {
   try {
     const verifiedAddress =
       body.walletKind === 'solana'
-        ? verifySolanaIssue(body.message, body.signature, session.csrf)
-        : await verifyEvmIssue(body.message, body.signature, session.csrf);
+        ? verifySolanaIssue(body.message, body.signature, nonce)
+        : await verifyEvmIssue(body.message, body.signature, nonce);
 
     if (verifiedAddress !== session.address) {
       return NextResponse.json({ error: 'Wallet address mismatch' }, { status: 401 });
     }
 
     const validated = await validateBlueprintSubmission(body.snapshot, body.blueprintHash);
-    if ('ok' in validated && !validated.ok) {
+    if ('ok' in validated) {
       return NextResponse.json({ error: validated.error }, { status: validated.status });
     }
 

@@ -27,6 +27,6 @@ export async function validateBlueprintSubmission(
     blueprintHash,
     buildId: snapshot.buildId,
     scenarioId: snapshot.scenarioId,
-    scenarioName: snapshot.scenarioName,
+    scenarioName: snapshot.scenarioName ?? '',
   };
 }
