@@ -5,11 +5,9 @@
 export * from './chains';
 export * from './metadata';
 export * from './client';
-export * from './server';
 export * from './abi';
 
 // Re-export commonly used types
 export type { ChainConfig } from './chains';
 export type { CertificateMetadata, StorageProvider, StorageResult } from './metadata';
 export type { MintCertificateParams, MintResult, CertificateInfo } from './client';
-export type { MintCertificateServerInput, MintCertificateServerResult, SerializableStorageResult } from './server';

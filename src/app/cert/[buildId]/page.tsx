@@ -24,10 +24,9 @@ import {
   computeBlueprintHash,
   hasCertificate,
   getTestnetTokenReminder,
-  isTestnetChain,
-  SUPPORTED_CHAINS,
-  type MintCertificateServerResult,
-} from '@/lib/sbt';
+} from '@/lib/sbt/client';
+import { isTestnetChain, SUPPORTED_CHAINS } from '@/lib/sbt/chains';
+import type { MintCertificateServerResult } from '@/lib/sbt/server';
 
 export default function CertPage() {
   const params = useParams<{ buildId: string }>();

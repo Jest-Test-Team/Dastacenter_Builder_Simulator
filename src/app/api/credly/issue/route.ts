@@ -1,7 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import type { BuildSnapshot } from '@/lib/store/build-store';
-import { mintCertificateOnChain, MintError } from '@/lib/sbt';
+import { mintCertificateOnChain, MintError } from '@/lib/sbt/server';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
