@@ -10,7 +10,7 @@ CN PUE**. A SVG certificate is generated client-side and, with the user's
 consent, pushed to **Credly** as a portable digital badge.
 
 ---
-##  demo img .
+##  demo img 
 
 
 ### 2. building scene ui
