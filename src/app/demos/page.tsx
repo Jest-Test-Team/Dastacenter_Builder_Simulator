@@ -17,7 +17,6 @@ import { AppHeader } from '@/components/layout/AppHeader';
 import {
   Copy,
   Check,
-  ExternalLink,
   Server,
   Zap,
   Shield,
@@ -29,7 +28,7 @@ import {
   Network,
 } from 'lucide-react';
 
-const CATEGORY_ICONS = {
+const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
   structure: Box,
   site: Shield,
   power: Zap,
@@ -38,6 +37,8 @@ const CATEGORY_ICONS = {
   safety: Flame,
   network: Network,
 };
+
+const ALL_CATEGORIES = ['structure', 'power', 'cooling', 'it', 'safety', 'network', 'site'] as const;
 
 const DIFFICULTY_LABELS = ['', 'Beginner', 'Easy', 'Intermediate', 'Advanced', 'Expert'];
 
@@ -113,31 +114,23 @@ export default function DemosPage() {
                   <div className="mt-4">
                     <p className="text-xs font-medium text-fg-muted">Categories used</p>
                     <div className="mt-1 flex flex-wrap gap-1">
-                      {(['structure', 'power', 'cooling', 'it', 'safety', 'network', 'site'] as const).map(
-                        (cat) => {
-                          const Icon = CATEGORY_ICONS[cat];
-                          const hasBlocks = Object.values(demo.snapshot.voxels).some(
-                            (v) => {
-                              const blocks = require('@/lib/blocks/registry');
-                              const def = blocks.getBlock(v.type);
-                              return def?.category === cat;
-                            },
-                          );
-                          return (
-                            <span
-                              key={cat}
-                              className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] ${
-                                hasBlocks
-                                  ? 'bg-primary/10 text-primary'
-                                  : 'bg-bg-subtle text-fg-muted opacity-40'
-                              }`}
-                            >
-                              <Icon className="h-2.5 w-2.5" />
-                              {cat}
-                            </span>
-                          );
-                        },
-                      )}
+                      {ALL_CATEGORIES.map((cat) => {
+                        const Icon = CATEGORY_ICONS[cat];
+                        const hasBlocks = demo.categories.includes(cat);
+                        return (
+                          <span
+                            key={cat}
+                            className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] ${
+                              hasBlocks
+                                ? 'bg-primary/10 text-primary'
+                                : 'bg-bg-subtle text-fg-muted opacity-40'
+                            }`}
+                          >
+                            <Icon className="h-2.5 w-2.5" />
+                            {cat}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>
