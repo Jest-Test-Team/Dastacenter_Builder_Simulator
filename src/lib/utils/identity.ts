@@ -1,9 +1,9 @@
 /**
- * Encode the current build snapshot into a stable, deterministic
- * string that can be used as a buildId. Hash via Web Crypto.
+ * Encode any snapshot into a stable, deterministic SHA-256 string.
+ * Used for build ids, blueprint hashes, and tamper-evidence.
  */
 
-export async function buildIdFromSnapshot(snapshot: unknown): Promise<string> {
+export async function stableSnapshotHash(snapshot: unknown): Promise<string> {
   const text = JSON.stringify(snapshot, replacerStable);
   const data = new TextEncoder().encode(text);
   if (typeof crypto !== 'undefined' && crypto.subtle) {
@@ -12,7 +12,11 @@ export async function buildIdFromSnapshot(snapshot: unknown): Promise<string> {
       .map((b) => b.toString(16).padStart(2, '0'))
       .join('');
   }
-  return 'id_' + simpleHash(text);
+  return `id_${simpleHash(text)}`;
+}
+
+export async function buildIdFromSnapshot(snapshot: unknown): Promise<string> {
+  return stableSnapshotHash(snapshot);
 }
 
 function replacerStable(_k: string, v: unknown) {

@@ -23,6 +23,8 @@ export interface Scenario {
   estMinutes: number;
   /** Optional goal: target tier or PUE. */
   goal?: { tier?: 'I' | 'II' | 'III' | 'IV'; maxPue?: number };
+  /** CAPEX budget used by the competition score and over-budget penalty. */
+  budgetUsd: number;
   /** Whether the build should be auto-cleared on entry. */
   freshStart: boolean;
   /** Accent color for the UI. */
@@ -41,6 +43,7 @@ export const SCENARIOS: Scenario[] = [
     focus: ['Uptime', 'TIA-942', 'ASHRAE', 'NFPA', 'ISO 27001'],
     difficulty: 1,
     estMinutes: 20,
+    budgetUsd: 999_999,
     freshStart: true,
     accent: '#7c3aed',
   },
@@ -83,6 +86,7 @@ export const SCENARIOS: Scenario[] = [
     difficulty: 3,
     estMinutes: 45,
     goal: { tier: 'III', maxPue: 1.4 },
+    budgetUsd: 1_500_000,
     freshStart: true,
     accent: '#0ea5e9',
   },
@@ -132,6 +136,7 @@ export const SCENARIOS: Scenario[] = [
     difficulty: 5,
     estMinutes: 90,
     goal: { tier: 'IV', maxPue: 1.3 },
+    budgetUsd: 2_250_000,
     freshStart: false,
     accent: '#f59e0b',
   },
@@ -172,6 +177,7 @@ export const SCENARIOS: Scenario[] = [
     difficulty: 2,
     estMinutes: 30,
     goal: { tier: 'III', maxPue: 1.3 },
+    budgetUsd: 180_000,
     freshStart: true,
     accent: '#10b981',
   },

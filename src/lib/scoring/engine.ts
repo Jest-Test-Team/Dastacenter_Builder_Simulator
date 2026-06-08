@@ -27,6 +27,7 @@ import {
 } from '@/lib/blocks';
 import { type BuildState } from '@/lib/blocks';
 import { type PolicyState } from './policy';
+import { computeCompetitionScore } from './competition';
 import { allRules, type Issue } from './rules';
 
 export type Severity = 'info' | 'warn' | 'error' | 'critical';
@@ -77,6 +78,24 @@ export interface RatingReport {
   totalFacilityPowerKW: number;
   /** The rule pack version. */
   rulePackVersion: string;
+  /** Competition score used by leaderboard and badge gating. */
+  competitionScore: number;
+  /** Current build cost estimate in USD. */
+  buildCostUsd: number;
+  /** Scenario budget ceiling in USD. */
+  budgetUsd: number;
+  /** Whether the build exceeds budget. */
+  overBudget: boolean;
+  /** Base compute contribution for the competition score. */
+  baseComputeScore: number;
+  /** PUE multiplier used in the competition score. */
+  efficiencyMultiplier: number;
+  /** Efficiency contribution to the competition score. */
+  efficiencyScore: number;
+  /** Resiliency contribution to the competition score. */
+  resiliencyBonus: number;
+  /** Whether the over-budget penalty was applied. */
+  budgetPenaltyApplied: boolean;
 }
 
 /** Public scoring entry point. */
@@ -120,6 +139,12 @@ export function score(state: BuildState): RatingReport {
   const pue = estimatePUE(state);
   const wue = estimateWUE(state);
   const certifiable = overall >= 60 && tier !== 'F';
+  const competition = computeCompetitionScore(state, {
+    pue,
+    tier,
+    breakdown,
+    totalITLoadKW: ctx.totalITLoadKW,
+  });
 
   return {
     score: clamp(overall, 0, 100),
@@ -137,6 +162,15 @@ export function score(state: BuildState): RatingReport {
     totalITLoadKW: ctx.totalITLoadKW,
     totalFacilityPowerKW: ctx.totalFacilityPowerKW,
     rulePackVersion: RULE_PACK_VERSION,
+    competitionScore: competition.competitionScore,
+    buildCostUsd: competition.buildCostUsd,
+    budgetUsd: competition.budgetUsd,
+    overBudget: competition.overBudget,
+    baseComputeScore: competition.baseComputeScore,
+    efficiencyMultiplier: competition.efficiencyMultiplier,
+    efficiencyScore: competition.efficiencyScore,
+    resiliencyBonus: competition.resiliencyBonus,
+    budgetPenaltyApplied: competition.budgetPenaltyApplied,
   };
 }
 
