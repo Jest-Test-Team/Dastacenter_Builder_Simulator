@@ -44,13 +44,14 @@ export function SecurityFrameworkPanel() {
   if (mode !== 'inspect') return null;
 
   return (
-    <div className="pointer-events-none absolute bottom-20 right-4 w-72">
-      <div className="panel p-3 text-xs">
+    <div className="pointer-events-none absolute bottom-3 left-2 right-2 md:bottom-20 md:left-auto md:right-4 md:w-72">
+      <div className="panel flex max-h-[32dvh] flex-col p-2 text-[10px] md:p-3 md:text-xs">
         <div className="mb-2 flex items-center gap-2 font-semibold">
           <Shield className="h-4 w-4" />
           Security framework
         </div>
-        <div className="grid grid-cols-2 gap-1.5">
+        <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+          <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
           {POLICY_GROUPS.map((g) => {
             const onCount = g.keys.filter((k) => policies[k] === true).length;
             const numCount = g.keys.filter((k) => typeof policies[k] === 'number').length;
@@ -80,6 +81,7 @@ export function SecurityFrameworkPanel() {
               </div>
             );
           })}
+          </div>
         </div>
         <div className="mt-2 text-[9px] text-fg-muted">
           Coverage score feeds the 5-axis security score in your report.

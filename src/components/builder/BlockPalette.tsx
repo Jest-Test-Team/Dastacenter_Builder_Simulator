@@ -43,7 +43,7 @@ export function BlockPalette() {
   })();
 
   return (
-    <aside className="panel flex h-full w-72 flex-col border-r">
+    <aside className="panel flex w-full max-h-[36dvh] flex-col border-b md:h-full md:max-h-none md:w-72 md:border-b-0 md:border-r">
       <div className="border-b p-3">
         <h2 className="text-sm font-semibold">{t('builder.palette.title')}</h2>
         <p className="text-xs text-fg-muted">{t('builder.palette.hint')}</p>
@@ -87,7 +87,7 @@ export function BlockPalette() {
         ))}
       </div>
 
-      <div className="flex-1 overflow-y-auto p-2">
+      <div className="min-h-0 flex-1 overflow-y-auto p-2">
         {blocks.length === 0 ? (
           <p className="p-4 text-center text-sm text-fg-muted">{t('builder.palette.empty')}</p>
         ) : (
