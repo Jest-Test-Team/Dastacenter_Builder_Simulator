@@ -63,6 +63,22 @@ const nextConfig = {
         net: false,
         tls: false,
       };
+
+      // Cloudflare Workers Assets cannot serve files whose path contains
+      // square brackets. Next names per-route client chunks after the route
+      // (e.g. app/build/[scenarioId]/page-<hash>.js); the webpack runtime then
+      // requests them URL-encoded (%5B…%5D), which never matches the raw
+      // bracket path on disk -> 404 -> ChunkLoadError on every dynamic route.
+      // Strip brackets from the chunk name so the emitted filename and the
+      // runtime request URL are both bracket-free and match.
+      const sanitize = (tmpl) => (pathData, assetInfo) => {
+        const name = pathData && pathData.chunk && pathData.chunk.name;
+        if (name && /[[\]]/.test(name)) {
+          pathData.chunk.name = name.replace(/[[\]]/g, '_');
+        }
+        return typeof tmpl === 'function' ? tmpl(pathData, assetInfo) : tmpl;
+      };
+      config.output.chunkFilename = sanitize(config.output.chunkFilename);
     }
 
     return config;
