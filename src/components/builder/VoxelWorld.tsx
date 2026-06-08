@@ -19,6 +19,7 @@ import { useBlockPlugins } from '@/lib/plugins/block-plugins';
 export function VoxelWorld() {
   const voxels = useBuildStore((s) => s.voxels);
   const selectedId = useBuildStore((s) => s.selectedInstanceId);
+  const visualMode = useBuildStore((s) => s.visualMode);
   const pluginRevision = useBlockPlugins((state) => state.revision);
   useBuildHistory(); // re-render on history changes
 
@@ -47,14 +48,23 @@ export function VoxelWorld() {
       {blockDefinitions.map((def) => {
         const matrices = grouped.get(def.id) ?? [];
         if (matrices.length === 0) return null;
-        return <CategoryInstanced key={def.id} def={def} matrices={matrices} />;
+        return <CategoryInstanced key={def.id} def={def} matrices={matrices} visualMode={visualMode} />;
       })}
+      <ThermalOverlay voxels={voxels} visualMode={visualMode} />
       {selectedId && <SelectionOutline instanceId={selectedId} />}
     </group>
   );
 }
 
-function CategoryInstanced({ def, matrices }: { def: BlockDef; matrices: THREE.Matrix4[] }) {
+function CategoryInstanced({
+  def,
+  matrices,
+  visualMode,
+}: {
+  def: BlockDef;
+  matrices: THREE.Matrix4[];
+  visualMode: 'standard' | 'thermal';
+}) {
   const meshRef = useRef<THREE.InstancedMesh>(null);
   const setSelected = useBuildStore((s) => s.setSelected);
 
@@ -68,12 +78,17 @@ function CategoryInstanced({ def, matrices }: { def: BlockDef; matrices: THREE.M
     mesh.instanceMatrix.needsUpdate = true;
   }, [matrices]);
 
-  const emissive = useMemo(() => {
-    // Safety/security/network get a faint emissive glow
-    if (def.category === 'network') return new THREE.Color(def.color).multiplyScalar(0.15);
-    if (def.category === 'safety') return new THREE.Color(def.color).multiplyScalar(0.1);
-    return new THREE.Color('#000000');
-  }, [def.category, def.color]);
+  const material = useMemo(() => {
+    if (visualMode === 'thermal') {
+      if (def.category === 'it') return { color: '#fb7185', emissive: '#7f1d1d', emissiveIntensity: 0.75 };
+      if (def.category === 'cooling') return { color: '#38bdf8', emissive: '#0f172a', emissiveIntensity: 0.6 };
+      if (def.category === 'power') return { color: '#f59e0b', emissive: '#78350f', emissiveIntensity: 0.45 };
+      return { color: def.color, emissive: '#111827', emissiveIntensity: 0.1 };
+    }
+    if (def.category === 'network') return { color: def.color, emissive: new THREE.Color(def.color).multiplyScalar(0.15), emissiveIntensity: 1 };
+    if (def.category === 'safety') return { color: def.color, emissive: new THREE.Color(def.color).multiplyScalar(0.1), emissiveIntensity: 1 };
+    return { color: def.color, emissive: '#000000', emissiveIntensity: 1 };
+  }, [def.category, def.color, visualMode]);
 
   return (
     <instancedMesh
@@ -94,13 +109,51 @@ function CategoryInstanced({ def, matrices }: { def: BlockDef; matrices: THREE.M
     >
       <boxGeometry args={[1, 1, 1]} />
       <meshStandardMaterial
-        color={def.color}
+        color={material.color}
         roughness={0.7}
         metalness={0.2}
-        emissive={emissive}
-        emissiveIntensity={1}
+        emissive={material.emissive}
+        emissiveIntensity={material.emissiveIntensity}
       />
     </instancedMesh>
+  );
+}
+
+function ThermalOverlay({
+  voxels,
+  visualMode,
+}: {
+  voxels: Record<string, { id: string; type: string; position: { x: number; y: number; z: number } }>;
+  visualMode: 'standard' | 'thermal';
+}) {
+  if (visualMode !== 'thermal') return null;
+  const items = Object.values(voxels)
+    .map((inst) => {
+      const def = getBlock(inst.type);
+      if (!def) return null;
+      if (def.category !== 'it' && def.category !== 'cooling') return null;
+      const isHot = def.category === 'it';
+      return {
+        id: inst.id,
+        position: [inst.position.x + 0.5, inst.position.y + 0.5, inst.position.z + 0.5] as const,
+        scale: isHot ? 1.6 : 1.45,
+        color: isHot ? '#ef4444' : '#38bdf8',
+        opacity: isHot ? 0.16 : 0.12,
+      };
+    })
+    .filter((item): item is NonNullable<typeof item> => item !== null);
+
+  if (items.length === 0) return null;
+
+  return (
+    <group>
+      {items.map((item) => (
+        <mesh key={item.id} position={item.position} scale={[item.scale, item.scale, item.scale]}>
+          <sphereGeometry args={[0.5, 12, 12]} />
+          <meshBasicMaterial color={item.color} transparent opacity={item.opacity} depthWrite={false} />
+        </mesh>
+      ))}
+    </group>
   );
 }
 

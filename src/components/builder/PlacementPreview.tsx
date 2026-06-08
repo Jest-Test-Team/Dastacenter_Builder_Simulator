@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
+import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useBuildStore } from '@/lib/store/build-store';
 import { getBlock } from '@/lib/blocks';
@@ -16,6 +17,7 @@ import { getBlock } from '@/lib/blocks';
 export function PlacementPreview() {
   const { camera, gl } = useThree();
   const [valid, setValid] = useState(true);
+  const [reason, setReason] = useState<string>('Ready');
   const [pos, setPos] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
   const [size, setSize] = useState<[number, number, number]>([1, 1, 1]);
 
@@ -82,6 +84,7 @@ export function PlacementPreview() {
   useFrame(() => {
     if (!activeType) {
       setHoveredCell(null);
+      setReason('Select a block to place');
       return;
     }
     raycaster.current.setFromCamera(mouse.current, camera);
@@ -100,11 +103,13 @@ export function PlacementPreview() {
       const cy = 0;
       if (cx < 0 || cx >= gridSize.w || cz < 0 || cz >= gridSize.d) {
         setValid(false);
+        setReason('Outside the build footprint');
         return;
       }
       setPos(new THREE.Vector3(cx + size[0] / 2, cy + size[1] / 2, cz + size[2] / 2));
       setHoveredCell({ x: cx, y: cy, z: cz });
       setValid(true);
+      setReason('Legal placement');
       return;
     }
     // For now, just snap to ground using first hit
@@ -116,18 +121,21 @@ export function PlacementPreview() {
     setHoveredCell({ x: cx, y: cy, z: cz });
     // Validate
     let ok = true;
+    let failureReason = 'Placement blocked';
     for (let dx = 0; dx < size[0]; dx++) {
       for (let dy = 0; dy < size[1]; dy++) {
         for (let dz = 0; dz < size[2]; dz++) {
           const c = `${cx + dx},${cy + dy},${cz + dz}`;
           if (byCell[c]) {
             ok = false;
+            failureReason = 'Cell occupied';
             break;
           }
         }
       }
     }
     setValid(ok);
+    setReason(ok ? 'Legal placement' : failureReason);
   });
 
   if (!activeType) return null;
@@ -146,6 +154,17 @@ export function PlacementPreview() {
         opacity={0.35}
         wireframe={!valid}
       />
+      <Html center position={[0, size[1] / 2 + 0.9, 0]} style={{ pointerEvents: 'none' }}>
+        <div
+          className={`rounded-full border px-2 py-1 text-[10px] font-semibold shadow-lg ${
+            valid
+              ? 'border-success/40 bg-success/20 text-success'
+              : 'border-danger/40 bg-danger/20 text-danger'
+          }`}
+        >
+          {reason}
+        </div>
+      </Html>
     </mesh>
   );
 }

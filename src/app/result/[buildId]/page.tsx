@@ -61,6 +61,13 @@ export default function ResultPage() {
       <main className="mx-auto max-w-5xl px-6 py-10">
         <Scorecard report={report} />
 
+        <section className="mt-6 grid gap-4 md:grid-cols-4">
+          <StatCard label="Competition score" value={`${report.competitionScore.toFixed(0)}/1000`} />
+          <StatCard label="Build cost" value={`$${report.buildCostUsd.toLocaleString()}`} />
+          <StatCard label="Budget" value={`$${report.budgetUsd.toLocaleString()}`} />
+          <StatCard label={report.overBudget ? 'Budget status' : 'Budget status'} value={report.overBudget ? 'Over' : 'Within'} tone={report.overBudget ? 'warn' : 'success'} />
+        </section>
+
         <div className="mt-8 grid gap-6 md:grid-cols-2">
           <Breakdown report={report} />
           <Achievements report={report} />
@@ -179,6 +186,25 @@ function levelColor(l: RatingReport['level']) {
     Bronze: 'text-warn',
     None: 'text-danger',
   }[l];
+}
+
+function StatCard({
+  label,
+  value,
+  tone = 'default',
+}: {
+  label: string;
+  value: string;
+  tone?: 'default' | 'warn' | 'success';
+}) {
+  const toneClass =
+    tone === 'warn' ? 'border-warn/30 bg-warn/5 text-warn' : tone === 'success' ? 'border-success/30 bg-success/5 text-success' : 'border-border bg-bg-subtle';
+  return (
+    <div className={`panel rounded-md border p-4 ${toneClass}`}>
+      <div className="text-xs text-fg-muted">{label}</div>
+      <div className="mt-1 font-mono text-lg font-semibold">{value}</div>
+    </div>
+  );
 }
 
 const TIER_LABELS: Record<RatingReport['tier'], string> = {
