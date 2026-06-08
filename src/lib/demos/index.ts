@@ -183,7 +183,6 @@ const EDGE_MICRO: BuildSnapshot = {
   buildId: 'demo-edge-micro',
   name: 'Edge Micro-Datacenter',
   scenarioId: 'edge',
-  gridSize: { w: 32, h: 8, d: 32 },
   voxels: {
     'em-01': { id: 'em-01', type: 'utility_feed', position: { x: 0, y: 0, z: 0 }, rotation: 0, metadata: {} },
     'em-02': { id: 'em-02', type: 'ups', position: { x: 2, y: 0, z: 0 }, rotation: 0, metadata: {} },
