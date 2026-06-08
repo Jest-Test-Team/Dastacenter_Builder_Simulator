@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /build/
+Disallow: /sim/
+Disallow: /result/
+Disallow: /cert/
+
+Sitemap: https://datacenterbuilder.example.com/sitemap.xml
