@@ -223,7 +223,6 @@ const TIER4_RETROFIT: BuildSnapshot = {
   buildId: 'demo-tier4-retrofit',
   name: 'Tier IV Fault-Tolerant Retrofit',
   scenarioId: 'retrofit',
-  gridSize: { w: 32, h: 8, d: 32 },
   voxels: {
     't4-01': { id: 't4-01', type: 'utility_feed', position: { x: 0, y: 0, z: 0 }, rotation: 0, metadata: {} },
     't4-02': { id: 't4-02', type: 'utility_feed', position: { x: 1, y: 0, z: 0 }, rotation: 0, metadata: {} },
