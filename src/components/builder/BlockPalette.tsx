@@ -19,7 +19,51 @@ import { Search, X } from 'lucide-react';
 import { useT } from '@/lib/i18n/client';
 import { useBlockLabel } from '@/lib/i18n/blocks';
 
-export function BlockPalette() {
+export function BlockPalette({
+  mobileOpen = false,
+  onClose,
+}: {
+  mobileOpen?: boolean;
+  onClose?: () => void;
+}) {
+  const mobileSheet = (
+    <div
+      className={cn(
+        'fixed inset-x-2 bottom-2 z-40 hidden max-h-[72dvh] flex-col overflow-hidden rounded-2xl border bg-bg-panel/98 shadow-2xl md:hidden',
+        mobileOpen && 'flex',
+      )}
+      role="dialog"
+      aria-modal="true"
+      aria-label={useT()('builder.palette.title')}
+    >
+      <div className="flex items-center justify-between border-b p-3">
+        <div>
+          <h2 className="text-sm font-semibold">{useT()('builder.palette.title')}</h2>
+          <p className="text-xs text-fg-muted">{useT()('builder.palette.hint')}</p>
+        </div>
+        <button onClick={onClose} className="icon-btn" aria-label={useT()('common.close')}>
+          <X className="h-4 w-4" />
+        </button>
+      </div>
+      <PaletteBody compact />
+    </div>
+  );
+
+  return (
+    <>
+      <aside className="panel hidden h-full w-72 flex-col border-r md:flex">
+        <PaletteBody />
+      </aside>
+      <div
+        className={cn('fixed inset-0 z-30 bg-black/40 md:hidden', mobileOpen ? 'block' : 'hidden')}
+        onClick={onClose}
+      />
+      {mobileSheet}
+    </>
+  );
+}
+
+function PaletteBody({ compact = false }: { compact?: boolean }) {
   const [activeCategory, setActiveCategory] = useState<BlockCategory>('power');
   const [query, setQuery] = useState('');
   const t = useT();
@@ -43,13 +87,8 @@ export function BlockPalette() {
   })();
 
   return (
-    <aside className="panel flex w-full max-h-[36dvh] flex-col border-b md:h-full md:max-h-none md:w-72 md:border-b-0 md:border-r">
-      <div className="border-b p-3">
-        <h2 className="text-sm font-semibold">{t('builder.palette.title')}</h2>
-        <p className="text-xs text-fg-muted">{t('builder.palette.hint')}</p>
-      </div>
-
-      <div className="border-b p-2">
+    <div className={cn('flex min-h-0 flex-1 flex-col', compact ? 'p-2' : '')}>
+      <div className={compact ? 'border-b py-2' : 'border-b p-2'}>
         <div className="relative">
           <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" />
           <input
@@ -98,7 +137,7 @@ export function BlockPalette() {
           </ul>
         )}
       </div>
-    </aside>
+    </div>
   );
 }
 
