@@ -51,7 +51,7 @@ export default function CertPage() {
 
   if (!report) {
     return (
-      <div className="flex h-screen items-center justify-center text-fg-muted">
+      <div className="flex min-h-[100dvh] items-center justify-center text-fg-muted">
         Loading certificate…
       </div>
     );
@@ -59,7 +59,7 @@ export default function CertPage() {
 
   if (!report.certifiable) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex min-h-[100dvh] items-center justify-center">
         <div className="panel max-w-md p-6 text-center">
           <p className="text-lg">This build is not certifiable.</p>
           <p className="mt-2 text-sm text-fg-muted">
@@ -117,7 +117,7 @@ export default function CertPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-y-auto bg-bg">
+    <div className="min-h-[100dvh] overflow-y-auto bg-bg">
       <header className="border-b border-border bg-bg-panel/80 backdrop-blur-md">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
           <Link href="/" className="flex items-center gap-2 font-semibold">

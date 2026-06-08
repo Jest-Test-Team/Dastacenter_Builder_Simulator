@@ -34,7 +34,7 @@ export function PolicyPanel({ open, onClose }: { open: boolean; onClose: () => v
     <div className="fixed inset-0 z-40 flex justify-end bg-black/40" onClick={onClose}>
       <aside
         ref={asideRef}
-        className="panel flex h-full w-96 flex-col rounded-l-lg rounded-r-none border-r-0"
+        className="panel flex h-[100dvh] w-full flex-col rounded-none border-r-0 md:w-96 md:rounded-l-lg md:rounded-r-none"
         role="dialog"
         aria-modal="true"
         aria-labelledby="policy-panel-title"
@@ -49,7 +49,7 @@ export function PolicyPanel({ open, onClose }: { open: boolean; onClose: () => v
             <X className="h-4 w-4" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto p-3">
+        <div className="min-h-0 flex-1 overflow-y-auto p-3">
           {POLICY_GROUPS.map((g) => (
             <PolicyGroup key={g.id} group={g} />
           ))}

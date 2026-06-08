@@ -44,13 +44,13 @@ export function Hotbar() {
   }, [activeType, slots]);
 
   return (
-    <div className="pointer-events-auto panel flex items-center gap-1 rounded-lg p-1 shadow-2xl">
+    <div className="pointer-events-auto panel flex max-w-[calc(100vw-1rem)] items-center gap-1 overflow-x-auto rounded-lg p-1 shadow-2xl no-scrollbar md:max-w-none">
       {slots.map((slot, idx) => {
         if (!slot || !isValidBlockType(slot)) {
           return (
             <div
               key={idx}
-              className="flex h-14 w-14 flex-col items-center justify-center rounded border border-dashed border-border/50 text-fg-muted"
+              className="flex h-12 w-12 flex-col items-center justify-center rounded border border-dashed border-border/50 text-fg-muted md:h-14 md:w-14"
             >
               <span className="text-[10px]">{idx + 1}</span>
             </div>
@@ -65,7 +65,7 @@ export function Hotbar() {
             key={idx}
             onClick={() => setActiveType(isActive ? null : slot)}
             className={cn(
-              'group relative flex h-14 w-14 flex-col items-center justify-center rounded border-2 transition-all',
+              'group relative flex h-12 w-12 flex-col items-center justify-center rounded border-2 transition-all md:h-14 md:w-14',
               isActive ? 'border-primary bg-primary/10' : 'border-border hover:border-primary/50',
               count <= 0 && 'opacity-50',
             )}

@@ -135,9 +135,9 @@ export default function SimPage() {
   }, [playing, projection.facilityPowerKw, speed]);
 
   return (
-    <div className="flex h-screen flex-col">
-      <header className="flex items-center justify-between border-b border-border bg-bg-panel px-4 py-2">
-        <div className="flex items-center gap-3">
+    <div className="flex min-h-[100dvh] flex-col overflow-x-hidden">
+      <header className="flex flex-col gap-3 border-b border-border bg-bg-panel px-4 py-2 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-wrap items-center gap-3">
           <Link href={`/build/${snapshot.scenarioId}?buildId=${buildId}`} className="btn-ghost">
             <ArrowLeft className="h-4 w-4" />
             Back to build
@@ -146,7 +146,7 @@ export default function SimPage() {
             Simulating <span className="font-mono">{buildId.slice(0, 12)}…</span>
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <WalletPicker />
           <button
             onClick={handleDownloadWorks}
@@ -181,8 +181,8 @@ export default function SimPage() {
         </div>
       </header>
 
-      <div className="grid flex-1 grid-cols-[1fr_320px]">
-        <div className="relative bg-bg-subtle">
+      <div className="grid min-h-0 flex-1 grid-cols-1 md:grid-cols-[1fr_320px]">
+        <div className="relative min-h-[48dvh] bg-bg-subtle md:min-h-0">
           <SimulationCanvas elapsedSeconds={simulationTime} />
 
           <HUD
@@ -195,13 +195,13 @@ export default function SimPage() {
           />
         </div>
 
-        <aside className="flex flex-col border-l border-border bg-bg-panel">
+        <aside className="flex min-h-0 flex-col border-l-0 border-t border-border bg-bg-panel md:border-l md:border-t-0">
           <OperationsPanel projection={projection} />
           <div className="border-b p-3">
             <h2 className="text-sm font-semibold">Event log</h2>
             <p className="text-xs text-fg-muted">Live incidents from this simulation run.</p>
           </div>
-          <ul className="flex-1 overflow-y-auto p-2">
+          <ul className="min-h-0 flex-1 overflow-y-auto p-2">
             {events.length === 0 && (
               <li className="rounded border border-dashed border-border p-3 text-xs text-fg-muted">
                 Quiet for now. Events will appear as the simulation runs.

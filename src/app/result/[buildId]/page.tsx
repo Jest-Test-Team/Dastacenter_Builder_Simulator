@@ -49,14 +49,14 @@ export default function ResultPage() {
 
   if (!report) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex min-h-[100dvh] items-center justify-center">
         <p className="text-fg-muted">Scoring your build…</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen overflow-y-auto bg-bg">
+    <div className="min-h-[100dvh] overflow-y-auto bg-bg">
       <Header />
       <main className="mx-auto max-w-5xl px-6 py-10">
         <Scorecard report={report} />
