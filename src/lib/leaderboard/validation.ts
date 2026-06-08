@@ -1,10 +1,11 @@
 import { loadBuildFromIDB } from '@/lib/persist';
 import { score, type RatingReport } from '@/lib/scoring';
 import { stableSnapshotHash } from '@/lib/utils/identity';
+import type { BuildSnapshot } from '@/lib/store/build-store';
 
 export interface ValidatedBlueprintSubmission {
   buildId: string;
-  snapshot: Awaited<ReturnType<typeof loadBuildFromIDB>> extends { snapshot: infer S } ? S : never;
+  snapshot: BuildSnapshot;
   report: RatingReport;
   blueprintHash: string;
   scenarioName: string;

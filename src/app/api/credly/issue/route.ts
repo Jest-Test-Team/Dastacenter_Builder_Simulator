@@ -56,6 +56,8 @@ export async function POST(req: NextRequest) {
   if (!consumeNonce(session.csrf)) {
     return NextResponse.json({ error: 'Nonce already used' }, { status: 400 });
   }
+  session.csrf = undefined;
+  await session.save();
 
   try {
     const verifiedAddress =
