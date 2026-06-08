@@ -303,6 +303,7 @@ export interface DemoBuild {
   tier: string;
   pue: string;
   difficulty: number;
+  categories: string[];
   snapshot: BuildSnapshot;
 }
 
