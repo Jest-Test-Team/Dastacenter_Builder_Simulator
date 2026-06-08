@@ -116,9 +116,9 @@ function makeId() {
 function cellsForBlock(type: string, position: Cell, rotation: 0 | 1 | 2 | 3): Cell[] {
   const def = getBlock(type);
   if (!def) return [];
-  let [w, h, d] = def.size;
-  // rotation: 1 swaps w and d
-  if (rotation % 2 === 1) [w, d] = [d, w];
+  const [sw, h, sd] = def.size;
+  const w = rotation % 2 === 1 ? sd : sw;
+  const d = rotation % 2 === 1 ? sw : sd;
   const cells: Cell[] = [];
   for (let dx = 0; dx < w; dx++) {
     for (let dy = 0; dy < h; dy++) {
