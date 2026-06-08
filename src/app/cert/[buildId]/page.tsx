@@ -2,7 +2,7 @@
  * Certificate page.
  *
  * Shows the cert (SVG-rendered), lets the user download it (PNG/SVG),
- * and offers to publish to Credly via /api/credly/issue.
+ * and mint it as a Soulbound Token (SBT) on multiple EVM chains.
  */
 
 'use client';
@@ -10,31 +10,45 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useAccount, useSignMessage } from 'wagmi';
+import { useAccount, useWalletClient, usePublicClient } from 'wagmi';
 import { useLoadBuild } from '@/lib/persist';
 import { loadBuildFromIDB } from '@/lib/persist';
 import { useBuildStore } from '@/lib/store/build-store';
 import { score, type RatingReport } from '@/lib/scoring';
-import { buildSiweMessage } from '@/lib/wallet/siwe';
 import { stableSnapshotHash } from '@/lib/utils/identity';
-import { Award, Download, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { Award, Download, ExternalLink, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { CertificateSvg } from '@/components/cert/CertificateSvg';
 import { useT } from '@/lib/i18n/client';
 import { WalletPicker } from '@/components/wallet/WalletPicker';
+import {
+  mintCertificate,
+  hasCertificate,
+  getTestnetTokenReminder,
+  isTestnetChain,
+  getExplorerUrl,
+  estimateMintGas,
+  SUPPORTED_CHAINS,
+  type MintResult,
+} from '@/lib/sbt';
 
 export default function CertPage() {
   const params = useParams<{ buildId: string }>();
   const buildId = params?.buildId;
   useLoadBuild(buildId ?? null);
   const [report, setReport] = useState<RatingReport | null>(null);
-  const [recipientEmail, setRecipientEmail] = useState('');
   const [recipientName, setRecipientName] = useState('');
-  const [issuing, setIssuing] = useState(false);
-  const [issued, setIssued] = useState<{ id: string; url?: string } | null>(null);
+  const [minting, setMinting] = useState(false);
+  const [minted, setMinted] = useState<MintResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [blueprintHash, setBlueprintHash] = useState('');
+  const [selectedChainId, setSelectedChainId] = useState<number | null>(null);
+  const [alreadyMinted, setAlreadyMinted] = useState(false);
+  const [gasEstimate, setGasEstimate] = useState<{ eth: string; usd: string } | null>(null);
+  const [svgDataUri, setSvgDataUri] = useState('');
+  
   const { address, isConnected, chain } = useAccount();
-  const { signMessageAsync } = useSignMessage();
+  const { data: walletClient } = useWalletClient();
+  const publicClient = usePublicClient();
   const t = useT();
 
   useEffect(() => {
@@ -44,10 +58,67 @@ export default function CertPage() {
       if (rec) {
         useBuildStore.getState().loadBuild(rec.snapshot);
         setReport(score(rec.snapshot));
-        setBlueprintHash(await stableSnapshotHash(rec.snapshot));
+        const hash = await stableSnapshotHash(rec.snapshot);
+        setBlueprintHash(hash);
+        
+        // Generate SVG data URI
+        setTimeout(() => {
+          const svg = document.querySelector<SVGElement>('[data-cert-svg]');
+          if (svg) {
+            const xml = new XMLSerializer().serializeToString(svg);
+            const base64 = btoa(unescape(encodeURIComponent(xml)));
+            setSvgDataUri(`data:image/svg+xml;base64,${base64}`);
+          }
+        }, 100);
       }
     })();
   }, [buildId]);
+
+  // Set default chain (prefer current chain, fallback to Polygon Amoy)
+  useEffect(() => {
+    if (!selectedChainId && chain) {
+      setSelectedChainId(chain.id);
+    } else if (!selectedChainId) {
+      setSelectedChainId(80002); // Polygon Amoy
+    }
+  }, [chain, selectedChainId]);
+
+  // Check if already minted on selected chain
+  useEffect(() => {
+    if (!blueprintHash || !selectedChainId || !publicClient) return;
+    void (async () => {
+      try {
+        const exists = await hasCertificate(blueprintHash as any, selectedChainId, publicClient);
+        setAlreadyMinted(exists);
+      } catch (err) {
+        console.error('Failed to check certificate:', err);
+      }
+    })();
+  }, [blueprintHash, selectedChainId, publicClient]);
+
+  // Estimate gas when chain or address changes
+  useEffect(() => {
+    if (!address || !selectedChainId || !blueprintHash || !report || !publicClient) return;
+    void (async () => {
+      try {
+        const estimate = await estimateMintGas(
+          {
+            recipientAddress: address,
+            report,
+            buildId: buildId ?? '',
+            blueprintHash,
+            recipientName,
+            chainId: selectedChainId,
+          },
+          publicClient
+        );
+        setGasEstimate({ eth: estimate.gasCostEth, usd: estimate.gasCostUsd });
+      } catch (err) {
+        console.error('Failed to estimate gas:', err);
+        setGasEstimate(null);
+      }
+    })();
+  }, [address, selectedChainId, blueprintHash, report, publicClient, buildId, recipientName]);
 
   if (!report) {
     return (
@@ -73,46 +144,34 @@ export default function CertPage() {
     );
   }
 
-  async function handleIssue() {
-    if (!buildId || !address || !isConnected) return;
-    setIssuing(true);
+  async function handleMint() {
+    if (!buildId || !address || !isConnected || !report || !selectedChainId || !walletClient || !publicClient) {
+      return;
+    }
+    
+    setMinting(true);
     setError(null);
+    
     try {
-      const nonceRes = await fetch('/api/auth/nonce');
-      const nonceData = await nonceRes.json();
-      if (!nonceRes.ok) throw new Error(nonceData.error ?? 'Failed to start issuance');
-
-      const message = buildSiweMessage({
-        address,
-        nonce: nonceData.nonce,
-        chainId: chain?.id ?? 1,
-        domain: window.location.host,
-        uri: window.location.origin,
-        statement: `Authorize Credly issuance for blueprint ${blueprintHash}.`,
-      });
-      const signature = await signMessageAsync({ message });
-
-      const res = await fetch('/api/credly/issue', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const result = await mintCertificate(
+        {
+          recipientAddress: address,
+          report,
           buildId,
-          snapshot: useBuildStore.getState().exportSnapshot(),
-          recipientEmail,
-          recipientName,
           blueprintHash,
-          message,
-          signature,
-          walletKind: 'evm',
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? 'Issue failed');
-      setIssued({ id: data.badgeId, url: data.publicUrl });
+          recipientName: recipientName || 'Anonymous Builder',
+          svgDataUri,
+          chainId: selectedChainId,
+        },
+        walletClient,
+        publicClient
+      );
+      
+      setMinted(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Issue failed');
+      setError(err instanceof Error ? err.message : 'Minting failed');
     } finally {
-      setIssuing(false);
+      setMinting(false);
     }
   }
 
@@ -139,14 +198,14 @@ export default function CertPage() {
           {t('cert.title')}
         </h1>
         <p className="mt-1 text-fg-muted">
-          Share it, download it, or publish to Credly. The QR code lets anyone verify.
+          Mint it as a Soulbound Token (SBT) on blockchain. The QR code lets anyone verify.
         </p>
 
         <div className="mt-6">
           <CertificateSvg
             report={report}
             recipientName={recipientName || 'Anonymous Builder'}
-            recipientWallet={useBuildStore.getState().policies ? '' : ''}
+            recipientWallet={address ?? ''}
             buildId={buildId ?? ''}
           />
         </div>
@@ -168,63 +227,126 @@ export default function CertPage() {
           </section>
 
           <section className="panel p-5">
-            <h2 className="font-semibold">{t('cert.publish')}</h2>
+            <h2 className="font-semibold">Mint as Soulbound Token</h2>
             <p className="mt-1 text-sm text-fg-muted">
-              Receive the badge in your email. Free, opt-in.
+              Permanent, non-transferable certificate on blockchain.
             </p>
-            {issued ? (
+            
+            {minted ? (
               <div className="mt-4 rounded border border-success/30 bg-success/10 p-3 text-sm">
                 <p className="flex items-center gap-2 text-success">
-                  <CheckCircle2 className="h-4 w-4" /> Badge issued
+                  <CheckCircle2 className="h-4 w-4" /> Certificate minted!
                 </p>
                 <p className="mt-1 text-xs text-fg-muted">
-                  Check {recipientEmail} for the acceptance email from Credly.
+                  Token ID: #{minted.tokenId.toString()}
                 </p>
-                {issued.url && (
-                  <a
-                    href={issued.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-2 inline-flex items-center gap-1 text-sm text-accent hover:underline"
-                  >
-                    <ExternalLink className="h-3 w-3" />
-                    View on Credly
-                  </a>
-                )}
+                <p className="mt-1 text-[10px] text-fg-muted">
+                  Storage: {minted.metadata.provider.toUpperCase()} (${minted.metadata.cost.estimated.toFixed(4)})
+                </p>
+                <a
+                  href={minted.explorerUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-flex items-center gap-1 text-sm text-accent hover:underline"
+                >
+                  <ExternalLink className="h-3 w-3" />
+                  View on explorer
+                </a>
               </div>
             ) : (
-              <div className="mt-4 space-y-2">
+              <div className="mt-4 space-y-3">
+                {/* Chain selector */}
+                <div>
+                  <label className="block text-xs text-fg-muted mb-1">Select blockchain</label>
+                  <select
+                    className="input text-sm"
+                    value={selectedChainId ?? ''}
+                    onChange={(e) => setSelectedChainId(Number(e.target.value))}
+                  >
+                    <optgroup label="Testnets">
+                      {Object.values(SUPPORTED_CHAINS)
+                        .filter((c) => c.isTestnet)
+                        .map((c) => (
+                          <option key={c.chainId} value={c.chainId}>
+                            {c.name} ({c.nativeCurrency.symbol})
+                          </option>
+                        ))}
+                    </optgroup>
+                    <optgroup label="Mainnets">
+                      {Object.values(SUPPORTED_CHAINS)
+                        .filter((c) => !c.isTestnet)
+                        .map((c) => (
+                          <option key={c.chainId} value={c.chainId}>
+                            {c.name} ({c.nativeCurrency.symbol})
+                          </option>
+                        ))}
+                    </optgroup>
+                  </select>
+                </div>
+
+                {/* Testnet reminder */}
+                {selectedChainId && isTestnetChain(selectedChainId) && (
+                  <div className="rounded border border-warn/30 bg-warn/10 p-2 text-xs">
+                    <p className="flex items-start gap-1.5 text-warn">
+                      <AlertCircle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+                      <span>{getTestnetTokenReminder(selectedChainId)}</span>
+                    </p>
+                  </div>
+                )}
+
+                {/* Already minted warning */}
+                {alreadyMinted && (
+                  <div className="rounded border border-danger/30 bg-danger/10 p-2 text-xs text-danger">
+                    <AlertCircle className="inline h-3.5 w-3.5 mr-1" />
+                    This blueprint already has a certificate on this chain.
+                  </div>
+                )}
+
+                {/* Recipient name */}
                 <input
                   className="input"
                   placeholder="Your name (optional)"
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
                 />
-                <input
-                  className="input"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={recipientEmail}
-                  onChange={(e) => setRecipientEmail(e.target.value)}
-                  required
-                />
+
+                {/* Gas estimate */}
+                {gasEstimate && (
+                  <p className="text-[10px] text-fg-muted">
+                    Estimated gas: ~{gasEstimate.eth} {SUPPORTED_CHAINS[Object.keys(SUPPORTED_CHAINS).find(k => SUPPORTED_CHAINS[k].chainId === selectedChainId) ?? '']?.nativeCurrency.symbol} 
+                    (${gasEstimate.usd})
+                  </p>
+                )}
+
                 {error && <p className="text-xs text-danger">{error}</p>}
+                
                 <button
-                  onClick={handleIssue}
-                  disabled={issuing || !recipientEmail || !isConnected || !blueprintHash}
+                  onClick={handleMint}
+                  disabled={minting || !isConnected || !blueprintHash || !svgDataUri || alreadyMinted}
                   className="btn w-full"
                 >
-                  {issuing ? 'Issuing…' : 'Issue to my email'}
+                  {minting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Minting...
+                    </>
+                  ) : (
+                    <>
+                      <Award className="h-4 w-4" />
+                      Mint Certificate
+                    </>
+                  )}
                 </button>
+                
                 <p className="text-[10px] text-fg-muted">
                   Blueprint hash: <span className="font-mono">{blueprintHash || 'pending'}</span>
                 </p>
                 <p className="text-[10px] text-fg-muted">
-                  By issuing you accept the{' '}
+                  Soulbound tokens cannot be transferred. By minting you accept the{' '}
                   <Link href="/legal/privacy" className="underline">
                     privacy policy
                   </Link>
-                  . Your email is sent to Credly only.
+                  . You pay gas fees directly.
                 </p>
               </div>
             )}

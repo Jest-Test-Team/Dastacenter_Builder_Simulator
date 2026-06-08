@@ -1,13 +1,13 @@
 # Datacenter Builder Simulator
 
 > Build a Lego-style data center, run it in a SimCity-like simulation, score it
-> against international standards, and earn a publishable certificate.
+> against international standards, and earn a blockchain-verified certificate.
 
 A pure-frontend SaaS built on **Next.js 15 + React Three Fiber**. Wallet-only
 auth (no email/password). Builds are scored deterministically against
 **Uptime, TIA-942, EN 50600, ASHRAE, NFPA, ISO 27001, EU EED, SG DIA, DE EnEfG,
-CN PUE**. A SVG certificate is generated client-side and, with the user's
-consent, pushed to **Credly** as a portable digital badge.
+CN PUE**. A SVG certificate is generated client-side and minted as a
+**Soulbound Token (SBT)** on multiple EVM blockchains (Polygon, Ethereum, BSC, etc.).
 
 ---
 ##  demo img 
@@ -61,7 +61,7 @@ for the full cheat sheet.
   with weighted overall, Uptime tier (I–IV or F), cert level
   (Bronze/Silver/Gold/Platinum).
 - **Verifiable certificate** — client-side SVG, QR code, downloadable,
-  opt-in Credly push.
+  mintable as Soulbound Token (SBT) on Polygon, Ethereum, BSC, and other EVM chains.
 - **SimCity-like sim** — NPCs walk the rendered build, scheduled events fire,
   power and temperature gauges oscillate, and deterministic L2 projections cover
   staffing, OPEX, carbon, and water. Re-uses the same build state.
@@ -92,7 +92,7 @@ for the full cheat sheet.
 | Sharing     | LZ-string-encoded snapshot in URL                                   |
 | Scoring     | Pure functions, fully deterministic (no Date.now/Random in core)    |
 | Cert        | SVG, generated client-side; QR via `qrcode.react`                   |
-| Credly      | Server route only (Basic Auth) — opt-in, never in client bundle     |
+| Blockchain  | Soulbound Token (SBT) on Polygon, Ethereum, BSC, Base, Arbitrum, Optimism |
 | Tests       | Vitest + Testing Library (jsdom) — 45 tests, all green              |
 | Styling     | Tailwind + CSS variables (no UI framework)                          |
 | i18n        | Custom in-house (3 locales: en, zh-TW, ja)                          |
@@ -107,7 +107,7 @@ src/
 │  ├─ build/[scenarioId]/        # 3D builder
 │  ├─ sim/[buildId]/             # SimCity-like sim mode
 │  ├─ result/[buildId]/          # Scorecard + issues + achievements
-│  ├─ cert/[buildId]/            # SVG certificate + Credly push
+│  ├─ cert/[buildId]/            # SVG certificate + SBT minting
 │  ├─ learn/                     # Curriculum (8 modules)
 │  ├─ pricing/                   # Pricing tiers
 │  ├─ about/                     # About page
@@ -116,7 +116,6 @@ src/
 │  ├─ legal/{terms,privacy,cookies,dpa,ai}/   # Legal pages
 │  └─ api/
 │     ├─ auth/{nonce,verify,session,logout}/
-│     ├─ credly/issue/
 │     ├─ health/                 # Liveness
 │     └─ vitals/                 # Web Vitals beacon
 ├─ components/
@@ -137,7 +136,7 @@ src/
 │  ├─ scoring/                   # engine + ~60 rules + policy plane
 │  ├─ persist/                   # IndexedDB + share token
 │  ├─ wallet/                    # wagmi, solana, siwe, siws, iron-session
-│  ├─ credly/                    # Server-side REST client
+│  ├─ sbt/                       # SBT smart contract integration, multi-chain support
 │  ├─ content/                   # Learning modules
 │  ├─ i18n/                      # In-house i18n (en, zh-TW, ja)
 │  ├─ analytics/                 # PostHog, consent store
@@ -208,21 +207,77 @@ See `src/lib/scoring/rules/index.ts` for the full per-rule citations.
 ## Privacy & data
 
 The app is **pure-frontend**. Builds are stored in your browser's IndexedDB.
-Wallet signatures are the only server interaction, used to prove ownership
-of the certificate being claimed. **No emails, no tracking pixels, no
-server-side analytics by default.** PostHog is opt-in via the consent banner.
-See `docs/SECURITY.md` for the full threat model and `docs/LAUNCH.md` for
-the incident runbook.
+Wallet signatures are used to mint certificates as Soulbound Tokens on blockchain.
+**No emails, no tracking pixels, no server-side analytics by default.**
+PostHog is opt-in via the consent banner. All certificate data is stored on-chain
+or on decentralized storage (IPFS/Arweave). See `docs/SECURITY.md` for the full
+threat model and `docs/LAUNCH.md` for the incident runbook.
+
+## Blockchain Integration
+
+Certificates are minted as **Soulbound Tokens (SBT)** — non-transferable NFTs that
+permanently record your achievement on blockchain.
+
+### Supported Chains
+- **Polygon Amoy Testnet** (recommended for testing)
+- Polygon Mainnet
+- Ethereum Mainnet & Sepolia Testnet
+- BSC Mainnet & Testnet
+- Arbitrum One
+- Optimism
+- Base
+
+### Setup
+
+1. Deploy the SBT contract:
+```bash
+cd contracts
+npm install
+npm run deploy:amoy  # or deploy:polygon, deploy:sepolia, etc.
+```
+
+2. Update contract addresses in `src/lib/sbt/chains.ts`
+
+3. Add environment variables to `.env.local`:
+```bash
+# Metadata storage (choose one)
+NEXT_PUBLIC_NFT_STORAGE_KEY=your_key  # Free IPFS storage
+NEXT_PUBLIC_PINATA_KEY=your_key       # Alternative IPFS
+NEXT_PUBLIC_ARWEAVE_KEY=your_key      # Permanent storage (optional)
+
+# Contract deployment
+PRIVATE_KEY=your_deployer_key
+POLYGONSCAN_API_KEY=your_key
+```
+
+See `src/lib/sbt/README.md` for detailed deployment instructions.
+
+## Cost Comparison
+
+| Storage | Size | Testnet | Mainnet |
+|---------|------|---------|---------|
+| IPFS | <5KB | Free | ~$0.001 |
+| Arweave | <5KB | N/A | ~$0.05 |
+| On-chain | <5KB | ~$0.01 | ~$0.50-5 |
+
+The system automatically selects the cheapest option based on file size and network.
 
 ## Deployment
 
-The repo ships with a `vercel.json` (regions, headers) and a GitHub Actions
-CI workflow (`.github/workflows/ci.yml`). The CI runs typecheck, lint, test,
-and build on every PR; preview deploys go to Vercel.
+Deploy to Cloudflare Workers using OpenNext:
 
 ```bash
-vercel --prod
+npm run deploy  # Builds and deploys to Cloudflare
 ```
+
+Or deploy to other platforms:
+```bash
+vercel --prod  # Vercel
+npm run build && npx netlify deploy --prod  # Netlify
+```
+
+The repo ships with `wrangler.jsonc` for Cloudflare and `vercel.json` for Vercel.
+CI workflow (`.github/workflows/ci.yml`) runs typecheck, lint, test, and build on every PR.
 
 ## Contributing
 
@@ -235,5 +290,6 @@ npm test` before pushing.
 MIT — see `LICENSE`.
 
 ## todos
-- wire the D1 binding for
-- the leaderboard and set the Credly secrets in the environment.
+- Deploy SBT contracts to all supported chains
+- Set up IPFS/Arweave storage API keys
+- Configure the leaderboard D1 binding
