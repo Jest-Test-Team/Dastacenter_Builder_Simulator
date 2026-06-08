@@ -43,7 +43,6 @@ const ALL_CATEGORIES = ['structure', 'power', 'cooling', 'it', 'safety', 'networ
 const DIFFICULTY_LABELS = ['', 'Beginner', 'Easy', 'Intermediate', 'Advanced', 'Expert'];
 
 export default function DemosPage() {
-  const t = useT();
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   async function handleShare(demo: DemoBuild) {
