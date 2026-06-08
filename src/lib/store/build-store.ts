@@ -211,7 +211,7 @@ export const useBuildStore = create<BuildStore>()(
         if (!inst) return;
         const cells = cellsForBlock(inst.type, inst.position, inst.rotation);
         set((s) => {
-          const { [instanceId]: _removed, ...rest } = s.voxels;
+          const { [instanceId]: _, ...rest } = s.voxels; // eslint-disable-line @typescript-eslint/no-unused-vars
           const newByCell: Record<string, string> = { ...s.byCell };
           for (const c of cells) delete newByCell[cellKey(c)];
           const inv2 = { ...s.inventory };
