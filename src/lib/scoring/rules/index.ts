@@ -45,7 +45,6 @@ export interface Rule {
 }
 
 const ok: RuleResult = { issues: [], achievements: [] };
-const noop = (): RuleResult => ok;
 
 // Helper: small issue constructor
 function i(
