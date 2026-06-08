@@ -32,6 +32,15 @@
 | **P22** | Marketing site           | ✅ done | `/pricing`, `/about`, `/status`, `/contact`                                      |
 | **P23** | Legal/compliance         | ✅ done | ToS, Privacy, Cookies, DPA, AI policy templates                                  |
 | **P24** | Launch checklist         | ✅ done | `docs/LAUNCH.md` (T-7d, T-24h, T-1h, T+0, post-launch), runbook                  |
+| **P28** | Demo seeded builds       | ✅ done | 3 curated builds: Greenfield T3, Edge Micro, Tier IV Retrofit                    |
+| **P29** | Cert verifier (`/verify`)| ✅ done | QR code scan → cert validation with score, tier, level display                   |
+| **P30** | Onboarding overlay       | ✅ done | 5-step walkthrough, localStorage-persisted, wired in Providers                   |
+| **P31** | Enhanced credits page    | ✅ done | Categorized deps with links + standards referenced section                      |
+| **P32** | Enhanced help/FAQ page   | ✅ done | Quick links, shortcuts, 10 FAQ items, troubleshooting                            |
+| **P33** | E2E smoke test           | ✅ done | Playwright config + 11 smoke tests covering all public routes                   |
+| **P34** | Bundle optimization      | ✅ done | `optimizePackageImports` + `optimizeModules` config                             |
+| **P35** | Lint cleanup (0 warnings)| ✅ done | All ESLint warnings resolved — `✔ No ESLint warnings or errors`                 |
+| **P36** | Docs update              | ✅ done | `PHASE-P28-36.md`, STATUS, ROADMAP updated                                      |
 
 Legend: ✅ done · 🟡 partial · ⏳ pending
 
