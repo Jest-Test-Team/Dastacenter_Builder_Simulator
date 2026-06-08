@@ -25,7 +25,7 @@ export interface ChainConfig {
     symbol: string;
     decimals: number;
   };
-  sbtContractAddress?: '0xYourDepLoyedContractAddress'; // Will be filled after deployment
+  sbtContractAddress?: string; // Fill after deployment
   faucetUrl?: string; // For testnets
 }
 
