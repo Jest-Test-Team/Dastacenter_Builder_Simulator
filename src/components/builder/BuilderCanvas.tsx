@@ -36,6 +36,7 @@ export function BuilderCanvas({
   const reducedMotion = useReducedMotion();
   const [dpr, setDpr] = useState<[number, number]>([1, 2]);
   const report = score(useBuildStore.getState().exportSnapshot());
+  void updatedAt;
 
   // Reduce DPR on low-end devices
   useEffect(() => {
