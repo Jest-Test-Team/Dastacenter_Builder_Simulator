@@ -6,7 +6,7 @@
  * Body: { buildId, recipientEmail, recipientName? }
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 import { getSession } from '@/lib/wallet/session';
 import { issueBadge, templateIdForLevel } from '@/lib/credly/server';
 import { loadBuildFromIDB } from '@/lib/persist';

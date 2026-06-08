@@ -6,7 +6,7 @@
  * metrics endpoint. For now, just count.
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse, type NextRequest } from 'next/server';
 
 export const runtime = 'edge';
 
