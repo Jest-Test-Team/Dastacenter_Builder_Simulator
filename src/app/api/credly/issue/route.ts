@@ -13,12 +13,14 @@ import { verifySiweMessage } from '@/lib/wallet/siwe';
 import { parseSiwsMessage, verifySiwsSignature } from '@/lib/wallet/siws';
 import { validateBlueprintSubmission } from '@/lib/leaderboard/validation';
 import { recordLeaderboardEntry } from '@/lib/leaderboard/server';
+import type { BuildSnapshot } from '@/lib/store/build-store';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 interface IssueBody {
-  buildId: string;
+  buildId?: string;
+  snapshot: BuildSnapshot;
   recipientEmail: string;
   recipientName?: string;
   blueprintHash: string;
@@ -36,7 +38,7 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => null)) as IssueBody | null;
   if (
     !body ||
-    !body.buildId ||
+    !body.snapshot ||
     !body.recipientEmail ||
     !body.blueprintHash ||
     !body.message ||
@@ -69,7 +71,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Wallet address mismatch' }, { status: 401 });
     }
 
-    const validated = await validateBlueprintSubmission(body.buildId, body.blueprintHash);
+    const validated = await validateBlueprintSubmission(body.snapshot, body.blueprintHash);
     if ('ok' in validated && !validated.ok) {
       return NextResponse.json({ error: validated.error }, { status: validated.status });
     }
@@ -128,14 +130,14 @@ export async function POST(req: NextRequest) {
             { label: 'Build Cost', value: String(report.buildCostUsd) },
             { label: 'Budget', value: String(report.budgetUsd) },
             { label: 'Blueprint Hash', value: body.blueprintHash },
-            { label: 'Build ID', value: body.buildId },
+            { label: 'Build ID', value: body.buildId ?? buildId },
             { label: 'Scenario', value: scenarioName },
           ],
         },
         {
           type: 'UrlEvidence',
           name: 'Verify',
-          value: `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/cert/${body.buildId}`,
+          value: `${process.env.NEXT_PUBLIC_APP_URL ?? ''}/cert/${body.buildId ?? buildId}`,
         },
       ],
     });
