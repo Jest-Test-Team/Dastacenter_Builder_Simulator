@@ -190,6 +190,8 @@ export default function SimPage() {
             tempC={tempC}
             t={simulationTime}
             report={projection.report}
+            budgetUsd={projection.report.budgetUsd}
+            buildCostUsd={projection.report.buildCostUsd}
           />
         </div>
 
@@ -317,11 +319,15 @@ function HUD({
   tempC,
   t,
   report,
+  budgetUsd,
+  buildCostUsd,
 }: {
   powerLoad: number;
   tempC: number;
   t: number;
   report: RatingReport;
+  budgetUsd: number;
+  buildCostUsd: number;
 }) {
   return (
     <div className="pointer-events-none absolute left-4 top-4 flex flex-col gap-2">
@@ -345,6 +351,11 @@ function HUD({
           <span className="badge">{report.tier}</span>
           <span className="badge">{report.level}</span>
           <span className="badge">{report.score.toFixed(0)}/100</span>
+          <span className="badge">{report.competitionScore.toFixed(0)}/1000</span>
+        </div>
+        <div className="mt-2 text-[10px] text-fg-muted">
+          Budget {buildCostUsd.toLocaleString()} / {budgetUsd.toLocaleString()} USD
+          {report.overBudget ? ' · over budget penalty active' : ''}
         </div>
       </div>
     </div>
