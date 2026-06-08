@@ -18,7 +18,7 @@
  *   - ISO27:  ISO/IEC 27001
  */
 
-import type { RuleContext, RatingBreakdown, Severity, Achievement } from '../engine';
+import type { RuleContext, RatingBreakdown, Severity } from '../engine';
 
 export interface Issue {
   ruleId: string;
