@@ -17,6 +17,7 @@ import { PlacementPreview } from './PlacementPreview';
 import { SiteEnvironment } from './SiteEnvironment';
 import { CctvCoverage } from './CctvCoverage';
 import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
+import { score } from '@/lib/scoring';
 
 export interface BuilderCanvasProps {
   showGrid?: boolean;
@@ -31,8 +32,10 @@ export function BuilderCanvas({
 }: BuilderCanvasProps) {
   const gridSize = useBuildStore((s) => s.gridSize);
   const camera = useBuildStore((s) => s.camera);
+  const updatedAt = useBuildStore((s) => s.updatedAt);
   const reducedMotion = useReducedMotion();
   const [dpr, setDpr] = useState<[number, number]>([1, 2]);
+  const report = useMemo(() => score(useBuildStore.getState().exportSnapshot()), [updatedAt]);
 
   // Reduce DPR on low-end devices
   useEffect(() => {
@@ -99,7 +102,52 @@ export function BuilderCanvas({
         <VoxelWorld />
         <CctvCoverage />
         {showPreview && <PlacementPreview />}
+        <BuildMetricsHud report={report} />
       </Suspense>
     </Canvas>
   );
+}
+
+function BuildMetricsHud({ report }: { report: ReturnType<typeof score> }) {
+  const visualMode = useBuildStore((s) => s.visualMode);
+  return (
+    <HtmlOverlay>
+      <div className="pointer-events-none absolute left-4 top-4 w-72">
+        <div className="panel p-3 text-xs">
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-semibold">Milestone HUD</span>
+            <span className="badge">{visualMode === 'thermal' ? 'Thermal' : 'Standard'}</span>
+          </div>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <Metric label="PUE" value={report.pue.toFixed(2)} />
+            <Metric label="Score" value={`${report.competitionScore.toFixed(0)}/1000`} />
+            <Metric label="Cost" value={`$${report.buildCostUsd.toLocaleString()}`} />
+            <Metric label="Budget" value={`$${report.budgetUsd.toLocaleString()}`} />
+          </div>
+          <div className="mt-2 rounded border border-border/60 bg-bg-subtle p-2 text-[10px] text-fg-muted">
+            Power load: {report.totalITLoadKW.toFixed(0)} kW · Facility: {report.totalFacilityPowerKW.toFixed(0)} kW
+            {report.overBudget ? ' · over budget penalty active' : ''}
+          </div>
+          {visualMode === 'thermal' && report.breakdown.cooling < 50 && (
+            <div className="mt-2 rounded border border-danger/30 bg-danger/10 p-2 text-[10px] text-danger">
+              Thermal throttling alert: cooling coverage is lagging behind heat output.
+            </div>
+          )}
+        </div>
+      </div>
+    </HtmlOverlay>
+  );
+}
+
+function Metric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded border border-border bg-bg-subtle p-2">
+      <div className="text-[10px] text-fg-muted">{label}</div>
+      <div className="mt-0.5 font-mono text-sm font-semibold">{value}</div>
+    </div>
+  );
+}
+
+function HtmlOverlay({ children }: { children: React.ReactNode }) {
+  return <div className="pointer-events-none absolute inset-0">{children}</div>;
 }
