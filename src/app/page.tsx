@@ -123,7 +123,8 @@ export default function HomePage() {
         <p>
           Built for engineers, students, and certification-track professionals.
           <br />
-          Open source · <Link href="/legal/terms" className="underline">Terms</Link>{' · '}
+          Open source · <Link href="/demos" className="underline">Demos</Link>{' · '}
+          <Link href="/legal/terms" className="underline">Terms</Link>{' · '}
           <Link href="/legal/privacy" className="underline">Privacy</Link>{' · '}
           <Link href="/settings" className="underline">Settings</Link>{' · '}
           <Link href="/credits" className="underline">Credits</Link>{' · '}
