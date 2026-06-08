@@ -1,3 +1,0 @@
-CREATE TABLE IF NOT EXISTS tags (tag TEXT NOT NULL, path TEXT NOT NULL, UNIQUE(tag, path) ON CONFLICT REPLACE);
-     CREATE TABLE IF NOT EXISTS revalidations (tag TEXT NOT NULL, revalidatedAt INTEGER NOT NULL, UNIQUE(tag) ON CONFLICT REPLACE);
-INSERT INTO tags (tag, path) VALUES ("dUfF16so1j6Jmla53v6su/_N_T_/layout", "dUfF16so1j6Jmla53v6su/sitemap.xml"), ("dUfF16so1j6Jmla53v6su/_N_T_/sitemap.xml/layout", "dUfF16so1j6Jmla53v6su/sitemap.xml"), ("dUfF16so1j6Jmla53v6su/_N_T_/sitemap.xml/route", "dUfF16so1j6Jmla53v6su/sitemap.xml"), ("dUfF16so1j6Jmla53v6su/_N_T_/sitemap.xml", "dUfF16so1j6Jmla53v6su/sitemap.xml");

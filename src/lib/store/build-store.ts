@@ -29,6 +29,7 @@ import { cellKey, type Cell, type GridSize, DEFAULT_GRID_SIZE } from '@/lib/grid
 import { defaultPolicyState, type PolicyKey } from '@/lib/scoring/policy';
 
 export type BuildMode = 'build' | 'sim' | 'inspect';
+export type VisualMode = 'standard' | 'thermal';
 
 export interface CameraState {
   position: [number, number, number];
@@ -50,6 +51,7 @@ export interface BuildState extends PureBuildState {
   activeBlockType: string | null; // for placement
   rotation: 0 | 1 | 2 | 3;
   camera: CameraState;
+  visualMode: VisualMode;
 }
 
 export interface BuildActions {
@@ -80,6 +82,7 @@ export interface BuildActions {
   setActiveBlockType: (type: string | null) => void;
   setRotation: (r: 0 | 1 | 2 | 3) => void;
   setCamera: (camera: Partial<CameraState>) => void;
+  setVisualMode: (mode: VisualMode) => void;
 
   // Meta
   rename: (name: string) => void;
@@ -150,6 +153,7 @@ function createInitial(scenarioId = 'free', scenarioName = 'Free Build'): BuildS
       target: [8, 2, 8],
       zoom: 1,
     },
+    visualMode: 'standard',
     name: 'Untitled Build',
     createdAt: Date.now(),
     updatedAt: Date.now(),
