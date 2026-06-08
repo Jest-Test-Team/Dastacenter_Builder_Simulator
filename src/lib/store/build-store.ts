@@ -251,7 +251,7 @@ export const useBuildStore = create<BuildStore>()(
       },
 
       clearAll: () => {
-        set((s) => ({
+        set(() => ({
           voxels: {},
           byCell: {},
           inventory: defaultInventory(),
