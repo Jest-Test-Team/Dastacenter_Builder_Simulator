@@ -74,11 +74,12 @@ export default function VerifyPage() {
 
     // Try as cert ID format: DCB-XXXXXX-XXXX
     const certMatch = id.toUpperCase().match(/^DCB-([A-Z0-9]{6})-/);
-    if (certMatch) {
+    if (certMatch && certMatch[1]) {
       // Search IndexedDB for a build whose ID starts with this prefix
       const { listBuildsFromIDB } = await import('@/lib/persist');
       const builds = await listBuildsFromIDB();
-      const match = builds.find((b) => b.id.toUpperCase().startsWith(certMatch[1]));
+      const prefix = certMatch[1];
+      const match = builds.find((b) => b.id.toUpperCase().startsWith(prefix));
       if (match) {
         const report = score(match.snapshot);
         setState({
