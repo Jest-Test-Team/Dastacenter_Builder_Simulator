@@ -317,6 +317,7 @@ export const DEMO_BUILDS: DemoBuild[] = [
     tier: 'III',
     pue: '~1.4',
     difficulty: 3,
+    categories: ['structure', 'power', 'cooling', 'it', 'safety', 'network', 'site'],
     snapshot: GREENFIELD_TIER3,
   },
   {
@@ -328,6 +329,7 @@ export const DEMO_BUILDS: DemoBuild[] = [
     tier: 'III',
     pue: '≤ 1.3',
     difficulty: 2,
+    categories: ['structure', 'power', 'cooling', 'it', 'safety', 'network', 'site'],
     snapshot: EDGE_MICRO,
   },
   {
@@ -339,6 +341,7 @@ export const DEMO_BUILDS: DemoBuild[] = [
     tier: 'IV',
     pue: '~1.25',
     difficulty: 5,
+    categories: ['structure', 'power', 'cooling', 'it', 'safety', 'network', 'site'],
     snapshot: TIER4_RETROFIT,
   },
 ];
