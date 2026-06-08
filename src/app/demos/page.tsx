@@ -25,9 +25,10 @@ import {
   Cpu,
   Flame,
   Network,
+  type LucideIcon,
 } from 'lucide-react';
 
-const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
   structure: Box,
   site: Shield,
   power: Zap,
