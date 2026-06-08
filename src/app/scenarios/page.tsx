@@ -43,6 +43,7 @@ export default function ScenariosPage() {
                 {s.goal?.maxPue && (
                   <span className="badge">PUE ≤ {s.goal.maxPue}</span>
                 )}
+                <span className="badge">Budget ${s.budgetUsd.toLocaleString()}</span>
               </div>
               <div className="flex flex-wrap gap-1">
                 {s.focus.map((f) => (

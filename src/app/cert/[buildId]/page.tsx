@@ -10,13 +10,17 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
+import { useAccount, useSignMessage } from 'wagmi';
 import { useLoadBuild } from '@/lib/persist';
 import { loadBuildFromIDB } from '@/lib/persist';
 import { useBuildStore } from '@/lib/store/build-store';
 import { score, type RatingReport } from '@/lib/scoring';
+import { buildSiweMessage } from '@/lib/wallet/siwe';
+import { stableSnapshotHash } from '@/lib/utils/identity';
 import { Award, Download, ExternalLink, CheckCircle2 } from 'lucide-react';
 import { CertificateSvg } from '@/components/cert/CertificateSvg';
 import { useT } from '@/lib/i18n/client';
+import { WalletPicker } from '@/components/wallet/WalletPicker';
 
 export default function CertPage() {
   const params = useParams<{ buildId: string }>();
@@ -28,6 +32,9 @@ export default function CertPage() {
   const [issuing, setIssuing] = useState(false);
   const [issued, setIssued] = useState<{ id: string; url?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [blueprintHash, setBlueprintHash] = useState('');
+  const { address, isConnected, chain } = useAccount();
+  const { signMessageAsync } = useSignMessage();
   const t = useT();
 
   useEffect(() => {
@@ -37,6 +44,7 @@ export default function CertPage() {
       if (rec) {
         useBuildStore.getState().loadBuild(rec.snapshot);
         setReport(score(rec.snapshot));
+        setBlueprintHash(await stableSnapshotHash(rec.snapshot));
       }
     })();
   }, [buildId]);
@@ -66,14 +74,36 @@ export default function CertPage() {
   }
 
   async function handleIssue() {
-    if (!buildId) return;
+    if (!buildId || !address || !isConnected) return;
     setIssuing(true);
     setError(null);
     try {
+      const nonceRes = await fetch('/api/auth/nonce');
+      const nonceData = await nonceRes.json();
+      if (!nonceRes.ok) throw new Error(nonceData.error ?? 'Failed to start issuance');
+
+      const message = buildSiweMessage({
+        address,
+        nonce: nonceData.nonce,
+        chainId: chain?.id ?? 1,
+        domain: window.location.host,
+        uri: window.location.origin,
+        statement: `Authorize Credly issuance for blueprint ${blueprintHash}.`,
+      });
+      const signature = await signMessageAsync({ message });
+
       const res = await fetch('/api/credly/issue', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ buildId, recipientEmail, recipientName }),
+        body: JSON.stringify({
+          buildId,
+          recipientEmail,
+          recipientName,
+          blueprintHash,
+          message,
+          signature,
+          walletKind: 'evm',
+        }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? 'Issue failed');
@@ -93,9 +123,12 @@ export default function CertPage() {
             <span className="text-2xl">🖥️</span>
             <span>Datacenter Builder</span>
           </Link>
-          <Link href={`/result/${buildId}`} className="btn-ghost text-sm">
-            Back to results
-          </Link>
+          <div className="flex items-center gap-2">
+            <WalletPicker />
+            <Link href={`/result/${buildId}`} className="btn-ghost text-sm">
+              Back to results
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -177,11 +210,14 @@ export default function CertPage() {
                 {error && <p className="text-xs text-danger">{error}</p>}
                 <button
                   onClick={handleIssue}
-                  disabled={issuing || !recipientEmail}
+                  disabled={issuing || !recipientEmail || !isConnected || !blueprintHash}
                   className="btn w-full"
                 >
                   {issuing ? 'Issuing…' : 'Issue to my email'}
                 </button>
+                <p className="text-[10px] text-fg-muted">
+                  Blueprint hash: <span className="font-mono">{blueprintHash || 'pending'}</span>
+                </p>
                 <p className="text-[10px] text-fg-muted">
                   By issuing you accept the{' '}
                   <Link href="/legal/privacy" className="underline">

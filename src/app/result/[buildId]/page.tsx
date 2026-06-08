@@ -105,6 +105,9 @@ export default function ResultPage() {
             >
               {t('result.retry')}
             </Link>
+            <Link href="/leaderboard" className="btn-ghost">
+              Leaderboard
+            </Link>
             {report.certifiable ? (
               <Link href={`/cert/${buildId}`} className="btn">
                 <Award className="h-4 w-4" />
