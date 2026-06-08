@@ -8,8 +8,8 @@
 'use client';
 
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls, PerspectiveCamera, Grid } from '@react-three/drei';
-import { Suspense, useEffect, useState } from 'react';
+import { OrbitControls, PerspectiveCamera, Grid, Html } from '@react-three/drei';
+import { Suspense, useEffect, useMemo, useState, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { useBuildStore } from '@/lib/store/build-store';
 import { VoxelWorld } from './VoxelWorld';
@@ -148,6 +148,10 @@ function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-function HtmlOverlay({ children }: { children: React.ReactNode }) {
-  return <div className="pointer-events-none absolute inset-0">{children}</div>;
+function HtmlOverlay({ children }: { children: ReactNode }) {
+  return (
+    <Html fullscreen style={{ pointerEvents: 'none' }}>
+      {children}
+    </Html>
+  );
 }
