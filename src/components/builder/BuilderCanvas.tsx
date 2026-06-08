@@ -9,7 +9,7 @@
 
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, PerspectiveCamera, Grid, Html } from '@react-three/drei';
-import { Suspense, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Suspense, useEffect, useState, type ReactNode } from 'react';
 import * as THREE from 'three';
 import { useBuildStore } from '@/lib/store/build-store';
 import { VoxelWorld } from './VoxelWorld';
@@ -35,7 +35,7 @@ export function BuilderCanvas({
   const updatedAt = useBuildStore((s) => s.updatedAt);
   const reducedMotion = useReducedMotion();
   const [dpr, setDpr] = useState<[number, number]>([1, 2]);
-  const report = useMemo(() => score(useBuildStore.getState().exportSnapshot()), [updatedAt]);
+  const report = score(useBuildStore.getState().exportSnapshot());
 
   // Reduce DPR on low-end devices
   useEffect(() => {
