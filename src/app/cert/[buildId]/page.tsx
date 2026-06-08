@@ -10,25 +10,23 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
-import { useAccount, useWalletClient, usePublicClient } from 'wagmi';
+import { useAccount, usePublicClient } from 'wagmi';
+import type { Hash } from 'viem';
 import { useLoadBuild } from '@/lib/persist';
 import { loadBuildFromIDB } from '@/lib/persist';
 import { useBuildStore } from '@/lib/store/build-store';
 import { score, type RatingReport } from '@/lib/scoring';
-import { stableSnapshotHash } from '@/lib/utils/identity';
 import { Award, Download, ExternalLink, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { CertificateSvg } from '@/components/cert/CertificateSvg';
 import { useT } from '@/lib/i18n/client';
 import { WalletPicker } from '@/components/wallet/WalletPicker';
 import {
-  mintCertificate,
+  computeBlueprintHash,
   hasCertificate,
   getTestnetTokenReminder,
   isTestnetChain,
-  getExplorerUrl,
-  estimateMintGas,
   SUPPORTED_CHAINS,
-  type MintResult,
+  type MintCertificateServerResult,
 } from '@/lib/sbt';
 
 export default function CertPage() {
@@ -38,16 +36,14 @@ export default function CertPage() {
   const [report, setReport] = useState<RatingReport | null>(null);
   const [recipientName, setRecipientName] = useState('');
   const [minting, setMinting] = useState(false);
-  const [minted, setMinted] = useState<MintResult | null>(null);
+  const [minted, setMinted] = useState<MintCertificateServerResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [blueprintHash, setBlueprintHash] = useState('');
+  const [blueprintHash, setBlueprintHash] = useState<Hash | ''>('');
   const [selectedChainId, setSelectedChainId] = useState<number | null>(null);
   const [alreadyMinted, setAlreadyMinted] = useState(false);
-  const [gasEstimate, setGasEstimate] = useState<{ eth: string; usd: string } | null>(null);
   const [svgDataUri, setSvgDataUri] = useState('');
   
   const { address, isConnected, chain } = useAccount();
-  const { data: walletClient } = useWalletClient();
   const publicClient = usePublicClient();
   const t = useT();
 
@@ -58,7 +54,7 @@ export default function CertPage() {
       if (rec) {
         useBuildStore.getState().loadBuild(rec.snapshot);
         setReport(score(rec.snapshot));
-        const hash = await stableSnapshotHash(rec.snapshot);
+        const hash = computeBlueprintHash(rec.snapshot);
         setBlueprintHash(hash);
         
         // Generate SVG data URI
@@ -88,37 +84,13 @@ export default function CertPage() {
     if (!blueprintHash || !selectedChainId || !publicClient) return;
     void (async () => {
       try {
-        const exists = await hasCertificate(blueprintHash as any, selectedChainId, publicClient);
+        const exists = await hasCertificate(blueprintHash, selectedChainId, publicClient);
         setAlreadyMinted(exists);
       } catch (err) {
         console.error('Failed to check certificate:', err);
       }
     })();
   }, [blueprintHash, selectedChainId, publicClient]);
-
-  // Estimate gas when chain or address changes
-  useEffect(() => {
-    if (!address || !selectedChainId || !blueprintHash || !report || !publicClient) return;
-    void (async () => {
-      try {
-        const estimate = await estimateMintGas(
-          {
-            recipientAddress: address,
-            report,
-            buildId: buildId ?? '',
-            blueprintHash,
-            recipientName,
-            chainId: selectedChainId,
-          },
-          publicClient
-        );
-        setGasEstimate({ eth: estimate.gasCostEth, usd: estimate.gasCostUsd });
-      } catch (err) {
-        console.error('Failed to estimate gas:', err);
-        setGasEstimate(null);
-      }
-    })();
-  }, [address, selectedChainId, blueprintHash, report, publicClient, buildId, recipientName]);
 
   if (!report) {
     return (
@@ -145,7 +117,7 @@ export default function CertPage() {
   }
 
   async function handleMint() {
-    if (!buildId || !address || !isConnected || !report || !selectedChainId || !walletClient || !publicClient) {
+    if (!buildId || !address || !isConnected || !report || !selectedChainId || !svgDataUri) {
       return;
     }
     
@@ -153,21 +125,28 @@ export default function CertPage() {
     setError(null);
     
     try {
-      const result = await mintCertificate(
-        {
-          recipientAddress: address,
-          report,
+      const res = await fetch('/api/credly/issue', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          snapshot: useBuildStore.getState().exportSnapshot(),
           buildId,
-          blueprintHash,
+          recipientAddress: address,
           recipientName: recipientName || 'Anonymous Builder',
           svgDataUri,
           chainId: selectedChainId,
-        },
-        walletClient,
-        publicClient
-      );
-      
-      setMinted(result);
+        }),
+      });
+
+      const data = (await res.json().catch(() => null)) as MintCertificateServerResult | { error?: string } | null;
+      if (!res.ok) {
+        if (res.status === 409) setAlreadyMinted(true);
+        throw new Error(data && 'error' in data && data.error ? data.error : 'Minting failed');
+      }
+
+      setMinted(data as MintCertificateServerResult);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Minting failed');
     } finally {
@@ -241,6 +220,9 @@ export default function CertPage() {
                   Token ID: #{minted.tokenId.toString()}
                 </p>
                 <p className="mt-1 text-[10px] text-fg-muted">
+                  Tx: <span className="font-mono">{minted.transactionHash.slice(0, 18)}…</span>
+                </p>
+                <p className="mt-1 text-[10px] text-fg-muted">
                   Storage: {minted.metadata.provider.toUpperCase()} (${minted.metadata.cost.estimated.toFixed(4)})
                 </p>
                 <a
@@ -311,17 +293,10 @@ export default function CertPage() {
                 />
 
                 {/* Gas estimate */}
-                {gasEstimate && (
-                  <p className="text-[10px] text-fg-muted">
-                    Estimated gas: ~{gasEstimate.eth} {SUPPORTED_CHAINS[Object.keys(SUPPORTED_CHAINS).find(k => SUPPORTED_CHAINS[k].chainId === selectedChainId) ?? '']?.nativeCurrency.symbol} 
-                    (${gasEstimate.usd})
-                  </p>
-                )}
-
                 {error && <p className="text-xs text-danger">{error}</p>}
                 
                 <button
-                  onClick={handleMint}
+                  onClick={() => void handleMint()}
                   disabled={minting || !isConnected || !blueprintHash || !svgDataUri || alreadyMinted}
                   className="btn w-full"
                 >
@@ -342,11 +317,7 @@ export default function CertPage() {
                   Blueprint hash: <span className="font-mono">{blueprintHash || 'pending'}</span>
                 </p>
                 <p className="text-[10px] text-fg-muted">
-                  Soulbound tokens cannot be transferred. By minting you accept the{' '}
-                  <Link href="/legal/privacy" className="underline">
-                    privacy policy
-                  </Link>
-                  . You pay gas fees directly.
+                  The server relays the mint transaction to the selected chain. Soulbound tokens cannot be transferred.
                 </p>
               </div>
             )}

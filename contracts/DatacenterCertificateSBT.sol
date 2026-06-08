@@ -62,7 +62,7 @@ contract DatacenterCertificateSBT is ERC721, Ownable {
         address recipient,
         bytes32 blueprintHash,
         string memory metadataURI
-    ) external returns (uint256) {
+    ) external onlyOwner returns (uint256) {
         require(recipient != address(0), "Invalid recipient");
         require(blueprintHash != bytes32(0), "Invalid blueprint hash");
         require(_blueprintToToken[blueprintHash] == 0, "Certificate already exists for this blueprint");

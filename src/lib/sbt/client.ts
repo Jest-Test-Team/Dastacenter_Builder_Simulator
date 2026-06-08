@@ -1,6 +1,6 @@
 /**
  * SBT Client - 與智能合約互動的客戶端
- * 
+ *
  * 功能:
  * - 鑄造憑證 SBT
  * - 查詢用戶的憑證
@@ -8,7 +8,7 @@
  * - 多鏈支援
  */
 
-import { type Hash, type Address, encodePacked, keccak256 } from 'viem';
+import { type Address, type Hash, encodePacked, keccak256 } from 'viem';
 import type { RatingReport } from '@/lib/scoring';
 import type { BuildSnapshot } from '@/lib/store/build-store';
 import { getChainConfig, isTestnetChain, getFaucetUrl, getExplorerUrl } from './chains';
@@ -46,6 +46,40 @@ export interface CertificateInfo {
   mintedAt?: Date;
 }
 
+type SbtReceiptLog = {
+  address: Address;
+  topics: readonly Hash[];
+};
+
+type SbtPublicClient = {
+  readContract: (args: {
+    address: Address;
+    abi: readonly unknown[];
+    functionName: string;
+    args?: readonly unknown[];
+  }) => Promise<unknown>;
+  simulateContract: (args: {
+    address: Address;
+    abi: readonly unknown[];
+    functionName: string;
+    args?: readonly unknown[];
+    account: Address;
+  }) => Promise<{ request: unknown }>;
+  waitForTransactionReceipt: (args: { hash: Hash }) => Promise<{ logs: SbtReceiptLog[] }>;
+  estimateContractGas: (args: {
+    address: Address;
+    abi: readonly unknown[];
+    functionName: string;
+    args?: readonly unknown[];
+    account: Address;
+  }) => Promise<bigint>;
+  getGasPrice: () => Promise<bigint>;
+};
+
+type SbtWalletClient = {
+  writeContract: (request: unknown) => Promise<Hash>;
+};
+
 /**
  * 獲取合約地址（根據鏈 ID）
  */
@@ -68,7 +102,7 @@ export function computeBlueprintHash(snapshot: BuildSnapshot): Hash {
 export async function hasCertificate(
   blueprintHash: Hash,
   chainId: number,
-  publicClient: any
+  publicClient: SbtPublicClient
 ): Promise<boolean> {
   const contractAddress = getSBTContractAddress(chainId);
   if (!contractAddress) return false;
@@ -93,7 +127,7 @@ export async function hasCertificate(
 export async function getUserCertificates(
   userAddress: Address,
   chainId: number,
-  publicClient: any
+  publicClient: SbtPublicClient
 ): Promise<bigint[]> {
   const contractAddress = getSBTContractAddress(chainId);
   if (!contractAddress) return [];
@@ -118,7 +152,7 @@ export async function getUserCertificates(
 export async function getCertificateInfo(
   tokenId: bigint,
   chainId: number,
-  publicClient: any
+  publicClient: SbtPublicClient
 ): Promise<CertificateInfo | null> {
   const contractAddress = getSBTContractAddress(chainId);
   if (!contractAddress) return null;
@@ -181,8 +215,8 @@ export async function getCertificateInfo(
  */
 export async function mintCertificate(
   params: MintCertificateParams,
-  walletClient: any,
-  publicClient: any
+  walletClient: SbtWalletClient,
+  publicClient: SbtPublicClient
 ): Promise<MintResult> {
   const { recipientAddress, report, buildId, blueprintHash, recipientName, svgDataUri, chainId } = params;
 
@@ -232,7 +266,7 @@ export async function mintCertificate(
 
   // 6. 從事件日誌中提取 tokenId
   const mintEvent = receipt.logs.find(
-    (log: any) =>
+    (log) =>
       log.address.toLowerCase() === contractAddress.toLowerCase() &&
       log.topics[0] === keccak256(encodePacked(['string'], ['CertificateMinted(address,uint256,bytes32,string)']))
   );
@@ -241,7 +275,11 @@ export async function mintCertificate(
     throw new Error('Mint event not found in transaction receipt');
   }
 
-  const tokenId = BigInt(mintEvent.topics[2]);
+  const tokenIdTopic = mintEvent.topics[2];
+  if (!tokenIdTopic) {
+    throw new Error('Mint event missing tokenId topic');
+  }
+  const tokenId = BigInt(tokenIdTopic);
 
   return {
     tokenId,
@@ -256,7 +294,7 @@ export async function mintCertificate(
  */
 export async function estimateMintGas(
   params: Omit<MintCertificateParams, 'svgDataUri'>,
-  publicClient: any
+  publicClient: SbtPublicClient
 ): Promise<{ gasEstimate: bigint; gasCostEth: string; gasCostUsd: string }> {
   const { recipientAddress, chainId, blueprintHash } = params;
 

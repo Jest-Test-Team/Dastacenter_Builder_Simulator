@@ -67,15 +67,22 @@ export function buildCertificateMetadata(
   blueprintHash: string,
   recipientWallet: string,
   recipientName: string,
-  svgDataUri: string
+  svgDataUri: string,
+  baseUrl?: string
 ): CertificateMetadata {
+  const level = report.level;
+  const appUrl =
+    baseUrl ??
+    (typeof window !== 'undefined' ? window.location.origin : process.env.NEXT_PUBLIC_APP_URL) ??
+    'https://datacenter-builder.com';
+
   return {
-    name: `Datacenter Builder Certificate - ${report.certLevel}`,
-    description: `Certificate for completing a ${report.certLevel} level datacenter design. Score: ${report.score}/100, Tier: ${report.tier}`,
+    name: `Datacenter Builder Certificate - ${level}`,
+    description: `Certificate for completing a ${level} level datacenter design. Score: ${report.score}/100, Tier: ${report.tier}`,
     image: svgDataUri,
-    external_url: `https://datacenter-builder.com/cert/${buildId}`,
+    external_url: `${appUrl.replace(/\/$/, '')}/cert/${buildId}`,
     attributes: [
-      { trait_type: 'Level', value: report.certLevel },
+      { trait_type: 'Level', value: level },
       { trait_type: 'Score', value: report.score },
       { trait_type: 'Uptime Tier', value: report.tier },
       { trait_type: 'Recipient', value: recipientName || 'Anonymous Builder' },
@@ -89,7 +96,7 @@ export function buildCertificateMetadata(
       issuedAt: new Date().toISOString(),
       score: report.score,
       tier: report.tier,
-      certLevel: report.certLevel,
+      certLevel: level,
     },
   };
 }
