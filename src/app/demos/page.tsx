@@ -12,7 +12,6 @@ import Link from 'next/link';
 import { useBuildStore } from '@/lib/store/build-store';
 import { encodeBuildToShareToken } from '@/lib/persist/share';
 import { DEMO_BUILDS, type DemoBuild } from '@/lib/demos';
-import { useT } from '@/lib/i18n/client';
 import { AppHeader } from '@/components/layout/AppHeader';
 import {
   Copy,
