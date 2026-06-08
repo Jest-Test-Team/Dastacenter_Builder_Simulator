@@ -15,7 +15,7 @@
 - [ ] `/.well-known/security.txt` published with PGP key.
 - [ ] Sentry project created; DSN set in `NEXT_PUBLIC_SENTRY_DSN`; sample error received.
 - [ ] PostHog project created; consent banner tested.
-- [ ] Credly organization created; 4 templates (Bronze/Silver/Gold/Platinum) configured; first test issue verified end-to-end.
+- [ ] SBT minter key configured; contract deployed and first test mint verified end-to-end on Polygon Amoy.
 - [ ] WalletConnect project ID set in `NEXT_PUBLIC_WC_PROJECT_ID`.
 - [ ] Domain DNS: A / CNAME records pointed; DNSSEC on; CAA record for the chosen CA.
 - [ ] TLS: certificate issued; HSTS preload request submitted.
@@ -37,7 +37,7 @@
 - [ ] Production deploy triggered.
 - [ ] Smoke test: build → score → cert round-trip from a fresh browser profile.
 - [ ] Wallet auth: sign in with MetaMask + WalletConnect + Coinbase + Phantom (EVM).
-- [ ] Credly push: end-to-end test of one badge issue.
+- [ ] SBT mint: end-to-end test of one certificate issue.
 - [ ] `curl -fsS https://<domain>/api/health` returns 200.
 - [ ] All 14 routes return 200 (no 5xx, no 4xx on `/`).
 - [ ] No `console.error` in the browser console on any route.
@@ -69,7 +69,7 @@
 - [ ] Watch Sentry for spikes.
 - [ ] Watch Vercel logs for spikes.
 - [ ] Check status page: still green?
-- [ ] Manual review of first 10 user builds (in the public Credly feed).
+- [ ] Manual review of first 10 user builds (in the public certificate feed).
 - [ ] Triaging queue: any bug reports in support inbox?
 
 ## T+24h
@@ -82,7 +82,7 @@
 
 ## Post-launch (first week)
 
-- [ ] Monitor Credly publish rate; expect < 1% of builds to publish.
+- [ ] Monitor certificate mint rate; expect < 1% of builds to mint.
 - [ ] Monitor session-cookie error rate; expect < 0.1%.
 - [ ] Monitor wallet connect failures; expect < 2%.
 - [ ] Open GitHub issues for any reported bugs.

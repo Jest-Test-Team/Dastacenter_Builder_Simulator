@@ -22,11 +22,11 @@
 
 ## Authorization (server routes)
 
-- `/api/credly/issue` — requires:
-  1. Valid session.
-  2. Score ≥ 40.
-  3. Body includes the wallet address; must match the session.
-  4. User has explicitly opted in (checkbox in the cert UI).
+- `/api/credly/issue` — SBT mint relay requires:
+  1. Valid request body with snapshot, wallet address, and SVG payload.
+  2. Certifiable score from re-running the scoring engine.
+  3. Configured server-side minter private key.
+  4. A deployed contract address for the selected chain.
 
 ## Cryptographic guarantees
 
@@ -42,8 +42,8 @@
 
 - All builds live in IndexedDB on the user's device.
 - A "share link" is a LZ-string-compressed snapshot in the URL —
-  nothing leaves the browser unless the user clicks "publish to
-  Credly" or "email me a copy".
+  nothing leaves the browser unless the user clicks "mint the
+  certificate" or exports a copy.
 
 ## No tracking by default
 
@@ -62,7 +62,7 @@
 | XSS via 3D content | R3F never renders arbitrary HTML; only geometry + textures |
 | XSS via cert SVG | SVG built with React JSX; no innerHTML |
 | Snapshot tampering | buildId = SHA-256(snapshot); verifier re-runs the score |
-| Credly spam | session + score ≥ 40 + opt-in |
+| Unauthorized minting | server-side signer key only; contract `onlyOwner` mint |
 | Session theft | httpOnly secure sameSite=strict cookie, 12 h TTL |
 | CSP bypass | strict CSP; nonce-based script tags in `_document.tsx` |
 

@@ -81,7 +81,7 @@ export default function LeaderboardPage() {
                         {entry.issuedBadgeUrl ? (
                           <a href={entry.issuedBadgeUrl} target="_blank" rel="noreferrer" className="badge border-success/30 text-success">
                             <ShieldCheck className="mr-1 h-3 w-3" />
-                            Credly
+                            SBT
                           </a>
                         ) : (
                           <span className="badge">Validated</span>

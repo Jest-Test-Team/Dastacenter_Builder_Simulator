@@ -38,7 +38,7 @@ export default function AiPolicyPage() {
           <ul className="list-disc space-y-1 pl-6">
             <li>The scoring engine — never.</li>
             <li>The certificate generation — never.</li>
-            <li>The Credly push — never.</li>
+            <li>The SBT mint relay — never.</li>
             <li>Wallet authentication — never.</li>
           </ul>
 

@@ -15,7 +15,7 @@ const TIERS = [
       { label: 'IndexedDB persistence', yes: true },
       { label: 'Share link (LZ-compressed)', yes: true },
       { label: 'Cloud sync across devices', yes: false },
-      { label: 'Credly publish', yes: true },
+      { label: 'On-chain SBT mint', yes: true },
       { label: 'Curriculum reading UI', yes: true },
       { label: 'L2 sim (OPEX, staffing)', yes: false },
     ],
@@ -101,7 +101,7 @@ export default function PricingPage() {
           <dl className="mt-4 space-y-4 text-sm">
             <div>
               <dt className="font-medium">Is there a free tier forever?</dt>
-              <dd className="mt-1 text-fg-muted">Yes. Free includes the full builder and scoring engine. We charge for things that need our infrastructure (sync, multiplayer, Credly relay).</dd>
+              <dd className="mt-1 text-fg-muted">Yes. Free includes the full builder and scoring engine. We charge for things that need our infrastructure (sync, multiplayer, relayed SBT minting).</dd>
             </div>
             <div>
               <dt className="font-medium">Do you offer student / educator pricing?</dt>

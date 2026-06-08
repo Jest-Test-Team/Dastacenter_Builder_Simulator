@@ -45,8 +45,8 @@
 │  /api/auth/verify    → verifies SIWE/SIWS, sets session     │
 │  /api/auth/session   → returns current session              │
 │  /api/auth/logout    → clears session                       │
-│  /api/credly/issue   → server-side POST to Credly REST      │
-│                        (Basic Auth, never in client)        │
+│  /api/credly/issue   → server-side SBT mint relay          │
+│                        (ethers signer, never in client)     │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -64,9 +64,10 @@
 4. **Cert**: the report + buildId + wallet address are rendered into
    an SVG. The QR code points to a verifier URL that re-runs the
    score from the embedded snapshot.
-5. **Credly**: with explicit user consent, the server route POSTs a
-   badge issue to Credly. The route requires a valid session and a
-   certifiable score (≥ 40).
+5. **SBT mint relay**: the server route validates the build, uploads
+   metadata, and relays a mint transaction to the configured EVM
+   chain. The contract enforces non-transferability and duplicate
+   blueprint prevention.
 6. **Sim**: the sim page reads the same store, drops NPCs around the
    build, and runs scheduled events. Player does not intervene here —
    it is the "watch your design operate" mode.
@@ -100,9 +101,9 @@
   snapshot. The verifier endpoint re-runs the score on the embedded
   snapshot. The wallet address on the certificate is part of the
   signed message.
-- **Credly abuse**: the issue route requires a valid session AND a
-  score ≥ 40 AND the user to have explicitly opted in (checkbox
-  visible on the cert page).
+- **Mint abuse**: the issue route requires a valid wallet address, a
+  certifiable score, and the server-side signing secret. The contract
+  owner account is the only mint authority.
 - **XSS**: no `dangerouslySetInnerHTML` anywhere. SVG is built with
   React JSX.
 

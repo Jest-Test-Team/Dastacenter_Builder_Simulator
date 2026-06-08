@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   title: 'Datacenter Builder Simulator',
   description:
     'Build a data center in a Lego/Minecraft style, get rated against Uptime, TIA-942, ASHRAE, NFPA, ISO 27001, EU EED, and earn a verifiable certificate.',
-  keywords: ['data center', 'simulator', 'uptime', 'tia-942', 'ashrae', 'nfpa', 'iso 27001', 'learning', 'credly'],
+  keywords: ['data center', 'simulator', 'uptime', 'tia-942', 'ashrae', 'nfpa', 'iso 27001', 'learning', 'blockchain', 'sbt'],
   authors: [{ name: 'Datacenter Builder Simulator' }],
   openGraph: {
     title: 'Datacenter Builder Simulator',

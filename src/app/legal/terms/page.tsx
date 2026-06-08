@@ -19,7 +19,7 @@ const SECTIONS: { title: string; body: string }[] = [
   },
   {
     title: '5. User content',
-    body: 'You retain ownership of any builds ("User Content") you create. By using the Service, you grant us a non-exclusive, royalty-free, worldwide license to host, transmit, and display your User Content solely to operate the Service. We will not sell or share your User Content with third parties except as required to publish a Credly badge at your explicit request.',
+    body: 'You retain ownership of any builds ("User Content") you create. By using the Service, you grant us a non-exclusive, royalty-free, worldwide license to host, transmit, and display your User Content solely to operate the Service. We will not sell or share your User Content with third parties except as required to mint an SBT certificate at your explicit request.',
   },
   {
     title: '6. Acceptable use',

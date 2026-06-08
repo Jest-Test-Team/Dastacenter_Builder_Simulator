@@ -36,8 +36,8 @@ export default function HomePage() {
             <p className="mt-4 text-lg text-fg-muted">
               A 3D Lego/Minecraft-style simulator that teaches you to design a real
               data center. Get rated against Uptime, TIA-942, EN 50600, ASHRAE, NFPA,
-              ISO 27001, EU EED, and more — and publish a verifiable certificate to
-              Credly.
+              ISO 27001, EU EED, and more — then mint a verifiable SBT certificate
+              on-chain.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Link href="/build/free" className="btn text-base">
@@ -82,7 +82,7 @@ export default function HomePage() {
             <FeatureCard icon={<Flame className="h-6 w-6" />} title="Safety" desc="VESDA, FM-200, EPO, MFA readers." color="safety" />
             <FeatureCard icon={<Network className="h-6 w-6" />} title="Network" desc="Firewalls, IDS/IPS, WAF, SIEM, honeypots." color="network" />
             <FeatureCard icon={<Shield className="h-6 w-6" />} title="Security Policy" desc="5 functions × 3 deterrence types. Toggles." />
-            <FeatureCard icon={<Award className="h-6 w-6" />} title="Certificate" desc="Wallet-signed, Credly-issuable, verifiable." />
+            <FeatureCard icon={<Award className="h-6 w-6" />} title="Certificate" desc="Wallet-linked, SBT-mintable, verifiable." />
           </div>
         </section>
 
@@ -112,8 +112,8 @@ export default function HomePage() {
               panel to set non-3D controls.
             </Step>
             <Step n={3} title="Get rated & claim your cert">
-              See your Uptime Tier, PUE, security score. Optionally publish to
-              Credly.
+              See your Uptime Tier, PUE, security score. Mint a verifiable SBT
+              certificate.
             </Step>
           </ol>
         </section>

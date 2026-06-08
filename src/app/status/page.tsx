@@ -5,7 +5,7 @@ const SERVICES = [
   { name: 'Web app', status: 'operational' },
   { name: 'API', status: 'operational' },
   { name: 'Wallet auth (SIWE / SIWS)', status: 'operational' },
-  { name: 'Credly relay', status: 'operational' },
+  { name: 'SBT mint relay', status: 'operational' },
   { name: 'IndexedDB persistence', status: 'operational' },
   { name: 'Curriculum pages', status: 'operational' },
 ];

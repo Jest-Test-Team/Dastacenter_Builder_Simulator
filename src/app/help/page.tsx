@@ -38,7 +38,7 @@ const FAQ: { q: string; a: string }[] = [
   },
   {
     q: 'Where is my build stored?',
-    a: "In your browser's IndexedDB. Nothing is sent to a server unless you choose to publish to Credly. You can export your build as JSON at any time.",
+    a: 'In your browser\'s IndexedDB. Nothing is sent to a server unless you choose to mint the certificate or export your build as JSON.',
   },
   {
     q: 'Can I share my build?',

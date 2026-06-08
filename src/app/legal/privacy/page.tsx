@@ -34,8 +34,8 @@ export default function PrivacyPage() {
           <p className="mt-1 text-fg-muted">
             All builds are stored locally in your browser's IndexedDB. They
             do not leave your device unless you explicitly click "Share"
-            (which embeds the snapshot in a URL fragment) or "Publish to
-            Credly" (which sends a badge request through our relay).
+            (which embeds the snapshot in a URL fragment) or mint the
+            certificate (which sends a signed transaction through our relay).
           </p>
         </section>
 

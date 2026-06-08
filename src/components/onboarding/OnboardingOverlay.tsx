@@ -50,7 +50,7 @@ const STEPS = [
   {
     icon: Award,
     title: 'Earn your certificate',
-    body: 'Get rated and claim a verifiable SVG certificate with QR code. Optionally publish to Credly as a digital badge.',
+    body: 'Get rated and mint a verifiable SBT certificate with QR code. The chain stores the proof, and anyone can verify it.',
     color: 'text-warn',
   },
 ];
