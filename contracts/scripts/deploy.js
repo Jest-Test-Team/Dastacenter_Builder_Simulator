@@ -5,7 +5,8 @@ async function main() {
 
   const [deployer] = await hre.ethers.getSigners();
   console.log("Deploying with account:", deployer.address);
-  console.log("Account balance:", (await deployer.getBalance()).toString());
+  const balance = await hre.ethers.provider.getBalance(deployer.address);
+  console.log("Account balance:", balance.toString());
 
   // Deploy parameters
   const name = "Datacenter Builder Certificate";
@@ -15,22 +16,23 @@ async function main() {
   const DatacenterCertificateSBT = await hre.ethers.getContractFactory("DatacenterCertificateSBT");
   const sbt = await DatacenterCertificateSBT.deploy(name, symbol, baseTokenURI);
 
-  await sbt.deployed();
+  await sbt.waitForDeployment();
 
-  console.log("✅ DatacenterCertificateSBT deployed to:", sbt.address);
+  const address = await sbt.getAddress();
+  console.log("✅ DatacenterCertificateSBT deployed to:", address);
   console.log("\nAdd this to your .env.local:");
-  console.log(`NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY=${sbt.address}`);
+  console.log(`NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY=${address}`);
 
   // Wait for block confirmations before verification
   console.log("\nWaiting for block confirmations...");
-  await sbt.deployTransaction.wait(5);
+  await sbt.deploymentTransaction().wait(5);
 
   // Verify contract on block explorer (if not local network)
   if (hre.network.name !== "hardhat" && hre.network.name !== "localhost") {
     console.log("\nVerifying contract on block explorer...");
     try {
       await hre.run("verify:verify", {
-        address: sbt.address,
+        address: address,
         constructorArguments: [name, symbol, baseTokenURI],
       });
       console.log("✅ Contract verified!");
