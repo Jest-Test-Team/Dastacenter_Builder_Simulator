@@ -34,7 +34,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const locale = await getServerLocale();
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body>
+      <body className="min-h-screen overflow-x-hidden overflow-y-auto">
         <SkipLink />
         <Providers>
           {children}
