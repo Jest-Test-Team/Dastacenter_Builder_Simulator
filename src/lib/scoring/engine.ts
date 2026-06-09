@@ -98,7 +98,8 @@ export interface RatingReport {
   budgetPenaltyApplied: boolean;
 }
 
-const CERT_THRESHOLD = 40;
+const DEFAULT_CERT_THRESHOLD = 40;
+const CERT_THRESHOLD = readCertThreshold();
 
 /** Public scoring entry point. */
 export function score(state: BuildState): RatingReport {
@@ -177,6 +178,13 @@ export function score(state: BuildState): RatingReport {
 }
 
 const RULE_PACK_VERSION = '0.1.0';
+
+function readCertThreshold(): number {
+  const raw = process.env.NEXT_PUBLIC_CERT_THRESHOLD ?? process.env.CERT_THRESHOLD;
+  if (!raw) return DEFAULT_CERT_THRESHOLD;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) ? parsed : DEFAULT_CERT_THRESHOLD;
+}
 
 function clamp(v: number, min: number, max: number) {
   return Math.max(min, Math.min(max, v));
