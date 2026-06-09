@@ -293,3 +293,8 @@ MIT — see `LICENSE`.
 - Deploy SBT contracts to all supported chains
 - Set up IPFS/Arweave storage API keys
 - Configure the leaderboard D1 binding
+
+## smart contract
+- Contract address: 0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB  
+- Network: Polygon Amoy testnet (chain 80002)
+- You can view it: https://amoy.polygonscan.com/address/0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB
