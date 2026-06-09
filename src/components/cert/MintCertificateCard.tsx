@@ -18,11 +18,17 @@ import type { RatingReport } from '@/lib/scoring';
 import { useBuildStore } from '@/lib/store/build-store';
 import { CertificateSvg } from '@/components/cert/CertificateSvg';
 import { WalletPicker } from '@/components/wallet/WalletPicker';
-import { computeBlueprintHash, hasCertificate, getTestnetTokenReminder } from '@/lib/sbt/client';
+import {
+  computeBlueprintHash,
+  getSBTContractAddress,
+  hasCertificate,
+  getTestnetTokenReminder,
+} from '@/lib/sbt/client';
 import { isTestnetChain, SUPPORTED_CHAINS } from '@/lib/sbt/chains';
 import type { MintCertificateServerResult } from '@/lib/sbt/server';
 
 const DEFAULT_CHAIN_ID = 11155111; // Ethereum Sepolia
+const MINTABLE_CHAINS = Object.values(SUPPORTED_CHAINS).filter((chain) => getSBTContractAddress(chain.chainId));
 
 export function MintCertificateCard({
   report,
@@ -55,10 +61,17 @@ export function MintCertificateCard({
 
   // Prefer the wallet's current chain if it's one we support.
   useEffect(() => {
-    if (chain && SUPPORTED_CHAINS && Object.values(SUPPORTED_CHAINS).some((c) => c.chainId === chain.id)) {
+    if (
+      chain &&
+      MINTABLE_CHAINS.some((c) => c.chainId === chain.id)
+    ) {
       setSelectedChainId(chain.id);
+      return;
     }
-  }, [chain]);
+    if (!MINTABLE_CHAINS.some((c) => c.chainId === selectedChainId) && MINTABLE_CHAINS[0]) {
+      setSelectedChainId(MINTABLE_CHAINS[0].chainId);
+    }
+  }, [chain, selectedChainId]);
 
   // Check whether this blueprint was already minted on the selected chain.
   useEffect(() => {
@@ -181,7 +194,7 @@ export function MintCertificateCard({
               onChange={(e) => setSelectedChainId(Number(e.target.value))}
             >
               <optgroup label="Testnets">
-                {Object.values(SUPPORTED_CHAINS)
+                {MINTABLE_CHAINS
                   .filter((c) => c.isTestnet)
                   .map((c) => (
                     <option key={c.chainId} value={c.chainId}>
@@ -190,7 +203,7 @@ export function MintCertificateCard({
                   ))}
               </optgroup>
               <optgroup label="Mainnets">
-                {Object.values(SUPPORTED_CHAINS)
+                {MINTABLE_CHAINS
                   .filter((c) => !c.isTestnet)
                   .map((c) => (
                     <option key={c.chainId} value={c.chainId}>
