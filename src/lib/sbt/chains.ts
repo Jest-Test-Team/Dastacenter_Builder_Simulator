@@ -29,6 +29,37 @@ export interface ChainConfig {
   faucetUrl?: string; // For testnets
 }
 
+function getEnvRpcUrl(chainId: number, network?: string): string | null {
+  const keys =
+    chainId === 80002
+      ? ['POLYGON_AMOY_RPC', 'NEXT_PUBLIC_POLYGON_AMOY_RPC']
+      : chainId === 137
+        ? ['POLYGON_RPC', 'NEXT_PUBLIC_POLYGON_RPC']
+        : chainId === 11155111
+          ? ['SEPOLIA_RPC', 'NEXT_PUBLIC_SEPOLIA_RPC']
+          : chainId === 1
+            ? ['ETHEREUM_RPC', 'NEXT_PUBLIC_ETHEREUM_RPC']
+            : chainId === 97
+              ? ['BSC_TESTNET_RPC', 'NEXT_PUBLIC_BSC_TESTNET_RPC']
+              : chainId === 56
+                ? ['BSC_RPC', 'NEXT_PUBLIC_BSC_RPC']
+                : chainId === 42161
+                  ? ['ARBITRUM_RPC', 'NEXT_PUBLIC_ARBITRUM_RPC']
+                  : chainId === 10
+                    ? ['OPTIMISM_RPC', 'NEXT_PUBLIC_OPTIMISM_RPC']
+                    : chainId === 8453
+                      ? ['BASE_RPC', 'NEXT_PUBLIC_BASE_RPC']
+                      : network
+                        ? [`${network.toUpperCase().replace(/-/g, '_')}_RPC`, `NEXT_PUBLIC_${network.toUpperCase().replace(/-/g, '_')}_RPC`]
+                        : [];
+
+  for (const key of keys) {
+    const value = process.env[key];
+    if (value) return value;
+  }
+  return null;
+}
+
 export const SUPPORTED_CHAINS: Record<string, ChainConfig> = {
   // Polygon Amoy Testnet (替代 Mumbai)
   'polygon-amoy': {
@@ -68,7 +99,7 @@ export const SUPPORTED_CHAINS: Record<string, ChainConfig> = {
     name: 'Sepolia Testnet',
     network: 'sepolia',
     isTestnet: true,
-    rpcUrl: 'https://rpc.sepolia.org',
+    rpcUrl: 'https://11155111.rpc.thirdweb.com',
     blockExplorer: 'https://sepolia.etherscan.io',
     nativeCurrency: {
       name: 'ETH',
@@ -175,6 +206,13 @@ export function getChainConfig(chainIdOrNetwork: number | string): ChainConfig |
     return Object.values(SUPPORTED_CHAINS).find((c) => c.chainId === chainIdOrNetwork) ?? null;
   }
   return SUPPORTED_CHAINS[chainIdOrNetwork] ?? null;
+}
+
+export function getRpcUrl(chainIdOrNetwork: number | string): string | null {
+  const config = getChainConfig(chainIdOrNetwork);
+  if (!config) return null;
+  const envRpc = getEnvRpcUrl(config.chainId, config.network);
+  return envRpc ?? config.rpcUrl;
 }
 
 export function getTestnetChains(): ChainConfig[] {
