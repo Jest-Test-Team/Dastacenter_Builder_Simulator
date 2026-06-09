@@ -42,6 +42,12 @@ const nextConfig = {
   async headers() {
     return [{ source: '/(.*)', headers: securityHeaders }];
   },
+  async rewrites() {
+    return [
+      { source: '/build/free', destination: '/build' },
+      { source: '/build/index', destination: '/build' },
+    ];
+  },
   webpack: (config, { isServer }) => {
     config.module.rules.push({
       test: /\.(glsl|vs|fs|vert|frag)$/,
