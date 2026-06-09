@@ -13,7 +13,7 @@
 
 import { http, createConfig } from 'wagmi';
 import { mainnet, sepolia, base, optimism, arbitrum, polygon, bsc, bscTestnet } from 'wagmi/chains';
-import { injected, metaMask, walletConnect, coinbaseWallet } from 'wagmi/connectors';
+import { injected, walletConnect, coinbaseWallet } from 'wagmi/connectors';
 
 // Polygon Amoy Testnet (不在 wagmi/chains 中，需要手動定義)
 const polygonAmoy = {
@@ -60,7 +60,6 @@ export const wagmiConfig = createConfig({
   ],
   connectors: [
     injected({ shimDisconnect: true }),
-    metaMask(),
     ...(wcProjectId ? [walletConnect({ projectId: wcProjectId, showQrModal: true })] : []),
     coinbaseWallet({ appName: 'Datacenter Builder Simulator' }),
   ],
@@ -88,4 +87,3 @@ declare module 'wagmi' {
 
 // Export for use in other parts of the app
 export { polygonAmoy };
-
