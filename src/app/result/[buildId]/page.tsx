@@ -93,22 +93,42 @@ export default function ResultPage() {
           </ul>
         </section>
 
-        {report.certifiable && buildId && (
+        {buildId && (
           <section className="mt-10">
             <h2 className="flex items-center gap-2 text-xl font-semibold">
               <Award className="h-5 w-5 text-warn" />
-              {t('result.claim')}
+              Web3 Certificate
             </h2>
-            <div className="mt-4 grid gap-6 md:grid-cols-2">
-              <div className="self-start">
-                <CertificateSvg
-                  report={report}
-                  recipientName="Anonymous Builder"
-                  buildId={buildId}
-                />
+            {report.certifiable ? (
+              <div className="mt-4 grid gap-6 md:grid-cols-2">
+                <div className="self-start">
+                  <CertificateSvg
+                    report={report}
+                    recipientName="Anonymous Builder"
+                    buildId={buildId}
+                  />
+                </div>
+                <MintCertificateCard report={report} buildId={buildId} />
               </div>
-              <MintCertificateCard report={report} buildId={buildId} />
-            </div>
+            ) : (
+              <div className="mt-4 panel border border-warn/30 bg-warn/5 p-5">
+                <p className="flex items-center gap-2 font-medium text-warn">
+                  <AlertTriangle className="h-4 w-4" />
+                  This build isn&apos;t certifiable yet
+                </p>
+                <p className="mt-2 text-sm text-fg-muted">
+                  Your score is {report.score}/100 (Tier {report.tier}, {report.level}). To mint an
+                  on-chain certificate, resolve the critical issues above and reach a certifiable
+                  tier. Then the Mint button will appear here.
+                </p>
+                <Link
+                  href={`/build/${useBuildStore.getState().scenarioId}?buildId=${buildId}`}
+                  className="btn mt-4"
+                >
+                  {t('result.retry')}
+                </Link>
+              </div>
+            )}
           </section>
         )}
 

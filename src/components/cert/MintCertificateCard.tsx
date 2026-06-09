@@ -22,7 +22,7 @@ import { computeBlueprintHash, hasCertificate, getTestnetTokenReminder } from '@
 import { isTestnetChain, SUPPORTED_CHAINS } from '@/lib/sbt/chains';
 import type { MintCertificateServerResult } from '@/lib/sbt/server';
 
-const DEFAULT_CHAIN_ID = 80002; // Polygon Amoy
+const DEFAULT_CHAIN_ID = 11155111; // Ethereum Sepolia
 
 export function MintCertificateCard({
   report,

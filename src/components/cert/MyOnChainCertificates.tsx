@@ -1,9 +1,9 @@
 /**
  * Wallet-gated preview of the SBT certificates owned by the connected wallet.
  *
- * Reads directly from the deployed contract on Polygon Amoy (the chain the SBT
- * is deployed on), lists the user's token IDs, and renders the stored metadata
- * image + attributes for each.
+ * Reads directly from the deployed contracts on every chain that has an SBT
+ * contract configured (Polygon Amoy + Ethereum Sepolia), lists the user's
+ * token IDs, and renders the stored metadata image + attributes for each.
  */
 
 'use client';
@@ -18,27 +18,38 @@ import {
   getSBTContractAddress,
   type CertificateInfo,
 } from '@/lib/sbt/client';
-import { getExplorerUrl } from '@/lib/sbt/chains';
+import { getChainConfig, getExplorerUrl } from '@/lib/sbt/chains';
 
-const CHAIN_ID = 80002; // Polygon Amoy — where the SBT contract is deployed
+// Chains the SBT contract is deployed on.
+const AMOY = 80002;
+const SEPOLIA = 11155111;
+
+type OwnedCert = CertificateInfo & { chainId: number };
 
 export function MyOnChainCertificates() {
   const { address, isConnected } = useAccount();
-  // Force a public client on the chain the contract lives on, regardless of
+  // Force public clients on the chains the contracts live on, regardless of
   // which network the wallet is currently switched to.
-  const publicClient = usePublicClient({ chainId: CHAIN_ID });
+  const amoyClient = usePublicClient({ chainId: AMOY });
+  const sepoliaClient = usePublicClient({ chainId: SEPOLIA });
 
   const [loading, setLoading] = useState(false);
-  const [certs, setCerts] = useState<CertificateInfo[]>([]);
+  const [certs, setCerts] = useState<OwnedCert[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!isConnected || !address || !publicClient) {
+    if (!isConnected || !address) {
       setCerts([]);
       return;
     }
-    if (!getSBTContractAddress(CHAIN_ID)) {
-      setError('SBT contract address is not configured for Polygon Amoy.');
+
+    const targets = [
+      { chainId: AMOY, client: amoyClient },
+      { chainId: SEPOLIA, client: sepoliaClient },
+    ].filter((t) => t.client && getSBTContractAddress(t.chainId));
+
+    if (targets.length === 0) {
+      setError('No SBT contract address is configured.');
       return;
     }
 
@@ -47,11 +58,15 @@ export function MyOnChainCertificates() {
       setLoading(true);
       setError(null);
       try {
-        const tokenIds = await getUserCertificates(address, CHAIN_ID, publicClient);
-        const infos = await Promise.all(
-          tokenIds.map((id) => getCertificateInfo(id, CHAIN_ID, publicClient)),
-        );
-        if (!cancelled) setCerts(infos.filter((c): c is CertificateInfo => c !== null));
+        const all: OwnedCert[] = [];
+        for (const { chainId, client } of targets) {
+          const tokenIds = await getUserCertificates(address, chainId, client!);
+          const infos = await Promise.all(
+            tokenIds.map((id) => getCertificateInfo(id, chainId, client!)),
+          );
+          for (const info of infos) if (info) all.push({ ...info, chainId });
+        }
+        if (!cancelled) setCerts(all);
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load certificates');
       } finally {
@@ -62,7 +77,7 @@ export function MyOnChainCertificates() {
     return () => {
       cancelled = true;
     };
-  }, [address, isConnected, publicClient]);
+  }, [address, isConnected, amoyClient, sepoliaClient]);
 
   if (!isConnected) {
     return (
@@ -97,7 +112,7 @@ export function MyOnChainCertificates() {
     return (
       <div className="panel p-6 text-center">
         <ImageOff className="mx-auto h-10 w-10 text-fg-muted/40" />
-        <p className="mt-3 text-fg-muted">No SBT certificates found for this wallet on Polygon Amoy.</p>
+        <p className="mt-3 text-fg-muted">No SBT certificates found for this wallet on Polygon Amoy or Sepolia.</p>
         <p className="mt-1 text-xs text-fg-muted">
           Mint one from your result page after passing the certification threshold.
         </p>
@@ -108,16 +123,17 @@ export function MyOnChainCertificates() {
   return (
     <div className="grid gap-6 sm:grid-cols-2">
       {certs.map((cert) => (
-        <CertCard key={cert.tokenId.toString()} cert={cert} />
+        <CertCard key={`${cert.chainId}-${cert.tokenId.toString()}`} cert={cert} />
       ))}
     </div>
   );
 }
 
-function CertCard({ cert }: { cert: CertificateInfo }) {
+function CertCard({ cert }: { cert: OwnedCert }) {
   const md = cert.metadata;
   const image = md?.image;
   const attrs = md?.attributes ?? [];
+  const chainName = getChainConfig(cert.chainId)?.name ?? `Chain ${cert.chainId}`;
 
   return (
     <div className="panel overflow-hidden">
@@ -134,6 +150,7 @@ function CertCard({ cert }: { cert: CertificateInfo }) {
           <h3 className="font-semibold">{md?.name ?? 'Datacenter Certificate'}</h3>
           <span className="badge text-xs">#{cert.tokenId.toString()}</span>
         </div>
+        <p className="mt-1 text-xs text-fg-muted">{chainName}</p>
 
         {attrs.length > 0 && (
           <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
@@ -148,11 +165,9 @@ function CertCard({ cert }: { cert: CertificateInfo }) {
           </dl>
         )}
 
-        <p className="mt-3 break-all font-mono text-[10px] text-fg-muted">
-          Owner: {cert.owner}
-        </p>
+        <p className="mt-3 break-all font-mono text-[10px] text-fg-muted">Owner: {cert.owner}</p>
         <a
-          href={getExplorerUrl(CHAIN_ID, cert.owner, 'address')}
+          href={getExplorerUrl(cert.chainId, cert.owner, 'address')}
           target="_blank"
           rel="noreferrer"
           className="mt-2 inline-flex items-center gap-1 text-xs text-accent hover:underline"
