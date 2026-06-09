@@ -10,5 +10,11 @@
   },
   "observability": {
     "enabled": true
+  },
+  "vars": {
+    "NEXT_PUBLIC_APP_URL": "https://datacenter-building-simulator.dennisleehappy.org/",
+    "NEXT_PUBLIC_WC_PROJECT_ID": "10ab544899577333e1c63767710a9a4b",
+    "NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY": "0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB",
+    "NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_SEPOLIA": "0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB"
   }
 }
