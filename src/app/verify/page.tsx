@@ -110,12 +110,12 @@ export default function VerifyPage() {
   return (
     <div className="min-h-screen overflow-y-auto bg-bg">
       <header className="border-b border-border bg-bg-panel/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
+        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold">
             <span className="text-2xl">🖥️</span>
             <span>Datacenter Builder</span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             <WalletPicker />
             <Link href="/" className="btn-ghost text-sm">
               Home
@@ -124,7 +124,7 @@ export default function VerifyPage() {
         </div>
       </header>
 
-      <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-6 py-10">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
         <h1 className="flex items-center gap-2 text-2xl font-bold">
           <Shield className="h-6 w-6 text-primary" />
           {t('verifier.title')}
@@ -150,7 +150,7 @@ export default function VerifyPage() {
         <h2 className="text-lg font-semibold">Verify by certificate ID</h2>
 
         {/* Manual input form */}
-        <form onSubmit={handleManualVerify} className="mt-6 flex gap-2">
+        <form onSubmit={handleManualVerify} className="mt-6 flex flex-col gap-2 sm:flex-row">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-muted" />
             <input
@@ -204,7 +204,7 @@ export default function VerifyPage() {
                 </div>
               </div>
 
-              <div className="grid gap-6 md:grid-cols-2">
+              <div className="grid gap-6 lg:grid-cols-2">
                 <div className="panel p-5">
                   <h2 className="text-sm font-semibold">Certificate Details</h2>
                   <dl className="mt-3 space-y-2 text-sm">

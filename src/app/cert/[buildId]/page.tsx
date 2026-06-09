@@ -131,7 +131,6 @@ export default function CertPage() {
         },
         body: JSON.stringify({
           snapshot: useBuildStore.getState().exportSnapshot(),
-          buildId,
           recipientAddress: address,
           recipientName: recipientName || 'Anonymous Builder',
           svgDataUri,
@@ -156,12 +155,12 @@ export default function CertPage() {
   return (
     <div className="min-h-[100dvh] overflow-y-auto bg-bg">
       <header className="border-b border-border bg-bg-panel/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
-          <Link href="/" className="flex items-center gap-2 font-semibold">
+        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold">
             <span className="text-2xl">🖥️</span>
             <span>Datacenter Builder</span>
           </Link>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 sm:justify-end">
             <WalletPicker />
             <Link href={`/result/${buildId}`} className="btn-ghost text-sm">
               Back to results
@@ -170,7 +169,7 @@ export default function CertPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-10">
+      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
         <h1 className="flex items-center gap-2 text-2xl font-bold">
           <Award className="h-6 w-6 text-warn" />
           {t('cert.title')}
@@ -188,7 +187,7 @@ export default function CertPage() {
           />
         </div>
 
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
+        <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
           <section className="panel p-5">
             <h2 className="font-semibold">{t('cert.download')}</h2>
             <p className="mt-1 text-sm text-fg-muted">

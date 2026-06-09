@@ -61,17 +61,17 @@ export default function ResultPage() {
   return (
     <div className="min-h-[100dvh] overflow-y-auto bg-bg">
       <Header />
-      <main className="mx-auto max-w-5xl px-6 py-10">
+      <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
         <Scorecard report={report} />
 
-        <section className="mt-6 grid gap-4 md:grid-cols-4">
+        <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard label="Competition score" value={`${report.competitionScore.toFixed(0)}/1000`} />
           <StatCard label="Build cost" value={`$${report.buildCostUsd.toLocaleString()}`} />
           <StatCard label="Budget" value={`$${report.budgetUsd.toLocaleString()}`} />
           <StatCard label={report.overBudget ? 'Budget status' : 'Budget status'} value={report.overBudget ? 'Over' : 'Within'} tone={report.overBudget ? 'warn' : 'success'} />
         </section>
 
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
+        <div className="mt-8 grid gap-6 lg:grid-cols-2">
           <Breakdown report={report} />
           <Achievements report={report} />
         </div>
@@ -83,7 +83,7 @@ export default function ResultPage() {
               Web3 Certificate
             </h2>
             {report.certifiable ? (
-              <div className="mt-4 grid gap-6 md:grid-cols-2">
+              <div className="mt-4 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">
                 <div className="self-start">
                   <CertificateSvg
                     report={report}
@@ -134,7 +134,7 @@ export default function ResultPage() {
 
        
 
-        <section className="mt-10 flex flex-wrap items-center justify-between gap-4">
+        <section className="mt-10 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-sm text-fg-muted">
               PUE estimate: <span className="font-mono">{report.pue}</span> · WUE:{' '}
@@ -142,7 +142,7 @@ export default function ResultPage() {
               {report.rulePackVersion}
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             <Link
               href={`/build/${useBuildStore.getState().scenarioId}?buildId=${buildId}`}
               className="btn-ghost"
@@ -171,12 +171,12 @@ export default function ResultPage() {
 function Header() {
   return (
     <header className="border-b border-border bg-bg-panel/80 backdrop-blur-md">
-      <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
+      <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold">
           <span className="text-2xl">🖥️</span>
           <span>Datacenter Builder</span>
         </Link>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:justify-end">
           <WalletPicker />
           <Link href="/learn" className="btn-ghost text-sm">
             <BookOpen className="h-4 w-4" />

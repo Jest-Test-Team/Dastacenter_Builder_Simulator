@@ -37,7 +37,7 @@ export function WalletPicker() {
   }
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <span className="badge text-xs">{chain?.name ?? 'Unknown chain'}</span>
       <button
         onClick={() => {
@@ -47,9 +47,9 @@ export function WalletPicker() {
             setTimeout(() => setCopied(false), 1500);
           }
         }}
-        className="flex items-center gap-1 rounded border border-border bg-bg-subtle px-2 py-1 font-mono text-xs hover:bg-bg-panel"
+        className="flex max-w-[11rem] items-center gap-1 rounded border border-border bg-bg-subtle px-2 py-1 font-mono text-xs hover:bg-bg-panel sm:max-w-none"
       >
-        {shortAddress(address ?? '')}
+        <span className="truncate">{shortAddress(address ?? '')}</span>
         {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
       </button>
       <button onClick={() => disconnect()} className="icon-btn" title="Disconnect">
@@ -74,8 +74,11 @@ function WalletModal({
   error: Error | null;
 }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60" onClick={onClose}>
-      <div className="panel w-full max-w-md p-6" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3" onClick={onClose}>
+      <div
+        className="panel max-h-[calc(100dvh-1.5rem)] w-full max-w-md overflow-y-auto p-5 sm:p-6"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-semibold">Connect a wallet</h2>
           <button onClick={onClose} className="icon-btn">

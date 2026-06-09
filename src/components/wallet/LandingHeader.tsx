@@ -9,12 +9,12 @@ import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
 export function LandingHeader() {
   return (
     <header className="border-b border-border bg-bg-panel/80 backdrop-blur-md">
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-3">
-        <Link href="/" className="flex items-center gap-2 font-semibold">
+      <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <Link href="/" className="flex shrink-0 items-center gap-2 font-semibold">
           <span className="text-2xl">🖥️</span>
           <span>Datacenter Builder</span>
         </Link>
-        <nav className="flex items-center gap-2">
+        <nav className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
           <WalletPicker />
           <LocaleSwitcher current={DEFAULT_LOCALE satisfies Locale} />
           <Link href="/learn" className="btn-ghost text-sm">

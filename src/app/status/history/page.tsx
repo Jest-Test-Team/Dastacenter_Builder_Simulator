@@ -3,9 +3,9 @@ import { AppHeader } from '@/components/layout/AppHeader';
 
 export default function StatusHistoryPage() {
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="min-h-screen overflow-y-auto bg-bg">
       <AppHeader />
-      <main id="main" tabIndex={-1} className="mx-auto max-w-3xl px-6 py-10">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <h1 className="text-3xl font-bold">Incident history</h1>
         <div className="panel mt-8 p-6 text-center">
           <p className="font-semibold">No published incidents</p>
