@@ -148,8 +148,8 @@ function isUserWorkerFirst(runWorkerFirst, pathname) {
 var asset_resolver_default = resolver;
 
 // node_modules/@opennextjs/cloudflare/dist/api/config.js
-function defineCloudflareConfig(config = {}) {
-  const { incrementalCache, tagCache, queue, cachePurge, enableCacheInterception = false, routePreloadingBehavior = "none" } = config;
+function defineCloudflareConfig(config2 = {}) {
+  const { incrementalCache, tagCache, queue, cachePurge, enableCacheInterception = false, routePreloadingBehavior = "none" } = config2;
   return {
     default: {
       override: {
@@ -211,11 +211,14 @@ function resolveCdnInvalidation(value = "dummy") {
 }
 
 // open-next.config.ts
-var open_next_config_default = defineCloudflareConfig({
+var config = defineCloudflareConfig({
   // OpenNext Cloudflare configuration
   // See: https://opennext.js.org/cloudflare
-  buildCommand: "npm run build:next"
 });
+var open_next_config_default = {
+  ...config,
+  buildCommand: "npm run build:next"
+};
 export {
   open_next_config_default as default
 };
