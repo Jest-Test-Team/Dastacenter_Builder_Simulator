@@ -12,6 +12,7 @@ import {
   buildCertificateMetadata,
   uploadMetadataAuto,
 } from '@/lib/sbt/metadata';
+import { computeBlueprintHash } from '@/lib/sbt/client';
 import { mintCertificateOnChain } from '@/lib/sbt/server';
 import { stableSnapshotHash } from '@/lib/utils/identity';
 
@@ -21,11 +22,15 @@ const minterPrivateKey = '0x59c6995e998f97a5a0044966f094538c9baf6a4f0a1d5bdbd0b2
 
 type ReceiptLog = { address: string; data: Hex; topics: string[] };
 
-let receiptLogs: ReceiptLog[] = [];
-let contractStub: {
-  hasCertificate: ReturnType<typeof vi.fn>;
-  mintCertificate: ReturnType<typeof vi.fn>;
-};
+const mocks = vi.hoisted(() => ({
+  receiptLogs: [] as ReceiptLog[],
+  contractStub: null as
+    | {
+        hasCertificate: ReturnType<typeof vi.fn>;
+        mintCertificate: ReturnType<typeof vi.fn>;
+      }
+    | null,
+}));
 
 vi.mock('@/lib/sbt/metadata', async () => {
   const actual = await vi.importActual<typeof import('@/lib/sbt/metadata')>('@/lib/sbt/metadata');
@@ -58,11 +63,11 @@ vi.mock('@/lib/sbt/metadata', async () => {
 
 vi.mock('ethers', async () => {
   const actual = await vi.importActual<typeof import('ethers')>('ethers');
-  contractStub = {
+  mocks.contractStub = {
     hasCertificate: vi.fn(async () => false),
     mintCertificate: vi.fn(async () => ({
       hash: '0xdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef',
-      wait: vi.fn(async () => ({ logs: receiptLogs })),
+      wait: vi.fn(async () => ({ logs: mocks.receiptLogs })),
     })),
   };
 
@@ -70,7 +75,7 @@ vi.mock('ethers', async () => {
     ...actual,
     JsonRpcProvider: vi.fn().mockImplementation(() => ({ kind: 'provider' })),
     Wallet: vi.fn().mockImplementation(() => ({ kind: 'wallet' })),
-    Contract: vi.fn().mockImplementation(() => contractStub),
+    Contract: vi.fn().mockImplementation(() => mocks.contractStub),
   };
 });
 
@@ -78,7 +83,7 @@ describe('SBT server mint flow', () => {
   beforeEach(() => {
     process.env.NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_SEPOLIA = contractAddress;
     process.env.SBT_MINTER_PRIVATE_KEY = minterPrivateKey;
-    receiptLogs = [];
+    mocks.receiptLogs = [];
     vi.clearAllMocks();
   });
 
@@ -97,12 +102,9 @@ describe('SBT server mint flow', () => {
 
     const snapshotBuildId = await stableSnapshotHash(snapshot);
     expect(snapshotBuildId).not.toBe(snapshot.buildId);
+    const blueprintHash = computeBlueprintHash(snapshot);
 
-    const blueprintHash = await import('@/lib/sbt/client').then(({ computeBlueprintHash }) =>
-      computeBlueprintHash(snapshot),
-    );
-
-    receiptLogs = [
+    mocks.receiptLogs = [
       {
         address: contractAddress,
         topics: encodeEventTopics({
@@ -149,8 +151,9 @@ describe('SBT server mint flow', () => {
       'data:image/svg+xml;base64,AAA',
       'https://example.com',
     );
-    expect(contractStub.hasCertificate).toHaveBeenCalledWith(blueprintHash);
-    expect(contractStub.mintCertificate).toHaveBeenCalledWith(
+    expect(mocks.contractStub).not.toBeNull();
+    expect(mocks.contractStub!.hasCertificate).toHaveBeenCalledWith(blueprintHash);
+    expect(mocks.contractStub!.mintCertificate).toHaveBeenCalledWith(
       recipientAddress,
       blueprintHash,
       'ipfs://mock-certificate-metadata',
