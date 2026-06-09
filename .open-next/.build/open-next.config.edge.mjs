@@ -212,6 +212,7 @@ function resolveCdnInvalidation(value = "dummy") {
 var open_next_config_default = defineCloudflareConfig({
   // OpenNext Cloudflare configuration
   // See: https://opennext.js.org/cloudflare
+  buildCommand: "npm run build:next"
 });
 export {
   open_next_config_default as default
