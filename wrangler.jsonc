@@ -8,6 +8,13 @@
     "directory": ".open-next/assets",
     "binding": "ASSETS"
   },
+  "d1_databases": [
+    {
+      "binding": "LEADERBOARD_DB",
+      "database_name": "leadeerboard",
+      "database_id": "1ff99801-d812-44f2-b2bd-43390a702fc9"
+    }
+  ],
   "observability": {
     "enabled": true
   },
