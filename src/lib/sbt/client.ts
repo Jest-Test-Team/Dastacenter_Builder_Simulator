@@ -269,24 +269,26 @@ export async function mintCertificate(
   const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
 
   // 6. 從事件日誌中提取 tokenId
-  const mintEvent = receipt.logs.find((log) => log.address.toLowerCase() === contractAddress.toLowerCase());
-
-  if (!mintEvent) {
-    throw new Error('Mint event not found in transaction receipt');
+  let tokenId: bigint | null = null;
+  for (const log of receipt.logs) {
+    if (log.address.toLowerCase() !== contractAddress.toLowerCase()) continue;
+    try {
+      const decoded = decodeEventLog({
+        abi: SBT_CONTRACT_ABI,
+        data: log.data,
+        topics: log.topics,
+      });
+      if (decoded.eventName !== 'CertificateMinted') continue;
+      tokenId = BigInt(decoded.args.tokenId.toString());
+      break;
+    } catch {
+      // Ignore logs that do not match the mint event ABI.
+    }
   }
 
-  const decoded = decodeEventLog({
-    abi: SBT_CONTRACT_ABI,
-    data: mintEvent.data,
-    topics: mintEvent.topics,
-  });
-
-  if (decoded.eventName !== 'CertificateMinted') {
+  if (tokenId === null) {
     throw new Error('Mint event not found in transaction receipt');
   }
-
-  const tokenIdValue = decoded.args.tokenId;
-  const tokenId = BigInt(tokenIdValue.toString());
 
   return {
     tokenId,
