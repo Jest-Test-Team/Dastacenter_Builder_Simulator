@@ -28,7 +28,8 @@ import { isTestnetChain, SUPPORTED_CHAINS } from '@/lib/sbt/chains';
 import type { MintCertificateServerResult } from '@/lib/sbt/server';
 
 const DEFAULT_CHAIN_ID = 11155111; // Ethereum Sepolia
-const MINTABLE_CHAINS = Object.values(SUPPORTED_CHAINS).filter((chain) => getSBTContractAddress(chain.chainId));
+const ALL_CHAINS = Object.values(SUPPORTED_CHAINS);
+const MINTABLE_CHAINS = ALL_CHAINS.filter((chain) => getSBTContractAddress(chain.chainId));
 
 export function MintCertificateCard({
   report,
@@ -194,19 +195,19 @@ export function MintCertificateCard({
               onChange={(e) => setSelectedChainId(Number(e.target.value))}
             >
               <optgroup label="Testnets">
-                {MINTABLE_CHAINS
+                {ALL_CHAINS
                   .filter((c) => c.isTestnet)
                   .map((c) => (
-                    <option key={c.chainId} value={c.chainId}>
+                    <option key={c.chainId} value={c.chainId} disabled={!getSBTContractAddress(c.chainId)}>
                       {c.name} ({c.nativeCurrency.symbol})
                     </option>
                   ))}
               </optgroup>
               <optgroup label="Mainnets">
-                {MINTABLE_CHAINS
+                {ALL_CHAINS
                   .filter((c) => !c.isTestnet)
                   .map((c) => (
-                    <option key={c.chainId} value={c.chainId}>
+                    <option key={c.chainId} value={c.chainId} disabled={!getSBTContractAddress(c.chainId)}>
                       {c.name} ({c.nativeCurrency.symbol})
                     </option>
                   ))}
