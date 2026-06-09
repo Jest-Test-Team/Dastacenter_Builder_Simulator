@@ -75,7 +75,7 @@ export const SUPPORTED_CHAINS: Record<string, ChainConfig> = {
       decimals: 18,
     },
     faucetUrl: 'https://faucet.polygon.technology/',
-    sbtContractAddress: process.env.NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY,
+    sbtContractAddress: '0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB',
   },
 
   // Polygon Mainnet
@@ -107,6 +107,7 @@ export const SUPPORTED_CHAINS: Record<string, ChainConfig> = {
       decimals: 18,
     },
     faucetUrl: 'https://sepoliafaucet.com/',
+    sbtContractAddress: '0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB',
   },
 
   // Ethereum Mainnet
