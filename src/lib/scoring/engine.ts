@@ -98,6 +98,8 @@ export interface RatingReport {
   budgetPenaltyApplied: boolean;
 }
 
+const CERT_THRESHOLD = 40;
+
 /** Public scoring entry point. */
 export function score(state: BuildState): RatingReport {
   const ctx = buildContext(state);
@@ -138,7 +140,7 @@ export function score(state: BuildState): RatingReport {
   const level = deriveLevel(overall, issues);
   const pue = estimatePUE(state);
   const wue = estimateWUE(state);
-  const certifiable = overall >= 60 && tier !== 'F';
+  const certifiable = overall >= CERT_THRESHOLD && tier !== 'F';
   const competition = computeCompetitionScore(state, {
     pue,
     tier,
