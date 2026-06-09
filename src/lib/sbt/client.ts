@@ -8,7 +8,7 @@
  * - 多鏈支援
  */
 
-import { type Address, type Hash, encodePacked, keccak256 } from 'viem';
+import { decodeEventLog, type Address, type Hash, encodePacked, keccak256 } from 'viem';
 import type { RatingReport } from '@/lib/scoring';
 import type { BuildSnapshot } from '@/lib/store/build-store';
 import { getChainConfig, isTestnetChain, getFaucetUrl, getExplorerUrl } from './chains';
@@ -48,6 +48,7 @@ export interface CertificateInfo {
 
 type SbtReceiptLog = {
   address: Address;
+  data: `0x${string}`;
   topics: readonly Hash[];
 };
 
@@ -86,12 +87,15 @@ type SbtWalletClient = {
 export function getSBTContractAddress(chainId: number): Address | null {
   const config = getChainConfig(chainId);
   const network = config?.network;
-  const envOverride =
+  const envKeys =
     chainId === 80002
-      ? process.env.NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY
-      : network
-        ? process.env[`NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_${network.toUpperCase().replace(/-/g, '_')}`]
-        : undefined;
+      ? ['NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY']
+      : chainId === 1
+        ? ['NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_ETHEREUM', 'NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_MAINNET']
+        : network
+          ? [`NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_${network.toUpperCase().replace(/-/g, '_')}`]
+          : [];
+  const envOverride = envKeys.map((key) => process.env[key]).find(Boolean);
   return (envOverride || config?.sbtContractAddress || null) as Address | null;
 }
 
@@ -122,8 +126,7 @@ export async function hasCertificate(
       args: [blueprintHash],
     });
     return result as boolean;
-  } catch (err) {
-    console.error('hasCertificate error:', err);
+  } catch {
     return false;
   }
 }
@@ -147,8 +150,7 @@ export async function getUserCertificates(
       args: [userAddress],
     });
     return result as bigint[];
-  } catch (err) {
-    console.error('getUserCertificates error:', err);
+  } catch {
     return [];
   }
 }
@@ -200,8 +202,8 @@ export async function getCertificateInfo(
       const metadataUrl = resolveMetadataUri(metadataURI as string);
       const res = await fetch(metadataUrl);
       metadata = await res.json();
-    } catch (err) {
-      console.warn('Failed to fetch metadata:', err);
+    } catch {
+      // Metadata lookup is best-effort.
     }
 
     return {
@@ -211,8 +213,7 @@ export async function getCertificateInfo(
       metadata,
       owner: owner as Address,
     };
-  } catch (err) {
-    console.error('getCertificateInfo error:', err);
+  } catch {
     return null;
   }
 }
@@ -251,9 +252,7 @@ export async function mintCertificate(
     svgDataUri
   );
 
-  console.log('Uploading metadata...', { isTestnet, size: JSON.stringify(metadata).length });
   const storageResult = await uploadMetadataAuto(metadata, isTestnet);
-  console.log('Metadata uploaded:', storageResult);
 
   // 4. 鑄造 SBT
   const { request } = await publicClient.simulateContract({
@@ -265,28 +264,29 @@ export async function mintCertificate(
   });
 
   const txHash = await walletClient.writeContract(request);
-  console.log('Minting transaction sent:', txHash);
 
   // 5. 等待交易確認
   const receipt = await publicClient.waitForTransactionReceipt({ hash: txHash });
-  console.log('Transaction confirmed:', receipt);
 
   // 6. 從事件日誌中提取 tokenId
-  const mintEvent = receipt.logs.find(
-    (log) =>
-      log.address.toLowerCase() === contractAddress.toLowerCase() &&
-      log.topics[0] === keccak256(encodePacked(['string'], ['CertificateMinted(address,uint256,bytes32,string)']))
-  );
+  const mintEvent = receipt.logs.find((log) => log.address.toLowerCase() === contractAddress.toLowerCase());
 
   if (!mintEvent) {
     throw new Error('Mint event not found in transaction receipt');
   }
 
-  const tokenIdTopic = mintEvent.topics[2];
-  if (!tokenIdTopic) {
-    throw new Error('Mint event missing tokenId topic');
+  const decoded = decodeEventLog({
+    abi: SBT_CONTRACT_ABI,
+    data: mintEvent.data,
+    topics: mintEvent.topics,
+  });
+
+  if (decoded.eventName !== 'CertificateMinted') {
+    throw new Error('Mint event not found in transaction receipt');
   }
-  const tokenId = BigInt(tokenIdTopic);
+
+  const tokenIdValue = decoded.args.tokenId;
+  const tokenId = BigInt(tokenIdValue.toString());
 
   return {
     tokenId,
