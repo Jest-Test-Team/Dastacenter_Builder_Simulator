@@ -6,17 +6,19 @@
  */
 
 import type { RatingReport } from '@/lib/scoring';
-import QRCodeSVG from 'qrcode.react';
+import QRCode from 'qrcode.react';
 
 export interface CertificateSvgProps {
   report: RatingReport;
   recipientName: string;
   recipientWallet?: string;
   buildId: string;
+  baseUrl?: string;
 }
 
-export function CertificateSvg({ report, recipientName, recipientWallet, buildId }: CertificateSvgProps) {
-  const verifyUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/cert/${buildId}`;
+export function CertificateSvg({ report, recipientName, recipientWallet, buildId, baseUrl }: CertificateSvgProps) {
+  const appUrl = baseUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? 'https://datacenter-building-simulator.dennisleehappy.org';
+  const verifyUrl = `${appUrl.replace(/\/$/, '')}/cert/${buildId}`;
   const date = new Date().toISOString().slice(0, 10);
   const certId = `DCB-${buildId.slice(0, 6).toUpperCase()}-${report.level.toUpperCase()}`;
 
@@ -116,11 +118,10 @@ export function CertificateSvg({ report, recipientName, recipientWallet, buildId
 
       {/* QR + cert id */}
       <g transform="translate(820, 600)">
-        <foreignObject x="-60" y="-60" width="120" height="120">
-          <div style={{ background: 'white', padding: 8, borderRadius: 4 }}>
-            <QRCodeSVG value={verifyUrl} size={104} level="M" />
-          </div>
-        </foreignObject>
+        <rect x="-60" y="-60" width="120" height="120" rx="4" fill="#ffffff" />
+        <g transform="translate(-52, -52)">
+          <QRCode {...({ value: verifyUrl, size: 104, level: 'M', renderAs: 'svg' } as any)} />
+        </g>
       </g>
 
       <text x="500" y="660" textAnchor="middle" fontFamily="monospace" fontSize="10" fill="#64748b">

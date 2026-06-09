@@ -179,12 +179,13 @@ export default function CertPage() {
         </p>
 
         <div className="mt-6">
-          <CertificateSvg
-            report={report}
-            recipientName={recipientName || 'Anonymous Builder'}
-            recipientWallet={address ?? ''}
-            buildId={buildId ?? ''}
-          />
+        <CertificateSvg
+          report={report}
+          recipientName={recipientName || 'Anonymous Builder'}
+          recipientWallet={address ?? ''}
+          buildId={buildId ?? ''}
+          baseUrl={process.env.NEXT_PUBLIC_APP_URL}
+        />
         </div>
 
         <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,420px)]">

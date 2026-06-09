@@ -89,6 +89,7 @@ export default function ResultPage() {
                     report={report}
                     recipientName="Anonymous Builder"
                     buildId={buildId}
+                    baseUrl={process.env.NEXT_PUBLIC_APP_URL}
                   />
                 </div>
                 <MintCertificateCard report={report} buildId={buildId} />
