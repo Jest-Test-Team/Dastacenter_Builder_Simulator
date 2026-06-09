@@ -1,3 +1,11 @@
+/**
+ * SBT certificate mint endpoint.
+ *
+ * The contract's mintCertificate is onlyOwner, so the server relays the mint
+ * using SBT_MINTER_PRIVATE_KEY (the contract owner) and mints the soulbound
+ * NFT directly to the connected user's wallet address. Gasless for the user.
+ */
+
 import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import type { BuildSnapshot } from '@/lib/store/build-store';
