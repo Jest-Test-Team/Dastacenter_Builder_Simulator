@@ -14,7 +14,7 @@
  * Route definitions (routes-manifest, the [scenarioId] server route) are NOT
  * touched — we only rewrite substrings inside `chunks/app/…`.
  */
-import { readdirSync, statSync, renameSync, readFileSync, writeFileSync } from 'node:fs';
+import { readdirSync, statSync, renameSync, readFileSync, writeFileSync, rmSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 const ROOT = '.open-next';
@@ -49,6 +49,9 @@ try {
     const base = full.slice(idx + 1);
     if (/[[\]]/.test(base)) {
       const next = full.slice(0, idx + 1) + strip(base);
+      if (existsSync(next)) {
+        rmSync(next, { recursive: true, force: true });
+      }
       renameSync(full, next);
       renamed++;
     }
