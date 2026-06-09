@@ -59,12 +59,12 @@ export default function TermsPage() {
   return (
     <div className="min-h-screen overflow-y-auto bg-bg">
       <header className="border-b border-border bg-bg-panel/80">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-3">
+        <div className="mx-auto flex max-w-3xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <Link href="/" className="font-semibold">🖥️ Datacenter Builder</Link>
           <Link href="/build/free" className="btn text-sm">Build</Link>
         </div>
       </header>
-      <main id="main" tabIndex={-1} className="mx-auto max-w-3xl px-6 py-10">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <h1 className="text-3xl font-bold">Terms of Service</h1>
         <p className="mt-1 text-xs text-fg-muted">Last updated: 2026-01-15. This is a template; review by counsel before public release.</p>
         <div className="prose prose-invert mt-6 max-w-none text-sm">
