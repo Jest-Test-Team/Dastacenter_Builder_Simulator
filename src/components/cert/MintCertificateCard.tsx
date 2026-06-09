@@ -34,7 +34,7 @@ export function MintCertificateCard({
   const { address, isConnected, chain } = useAccount();
   const [selectedChainId, setSelectedChainId] = useState<number>(DEFAULT_CHAIN_ID);
   // Read from the chain the SBT lives on, not whatever the wallet is on.
-  const publicClient = usePublicClient({ chainId: selectedChainId });
+  const publicClient = usePublicClient({ chainId: selectedChainId as 11155111 });
 
   const svgWrapRef = useRef<HTMLDivElement>(null);
   const [recipientName, setRecipientName] = useState('');
