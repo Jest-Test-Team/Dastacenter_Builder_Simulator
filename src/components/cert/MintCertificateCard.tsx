@@ -94,8 +94,10 @@ export function MintCertificateCard({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          // buildId is intentionally omitted: the server derives it from the
+          // snapshot, which avoids a "Build ID mismatch" when the result page
+          // scores an in-memory build whose id differs from the route param.
           snapshot: useBuildStore.getState().exportSnapshot(),
-          buildId,
           recipientAddress: address,
           recipientName: recipientName || 'Anonymous Builder',
           svgDataUri,

@@ -76,24 +76,7 @@ export default function ResultPage() {
           <Achievements report={report} />
         </div>
 
-        <section className="mt-10">
-          <h2 className="flex items-center gap-2 text-xl font-semibold">
-            <AlertTriangle className="h-5 w-5 text-warn" />
-            {t('result.issues')} ({report.issues.length})
-          </h2>
-          <p className="mt-1 text-sm text-fg-muted">
-            Each issue cites its source standard. Click an issue to see how to fix it.
-          </p>
-          <ul className="mt-4 space-y-2">
-            {report.issues.length === 0 ? (
-              <li className="panel p-4 text-center text-fg-muted">No issues found. Nicely done.</li>
-            ) : (
-              report.issues.map((iss, i) => <IssueRow key={i} issue={iss} />)
-            )}
-          </ul>
-        </section>
-
-        {buildId && (
+         {buildId && (
           <section className="mt-10">
             <h2 className="flex items-center gap-2 text-xl font-semibold">
               <Award className="h-5 w-5 text-warn" />
@@ -131,6 +114,25 @@ export default function ResultPage() {
             )}
           </section>
         )}
+
+        <section className="mt-10">
+          <h2 className="flex items-center gap-2 text-xl font-semibold">
+            <AlertTriangle className="h-5 w-5 text-warn" />
+            {t('result.issues')} ({report.issues.length})
+          </h2>
+          <p className="mt-1 text-sm text-fg-muted">
+            Each issue cites its source standard. Click an issue to see how to fix it.
+          </p>
+          <ul className="mt-4 space-y-2">
+            {report.issues.length === 0 ? (
+              <li className="panel p-4 text-center text-fg-muted">No issues found. Nicely done.</li>
+            ) : (
+              report.issues.map((iss, i) => <IssueRow key={i} issue={iss} />)
+            )}
+          </ul>
+        </section>
+
+       
 
         <section className="mt-10 flex flex-wrap items-center justify-between gap-4">
           <div>
