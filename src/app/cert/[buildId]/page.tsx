@@ -124,7 +124,7 @@ export default function CertPage() {
     setError(null);
     
     try {
-      const res = await fetch('/api/credly/issue', {
+      const res = await fetch('/api/sbt/mint', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

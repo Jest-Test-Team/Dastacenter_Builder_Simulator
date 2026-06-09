@@ -14,8 +14,10 @@ import { loadBuildFromIDB } from '@/lib/persist';
 import { decodeShareToken } from '@/lib/persist/share';
 import { score, type RatingReport } from '@/lib/scoring';
 import { CertificateSvg } from '@/components/cert/CertificateSvg';
+import { MyOnChainCertificates } from '@/components/cert/MyOnChainCertificates';
+import { WalletPicker } from '@/components/wallet/WalletPicker';
 import { useT } from '@/lib/i18n/client';
-import { Shield, CheckCircle, XCircle, ExternalLink, Search } from 'lucide-react';
+import { Shield, CheckCircle, XCircle, ExternalLink, Search, Wallet } from 'lucide-react';
 
 type VerifyState =
   | { status: 'loading' }
@@ -113,9 +115,12 @@ export default function VerifyPage() {
             <span className="text-2xl">🖥️</span>
             <span>Datacenter Builder</span>
           </Link>
-          <Link href="/" className="btn-ghost text-sm">
-            Home
-          </Link>
+          <div className="flex items-center gap-2">
+            <WalletPicker />
+            <Link href="/" className="btn-ghost text-sm">
+              Home
+            </Link>
+          </div>
         </div>
       </header>
 
@@ -125,6 +130,24 @@ export default function VerifyPage() {
           {t('verifier.title')}
         </h1>
         <p className="mt-1 text-fg-muted">{t('verifier.intro')}</p>
+
+        {/* Wallet-gated preview of the user's on-chain SBT certificates */}
+        <section className="mt-8">
+          <h2 className="flex items-center gap-2 text-lg font-semibold">
+            <Wallet className="h-5 w-5 text-primary" />
+            Your NFT certificates
+          </h2>
+          <p className="mt-1 text-sm text-fg-muted">
+            Connect your wallet to preview the Soulbound certificates you own on-chain.
+          </p>
+          <div className="mt-4">
+            <MyOnChainCertificates />
+          </div>
+        </section>
+
+        <div className="my-10 border-t border-border" />
+
+        <h2 className="text-lg font-semibold">Verify by certificate ID</h2>
 
         {/* Manual input form */}
         <form onSubmit={handleManualVerify} className="mt-6 flex gap-2">

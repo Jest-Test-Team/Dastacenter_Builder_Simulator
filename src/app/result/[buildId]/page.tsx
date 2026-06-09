@@ -27,6 +27,9 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useT } from '@/lib/i18n/client';
+import { WalletPicker } from '@/components/wallet/WalletPicker';
+import { MintCertificateCard } from '@/components/cert/MintCertificateCard';
+import { CertificateSvg } from '@/components/cert/CertificateSvg';
 
 export default function ResultPage() {
   const params = useParams<{ buildId: string }>();
@@ -90,6 +93,25 @@ export default function ResultPage() {
           </ul>
         </section>
 
+        {report.certifiable && buildId && (
+          <section className="mt-10">
+            <h2 className="flex items-center gap-2 text-xl font-semibold">
+              <Award className="h-5 w-5 text-warn" />
+              {t('result.claim')}
+            </h2>
+            <div className="mt-4 grid gap-6 md:grid-cols-2">
+              <div className="self-start">
+                <CertificateSvg
+                  report={report}
+                  recipientName="Anonymous Builder"
+                  buildId={buildId}
+                />
+              </div>
+              <MintCertificateCard report={report} buildId={buildId} />
+            </div>
+          </section>
+        )}
+
         <section className="mt-10 flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm text-fg-muted">
@@ -109,9 +131,9 @@ export default function ResultPage() {
               Leaderboard
             </Link>
             {report.certifiable ? (
-              <Link href={`/cert/${buildId}`} className="btn">
+              <Link href={`/cert/${buildId}`} className="btn-ghost">
                 <Award className="h-4 w-4" />
-                {t('result.claim')}
+                Certificate page
                 <ArrowRight className="h-4 w-4" />
               </Link>
             ) : (
@@ -132,10 +154,13 @@ function Header() {
           <span className="text-2xl">🖥️</span>
           <span>Datacenter Builder</span>
         </Link>
-        <Link href="/learn" className="btn-ghost text-sm">
-          <BookOpen className="h-4 w-4" />
-          Curriculum
-        </Link>
+        <div className="flex items-center gap-2">
+          <WalletPicker />
+          <Link href="/learn" className="btn-ghost text-sm">
+            <BookOpen className="h-4 w-4" />
+            Curriculum
+          </Link>
+        </div>
       </div>
     </header>
   );
