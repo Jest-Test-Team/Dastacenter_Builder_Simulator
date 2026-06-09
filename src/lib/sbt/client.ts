@@ -276,7 +276,7 @@ export async function mintCertificate(
       const decoded = decodeEventLog({
         abi: SBT_CONTRACT_ABI,
         data: log.data,
-        topics: log.topics,
+        topics: [...log.topics] as [`0x${string}`, ...`0x${string}`[]],
       });
       if (decoded.eventName !== 'CertificateMinted') continue;
       tokenId = BigInt(decoded.args.tokenId.toString());
