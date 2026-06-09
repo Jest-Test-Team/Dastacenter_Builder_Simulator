@@ -16,6 +16,13 @@ export interface CertificateSvgProps {
   baseUrl?: string;
 }
 
+type QRCodeWithRenderAsProps = {
+  value: string;
+  size: number;
+  level: 'L' | 'M' | 'Q' | 'H';
+  renderAs: 'canvas' | 'svg';
+};
+
 export function CertificateSvg({ report, recipientName, recipientWallet, buildId, baseUrl }: CertificateSvgProps) {
   const appUrl = baseUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? 'https://datacenter-building-simulator.dennisleehappy.org';
   const verifyUrl = `${appUrl.replace(/\/$/, '')}/cert/${buildId}`;
@@ -120,7 +127,7 @@ export function CertificateSvg({ report, recipientName, recipientWallet, buildId
       <g transform="translate(820, 600)">
         <rect x="-60" y="-60" width="120" height="120" rx="4" fill="#ffffff" />
         <g transform="translate(-52, -52)">
-          <QRCode {...({ value: verifyUrl, size: 104, level: 'M', renderAs: 'svg' } as any)} />
+          <QRCode {...({ value: verifyUrl, size: 104, level: 'M', renderAs: 'svg' } satisfies QRCodeWithRenderAsProps)} />
         </g>
       </g>
 
