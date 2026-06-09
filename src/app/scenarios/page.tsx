@@ -9,7 +9,7 @@ export default function ScenariosPage() {
   return (
     <div className="min-h-screen overflow-y-auto bg-bg">
       <AppHeader current="learn" />
-      <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-6 py-10">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
         <h1 className="text-3xl font-bold">Scenarios</h1>
         <p className="mt-2 text-fg-muted">
           Pick a starting brief. Each scenario constrains inventory, emphasizes specific

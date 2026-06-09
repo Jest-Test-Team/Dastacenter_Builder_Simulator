@@ -56,7 +56,7 @@ export default function CreditsPage() {
   return (
     <div className="min-h-screen overflow-y-auto bg-bg">
       <AppHeader />
-      <main id="main" tabIndex={-1} className="mx-auto max-w-3xl px-6 py-10">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <h1 className="text-3xl font-bold">Credits &amp; Attributions</h1>
         <p className="mt-2 text-fg-muted">
           Datacenter Builder Simulator is built on open-source software and informed by
@@ -69,7 +69,7 @@ export default function CreditsPage() {
             <h2 className="text-lg font-semibold">{category}</h2>
             <ul className="panel mt-3 divide-y divide-border">
               {CREDITS.filter((c) => c.category === category).map((credit) => (
-                <li key={credit.name} className="flex items-center justify-between px-5 py-3">
+                <li key={credit.name} className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
                   <div>
                     <span className="font-medium">{credit.name}</span>
                     <span className="ml-2 text-xs text-fg-muted">{credit.license}</span>
@@ -97,7 +97,7 @@ export default function CreditsPage() {
           </p>
           <ul className="panel mt-3 divide-y divide-border">
             {STANDARDS.map((std) => (
-              <li key={std.name} className="flex items-center justify-between px-5 py-3">
+              <li key={std.name} className="flex flex-col gap-2 px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
                 <span className="font-medium">{std.name}</span>
                 <a
                   href={std.url}

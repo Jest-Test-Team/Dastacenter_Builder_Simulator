@@ -91,7 +91,7 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen overflow-y-auto bg-bg">
-      <main id="main" tabIndex={-1} className="mx-auto max-w-3xl px-6 py-10">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <h1 className="text-3xl font-bold">Settings</h1>
         <p className="mt-2 text-fg-muted">Locale, analytics consent, and your local data.</p>
 

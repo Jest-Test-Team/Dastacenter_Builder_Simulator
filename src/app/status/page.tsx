@@ -21,12 +21,12 @@ export default function StatusPage() {
   return (
     <div className="min-h-screen overflow-y-auto bg-bg">
       <header className="border-b border-border bg-bg-panel/80">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-6 py-3">
+        <div className="mx-auto flex max-w-3xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <Link href="/" className="font-semibold">🖥️ Datacenter Builder</Link>
           <Link href="/build/free" className="btn text-sm">Build</Link>
         </div>
       </header>
-      <main id="main" tabIndex={-1} className="mx-auto max-w-3xl px-6 py-10">
+      <main id="main" tabIndex={-1} className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <div className="flex items-center gap-3">
           <Activity className="h-6 w-6" />
           <h1 className="text-2xl font-bold">System status</h1>
@@ -46,7 +46,7 @@ export default function StatusPage() {
         <h2 className="mt-8 text-sm font-semibold uppercase tracking-wide text-fg-muted">Services</h2>
         <ul className="mt-3 space-y-2">
           {SERVICES.map((s) => (
-            <li key={s.name} className="flex items-center justify-between panel p-3 text-sm">
+            <li key={s.name} className="flex flex-col gap-2 panel p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
               <span>{s.name}</span>
               <span className="flex items-center gap-2">
                 {ICONS[s.status as keyof typeof ICONS]}

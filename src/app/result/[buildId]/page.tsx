@@ -195,20 +195,20 @@ function Scorecard({ report }: { report: RatingReport }) {
   const tierDescription = translatedTier !== tierKey ? translatedTier : TIER_LABELS[report.tier];
   return (
     <section className="panel p-6">
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 sm:grid-cols-3">
         <div>
           <p className="label">{t('result.score')}</p>
-          <p className="mt-1 text-6xl font-bold tabular-nums">{report.score}</p>
+          <p className="mt-1 text-4xl font-bold tabular-nums sm:text-6xl">{report.score}</p>
           <p className="text-sm text-fg-muted">/ 100</p>
         </div>
         <div>
           <p className="label">{t('result.tier')}</p>
-          <p className={cn('mt-1 text-6xl font-bold', tierColor(report.tier))}>{report.tier}</p>
+          <p className={cn('mt-1 text-4xl font-bold sm:text-6xl', tierColor(report.tier))}>{report.tier}</p>
           <p className="text-sm text-fg-muted">{tierDescription}</p>
         </div>
         <div>
           <p className="label">{t('result.level')}</p>
-          <p className={cn('mt-1 text-6xl font-bold', levelColor(report.level))}>{report.level}</p>
+          <p className={cn('mt-1 text-4xl font-bold sm:text-6xl', levelColor(report.level))}>{report.level}</p>
           <p className="text-sm text-fg-muted">
             {report.certifiable ? 'Certifiable' : 'Not certifiable'}
           </p>
@@ -376,7 +376,7 @@ function IssueRow({ issue }: { issue: Issue }) {
 
   return (
     <li className="panel p-3">
-      <div className="flex items-start gap-3">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-start">
         {icon}
         <div className="flex-1">
           <div className="flex items-center gap-2">

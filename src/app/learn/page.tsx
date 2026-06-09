@@ -6,7 +6,7 @@ export default function LearnIndex() {
   return (
     <div className="min-h-screen overflow-y-auto bg-bg">
       <header className="border-b border-border bg-bg-panel/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-3">
+        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <Link href="/" className="flex items-center gap-2 font-semibold">
             <span className="text-2xl">🖥️</span>
             <span>Datacenter Builder</span>
@@ -17,7 +17,7 @@ export default function LearnIndex() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-6 py-10">
+      <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
         <h1 className="flex items-center gap-2 text-2xl font-bold">
           <BookOpen className="h-6 w-6" />
           Curriculum
