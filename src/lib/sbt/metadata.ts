@@ -58,6 +58,33 @@ export interface StorageResult {
   provider: StorageProvider;
 }
 
+function createCompactCertificateSvg(label: string): string {
+  const safeLabel = label.replace(/[<>&"]/g, '');
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+      <defs>
+        <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#0f172a"/>
+          <stop offset="100%" stop-color="#1e1b4b"/>
+        </linearGradient>
+      </defs>
+      <rect width="512" height="512" rx="32" fill="url(#g)"/>
+      <circle cx="256" cy="192" r="72" fill="#fbbf24" opacity="0.18"/>
+      <text x="256" y="240" text-anchor="middle" font-family="sans-serif" font-size="24" fill="#f8fafc" font-weight="700">Datacenter Builder</text>
+      <text x="256" y="276" text-anchor="middle" font-family="sans-serif" font-size="16" fill="#cbd5e1">${safeLabel}</text>
+      <text x="256" y="352" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#94a3b8">Verified certificate</text>
+    </svg>
+  `.trim();
+  return `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
+}
+
+export function createCompactCertificateMetadata(metadata: CertificateMetadata): CertificateMetadata {
+  return {
+    ...metadata,
+    image: createCompactCertificateSvg(metadata.certificate.certLevel),
+  };
+}
+
 /**
  * 建立憑證 metadata
  */
@@ -239,15 +266,15 @@ export async function uploadMetadataAuto(
     try {
       return await uploadToIPFS(metadata);
     } catch (err) {
-      console.warn('IPFS upload failed, falling back to on-chain:', err);
-      return createOnChainMetadata(metadata);
+      console.warn('IPFS upload failed, falling back to compact on-chain metadata:', err);
+      return createOnChainMetadata(createCompactCertificateMetadata(metadata));
     }
   }
 
   // 主網: 根據大小選擇
   if (jsonSize < 5000) {
     // < 5KB: 使用鏈上儲存 (最安全)
-    return createOnChainMetadata(metadata);
+    return createOnChainMetadata(createCompactCertificateMetadata(metadata));
   }
 
   // >= 5KB: 優先使用 IPFS，失敗則用 Arweave
