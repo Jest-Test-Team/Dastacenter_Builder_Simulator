@@ -8,6 +8,6 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const limit = Number(url.searchParams.get('limit') ?? '20');
   return NextResponse.json({
-    entries: listLeaderboardEntries(Number.isFinite(limit) ? limit : 20),
+    entries: await listLeaderboardEntries(Number.isFinite(limit) ? limit : 20),
   });
 }

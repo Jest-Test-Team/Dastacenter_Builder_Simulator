@@ -51,7 +51,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: validated.error }, { status: validated.status });
     }
 
-    const row = recordLeaderboardEntry({
+    const row = await recordLeaderboardEntry({
       buildId: validated.buildId,
       walletAddress: verifiedAddress,
       blueprintHash: validated.blueprintHash,

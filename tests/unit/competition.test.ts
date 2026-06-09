@@ -56,8 +56,8 @@ describe('leaderboard store', () => {
     (globalThis as { __dcbLeaderboard?: unknown[] }).__dcbLeaderboard = [];
   });
 
-  it('sorts entries by score then time then id', () => {
-    recordLeaderboardEntry({
+  it('sorts entries by score then time then id', async () => {
+    await recordLeaderboardEntry({
       buildId: 'b',
       walletAddress: '0x2',
       blueprintHash: 'hash-b',
@@ -73,7 +73,7 @@ describe('leaderboard store', () => {
       scenarioName: 'Free Build',
       createdAt: '2026-01-01T00:00:00.000Z',
     });
-    recordLeaderboardEntry({
+    await recordLeaderboardEntry({
       buildId: 'a',
       walletAddress: '0x1',
       blueprintHash: 'hash-a',
@@ -89,7 +89,7 @@ describe('leaderboard store', () => {
       scenarioName: 'Free Build',
       createdAt: '2026-01-02T00:00:00.000Z',
     });
-    const top = listLeaderboardEntries(2);
+    const top = await listLeaderboardEntries(2);
     expect(top[0]?.buildId).toBe('a');
     expect(top[1]?.buildId).toBe('b');
   });
