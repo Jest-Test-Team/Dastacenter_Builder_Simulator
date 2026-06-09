@@ -5,9 +5,10 @@ require("dotenv").config({ path: require("path").resolve(__dirname, "../.env.loc
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
   solidity: {
-    version: "0.8.20",
+    version: "0.8.24",
     settings: {
       optimizer: { enabled: true, runs: 200 },
+      evmVersion: "cancun",
     },
   },
   networks: {
@@ -39,7 +40,7 @@ module.exports = {
     ],
   },
   paths: {
-    sources: "./",
+    sources: "./src",
     cache: "./cache",
     artifacts: "./artifacts",
   },

@@ -61,3 +61,4 @@ storybook-static/
 /.open-next
 /.open-next
 .github/workflows/continue.txt
+/contracts/artifacts
