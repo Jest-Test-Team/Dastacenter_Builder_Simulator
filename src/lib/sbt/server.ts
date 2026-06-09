@@ -3,7 +3,7 @@ import type { Address } from 'viem';
 import type { BuildSnapshot } from '@/lib/store/build-store';
 import { score, type RatingReport } from '@/lib/scoring';
 import { stableSnapshotHash } from '@/lib/utils/identity';
-import { getChainConfig, getExplorerUrl, isTestnetChain } from './chains';
+import { getChainConfig, getExplorerUrl, getRpcUrl, isTestnetChain } from './chains';
 import { computeBlueprintHash, getSBTContractAddress } from './client';
 import { buildCertificateMetadata, uploadMetadataAuto, type StorageResult } from './metadata';
 import { SBT_CONTRACT_ABI } from './abi';
@@ -98,7 +98,7 @@ export async function mintCertificateOnChain(
     throw new MintError(500, 'Missing SBT_MINTER_PRIVATE_KEY or PRIVATE_KEY');
   }
 
-  const provider = new JsonRpcProvider(chain.rpcUrl);
+  const provider = new JsonRpcProvider(getRpcUrl(chainId) ?? chain.rpcUrl);
   const wallet = new Wallet(privateKey, provider);
   const contract = new Contract(contractAddress, SBT_CONTRACT_ABI, wallet) as Contract & {
     hasCertificate(blueprintHash: string): Promise<boolean>;
