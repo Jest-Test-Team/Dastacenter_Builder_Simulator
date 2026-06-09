@@ -3,7 +3,6 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Counters.sol";
 
 /**
  * @title DatacenterCertificateSBT
@@ -17,9 +16,7 @@ import "@openzeppelin/contracts/utils/Counters.sol";
  * - Gas-efficient minting
  */
 contract DatacenterCertificateSBT is ERC721, Ownable {
-    using Counters for Counters.Counter;
-    
-    Counters.Counter private _tokenIds;
+    uint256 private _tokenIds;
     
     // Mapping from tokenId to metadata URI (IPFS/Arweave hash)
     mapping(uint256 => string) private _tokenURIs;
@@ -67,8 +64,8 @@ contract DatacenterCertificateSBT is ERC721, Ownable {
         require(blueprintHash != bytes32(0), "Invalid blueprint hash");
         require(_blueprintToToken[blueprintHash] == 0, "Certificate already exists for this blueprint");
         
-        _tokenIds.increment();
-        uint256 newTokenId = _tokenIds.current();
+        _tokenIds += 1;
+        uint256 newTokenId = _tokenIds;
         
         _safeMint(recipient, newTokenId);
         _tokenURIs[newTokenId] = metadataURI;
@@ -143,7 +140,7 @@ contract DatacenterCertificateSBT is ERC721, Ownable {
      * @dev Get total supply
      */
     function totalSupply() external view returns (uint256) {
-        return _tokenIds.current();
+        return _tokenIds;
     }
     
     // ========== SOULBOUND OVERRIDES ==========
