@@ -27,6 +27,16 @@ import {
 } from '@/lib/blocks';
 import { cellKey, type Cell, type GridSize, DEFAULT_GRID_SIZE } from '@/lib/grid';
 import { defaultPolicyState, type PolicyKey } from '@/lib/scoring/policy';
+import {
+  createDefaultNetwork,
+  evaluateIntent,
+  type ControllerIntent,
+  type NetworkLayer,
+  type NetworkLink,
+  type NetworkNode,
+  type NetworkPolicy,
+  type SpatialUnit,
+} from '@/lib/network';
 
 export type BuildMode = 'build' | 'sim' | 'inspect';
 export type VisualMode = 'standard' | 'thermal';
@@ -43,6 +53,7 @@ export interface BuildState extends PureBuildState {
 
   // World
   gridSize: GridSize;
+  network: ReturnType<typeof createDefaultNetwork>;
 
   // UI
   mode: BuildMode;
@@ -52,6 +63,9 @@ export interface BuildState extends PureBuildState {
   rotation: 0 | 1 | 2 | 3;
   camera: CameraState;
   visualMode: VisualMode;
+  networkLayer: NetworkLayer;
+  selectedNetworkNodeId: string | null;
+  highlightedLinkIds: string[];
 }
 
 export interface BuildActions {
@@ -83,6 +97,21 @@ export interface BuildActions {
   setRotation: (r: 0 | 1 | 2 | 3) => void;
   setCamera: (camera: Partial<CameraState>) => void;
   setVisualMode: (mode: VisualMode) => void;
+  setNetworkLayer: (layer: NetworkLayer) => void;
+  setSelectedNetworkNode: (id: string | null) => void;
+  setHighlightedLinks: (ids: string[]) => void;
+
+  // Spatial and SDN graph
+  upsertSpace: (space: SpatialUnit) => void;
+  toggleSpaceVisibility: (id: string) => void;
+  upsertNetworkNode: (node: NetworkNode) => void;
+  removeNetworkNode: (id: string) => void;
+  upsertNetworkLink: (link: NetworkLink) => void;
+  toggleNetworkLink: (id: string) => void;
+  upsertNetworkPolicy: (policy: NetworkPolicy) => void;
+  upsertControllerIntent: (intent: ControllerIntent) => void;
+  validateControllerIntent: (id: string, deploy?: boolean) => void;
+  loadNetworkTemplate: () => void;
 
   // Meta
   rename: (name: string) => void;
@@ -113,6 +142,9 @@ export type BuildSnapshot = PureBuildState &
       | 'rotation'
       | 'camera'
       | 'visualMode'
+      | 'networkLayer'
+      | 'selectedNetworkNodeId'
+      | 'highlightedLinkIds'
     >
   >;
 
@@ -168,6 +200,10 @@ function createInitial(scenarioId = 'free', scenarioName = 'Free Build'): BuildS
       zoom: 1,
     },
     visualMode: 'standard',
+    network: createDefaultNetwork(),
+    networkLayer: 'physical',
+    selectedNetworkNodeId: null,
+    highlightedLinkIds: [],
     name: 'Untitled Build',
     createdAt: Date.now(),
     updatedAt: Date.now(),
@@ -275,6 +311,9 @@ export const useBuildStore = create<BuildStore>()(
           inventory: defaultInventory(),
           selectedInstanceId: null,
           hoveredCell: null,
+          network: createDefaultNetwork(),
+          selectedNetworkNodeId: null,
+          highlightedLinkIds: [],
           updatedAt: Date.now(),
         }));
       },
@@ -300,6 +339,99 @@ export const useBuildStore = create<BuildStore>()(
       setRotation: (r) => set({ rotation: r }),
       setCamera: (camera) => set((s) => ({ camera: { ...s.camera, ...camera } })),
       setVisualMode: (visualMode) => set({ visualMode }),
+      setNetworkLayer: (networkLayer) => set({ networkLayer }),
+      setSelectedNetworkNode: (selectedNetworkNodeId) => set({ selectedNetworkNodeId }),
+      setHighlightedLinks: (highlightedLinkIds) => set({ highlightedLinkIds }),
+
+      upsertSpace: (space) =>
+        set((s) => ({
+          network: { ...s.network, spaces: { ...s.network.spaces, [space.id]: space } },
+          updatedAt: Date.now(),
+        })),
+      toggleSpaceVisibility: (id) =>
+        set((s) => {
+          const space = s.network.spaces[id];
+          if (!space) return s;
+          return {
+            network: {
+              ...s.network,
+              spaces: { ...s.network.spaces, [id]: { ...space, visible: !space.visible } },
+            },
+          };
+        }),
+      upsertNetworkNode: (node) =>
+        set((s) => ({
+          network: { ...s.network, nodes: { ...s.network.nodes, [node.id]: node } },
+          updatedAt: Date.now(),
+        })),
+      removeNetworkNode: (id) =>
+        set((s) => {
+          const nodes = { ...s.network.nodes };
+          delete nodes[id];
+          const links = Object.fromEntries(
+            Object.entries(s.network.links).filter(
+              ([, link]) => link.sourceNodeId !== id && link.targetNodeId !== id,
+            ),
+          );
+          return {
+            network: { ...s.network, nodes, links },
+            selectedNetworkNodeId: s.selectedNetworkNodeId === id ? null : s.selectedNetworkNodeId,
+            updatedAt: Date.now(),
+          };
+        }),
+      upsertNetworkLink: (link) =>
+        set((s) => ({
+          network: { ...s.network, links: { ...s.network.links, [link.id]: link } },
+          updatedAt: Date.now(),
+        })),
+      toggleNetworkLink: (id) =>
+        set((s) => {
+          const link = s.network.links[id];
+          if (!link) return s;
+          return {
+            network: {
+              ...s.network,
+              links: { ...s.network.links, [id]: { ...link, enabled: !link.enabled } },
+            },
+            updatedAt: Date.now(),
+          };
+        }),
+      upsertNetworkPolicy: (policy) =>
+        set((s) => ({
+          network: { ...s.network, policies: { ...s.network.policies, [policy.id]: policy } },
+          updatedAt: Date.now(),
+        })),
+      upsertControllerIntent: (intent) =>
+        set((s) => ({
+          network: { ...s.network, intents: { ...s.network.intents, [intent.id]: intent } },
+          updatedAt: Date.now(),
+        })),
+      validateControllerIntent: (id, deploy = false) =>
+        set((s) => {
+          const intent = s.network.intents[id];
+          if (!intent) return s;
+          const result = evaluateIntent(s.network, intent);
+          return {
+            network: {
+              ...s.network,
+              intents: {
+                ...s.network.intents,
+                [id]: {
+                  ...intent,
+                  status: result.ok ? (deploy ? 'deployed' : 'validated') : 'failed',
+                  lastMessage: result.message,
+                },
+              },
+            },
+            highlightedLinkIds: result.primary?.linkIds ?? [],
+            updatedAt: Date.now(),
+          };
+        }),
+      loadNetworkTemplate: () =>
+        set((s) => ({
+          network: createEnterpriseTemplate(s.network.spaces),
+          updatedAt: Date.now(),
+        })),
 
       rename: (name) => set({ name, updatedAt: Date.now() }),
       setScenario: (id, name) => set({ scenarioId: id, scenarioName: name, updatedAt: Date.now() }),
@@ -311,7 +443,15 @@ export const useBuildStore = create<BuildStore>()(
         useBuildStore.temporal.getState().clear();
       },
 
-      loadBuild: (snapshot) => set(() => ({ ...snapshot, updatedAt: Date.now() })),
+      loadBuild: (snapshot) =>
+        set(() => ({
+          ...snapshot,
+          network: snapshot.network ?? createDefaultNetwork(),
+          networkLayer: snapshot.networkLayer ?? 'physical',
+          selectedNetworkNodeId: null,
+          highlightedLinkIds: [],
+          updatedAt: Date.now(),
+        })),
 
       exportSnapshot: () => {
         const s = get();
@@ -331,6 +471,10 @@ export const useBuildStore = create<BuildStore>()(
           rotation: 0,
           camera: s.camera,
           visualMode: 'standard',
+          network: s.network,
+          networkLayer: s.networkLayer,
+          selectedNetworkNodeId: null,
+          highlightedLinkIds: [],
           name: s.name,
           createdAt: s.createdAt,
           updatedAt: s.updatedAt,
@@ -345,6 +489,7 @@ export const useBuildStore = create<BuildStore>()(
           byCell: state.byCell,
           inventory: state.inventory,
           policies: state.policies,
+          network: state.network,
           name: state.name,
           scenarioId: state.scenarioId,
           scenarioName: state.scenarioName,
@@ -386,3 +531,99 @@ export function countByType(state: BuildState): Record<string, number> {
 
 /** Categories export for UI. */
 export { CATEGORIES };
+
+function createEnterpriseTemplate(spaces: BuildState['network']['spaces']): BuildState['network'] {
+  const node = (
+    id: string,
+    name: string,
+    kind: NetworkNode['kind'],
+    x: number,
+    z: number,
+    spaceId = 'hall-a',
+  ): NetworkNode => ({
+    id,
+    name,
+    kind,
+    spaceId,
+    position: { x, y: 1, z },
+    ports: [0, 1, 2, 3].map((index) => ({
+      id: `${id}-p${index}`,
+      name: `Eth${index}`,
+      kind: 'fiber',
+      speedGbps: kind === 'server' ? 25 : 100,
+      adminUp: true,
+    })),
+  });
+  const nodes = [
+    node('sdn-1', 'SDN Controller', 'controller', 4, 4, 'room-network'),
+    node('fw-1', 'Edge Firewall', 'firewall', 7, 4, 'room-network'),
+    node('spine-1', 'Spine A', 'spine', 15, 7),
+    node('spine-2', 'Spine B', 'spine', 15, 12),
+    node('leaf-1', 'Leaf A', 'leaf', 21, 7),
+    node('leaf-2', 'Leaf B', 'leaf', 21, 12),
+    node('server-1', 'Application Server', 'server', 27, 7),
+    node('server-2', 'Database Server', 'server', 27, 12),
+  ];
+  const nodeMap = Object.fromEntries(nodes.map((item) => [item.id, item]));
+  const pairs: Array<[string, string, string, number, number]> = [
+    ['l1', 'sdn-1', 'fw-1', 0, 0],
+    ['l2', 'fw-1', 'spine-1', 1, 0],
+    ['l3', 'fw-1', 'spine-2', 2, 0],
+    ['l4', 'spine-1', 'leaf-1', 1, 0],
+    ['l5', 'spine-1', 'leaf-2', 2, 0],
+    ['l6', 'spine-2', 'leaf-1', 1, 1],
+    ['l7', 'spine-2', 'leaf-2', 2, 1],
+    ['l8', 'leaf-1', 'server-1', 2, 0],
+    ['l9', 'leaf-2', 'server-1', 2, 1],
+    ['l10', 'leaf-1', 'server-2', 3, 0],
+    ['l11', 'leaf-2', 'server-2', 3, 1],
+  ];
+  const links = Object.fromEntries(
+    pairs.map(([id, a, b, ap, bp]) => [
+      id,
+      {
+        id,
+        sourceNodeId: a,
+        sourcePortId: nodeMap[a]!.ports[ap]!.id,
+        targetNodeId: b,
+        targetPortId: nodeMap[b]!.ports[bp]!.id,
+        medium: 'fiber' as const,
+        bandwidthGbps: 100,
+        redundancyGroup: a.includes('spine') || b.includes('spine') ? 'fabric' : undefined,
+        vlanIds: [10, 20],
+        vrf: 'enterprise',
+        vxlanVni: 10010,
+        securityZone: b.startsWith('server') ? 'application' : 'infrastructure',
+        enabled: true,
+      },
+    ]),
+  );
+  const policy: NetworkPolicy = {
+    id: 'policy-app-db',
+    name: 'Application to database',
+    sourceZone: 'application',
+    destinationZone: 'database',
+    action: 'allow',
+    protocol: 'tcp',
+    destinationPort: 5432,
+    priority: 100,
+    enabled: true,
+  };
+  const intent: ControllerIntent = {
+    id: 'intent-app-db',
+    name: 'Resilient application path',
+    controllerNodeId: 'sdn-1',
+    sourceNodeId: 'server-1',
+    destinationNodeId: 'server-2',
+    requiredBandwidthGbps: 20,
+    requireRedundancy: true,
+    status: 'draft',
+  };
+  return {
+    spaces,
+    nodes: nodeMap,
+    links,
+    policies: { [policy.id]: policy },
+    intents: { [intent.id]: intent },
+  };
+}

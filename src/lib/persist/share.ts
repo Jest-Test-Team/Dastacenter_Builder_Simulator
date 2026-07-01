@@ -74,6 +74,7 @@ function stripForShare(s: Partial<BuildSnapshot> & Partial<BuildState>) {
     updatedAt: s.updatedAt ?? 0,
     shareToken: s.shareToken,
     policies: (live.policies ?? {}) as BuildSnapshot['policies'],
+    network: hasNetworkContent(s.network) ? s.network : undefined,
     // UI fields, reset to defaults
     scenarioName: live.scenarioName ?? '',
     gridSize: live.gridSize ?? { w: 32, h: 8, d: 32 },
@@ -83,7 +84,21 @@ function stripForShare(s: Partial<BuildSnapshot> & Partial<BuildState>) {
     activeBlockType: null,
     rotation: 0,
     camera: live.camera ?? { position: [16, 16, 16], target: [0, 0, 0], zoom: 1 },
+    networkLayer: 'physical',
+    selectedNetworkNodeId: null,
+    highlightedLinkIds: [],
   };
+}
+
+function hasNetworkContent(network: BuildSnapshot['network']): boolean {
+  if (!network) return false;
+  return (
+    Object.keys(network.nodes).length > 0 ||
+    Object.keys(network.links).length > 0 ||
+    Object.keys(network.policies).length > 0 ||
+    Object.keys(network.intents).length > 0 ||
+    Object.keys(network.spaces).length > 5
+  );
 }
 
 /** Build a shareable URL for a given origin. */

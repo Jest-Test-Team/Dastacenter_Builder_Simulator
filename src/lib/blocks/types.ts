@@ -12,6 +12,7 @@
 
 import { z } from 'zod';
 import { defaultPolicyState, type PolicyState } from '@/lib/scoring/policy';
+import { createDefaultNetwork, type NetworkState } from '@/lib/network';
 
 export const BlockCategorySchema = z.enum([
   'structure',
@@ -69,7 +70,11 @@ export const BlockDefSchema = z.object({
   shortName: z.string().optional(),
   description: z.string(),
   /** 1m voxel size [w, h, d] — minimum 1×1×1. */
-  size: z.tuple([z.number().int().positive(), z.number().int().positive(), z.number().int().positive()]),
+  size: z.tuple([
+    z.number().int().positive(),
+    z.number().int().positive(),
+    z.number().int().positive(),
+  ]),
   /** Color for placeholder/ghost rendering (hex). */
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   /** Tags for search/filter. */
@@ -134,6 +139,8 @@ export interface BuildState {
   shareToken?: string;
   /** Non-spatial toggles (deterrence, 5 functions, ESG, privacy). */
   policies: PolicyState;
+  /** Spatial hierarchy and first-class physical/logical network graph. */
+  network?: NetworkState;
 }
 
 /** Returns a fresh, fully-defaulted BuildState. */
@@ -149,5 +156,6 @@ export function emptyState(): BuildState {
     createdAt: now,
     updatedAt: now,
     policies: defaultPolicyState(),
+    network: createDefaultNetwork(),
   };
 }

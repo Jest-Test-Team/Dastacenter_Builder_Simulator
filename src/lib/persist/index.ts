@@ -10,19 +10,10 @@
 
 import { useCallback, useEffect } from 'react';
 import { create } from 'zustand';
-import {
-  get as idbGet,
-  set as idbSet,
-  del as idbDel,
-  keys as idbKeys,
-} from 'idb-keyval';
+import { get as idbGet, set as idbSet, del as idbDel, keys as idbKeys } from 'idb-keyval';
 import type { BuildSnapshot } from '@/lib/store/build-store';
 import { useBuildStore } from '@/lib/store/build-store';
-import {
-  buildStore,
-  ensureDatabaseReady,
-  settingsStore,
-} from '@/lib/persist/database';
+import { buildStore, ensureDatabaseReady, settingsStore } from '@/lib/persist/database';
 
 export interface PersistedBuild {
   id: string;
@@ -125,7 +116,12 @@ export function useAutoSave(enabled = true) {
     if (!enabled) return;
     let timer: ReturnType<typeof setTimeout> | null = null;
     const unsub = useBuildStore.subscribe((state, prev) => {
-      if (state.voxels === prev.voxels && state.policies === prev.policies) return;
+      if (
+        state.voxels === prev.voxels &&
+        state.policies === prev.policies &&
+        state.network === prev.network
+      )
+        return;
       if (timer) clearTimeout(timer);
       timer = setTimeout(() => {
         void saveBuildToIDB(useBuildStore.getState().exportSnapshot());

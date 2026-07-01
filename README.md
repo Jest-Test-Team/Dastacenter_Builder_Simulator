@@ -294,6 +294,10 @@ CI workflow (`.github/workflows/ci.yml`) runs typecheck, lint, test, and build o
 
 ## Contributing
 
+Enterprise facility hierarchy, network topology, SDN overlays, path/failure
+simulation, and controller intents are documented in
+[`docs/NETWORK_SDN.md`](docs/NETWORK_SDN.md).
+
 See `docs/ROADMAP.md` and `PLAN.md` for the open work. Major changes should
 land with tests and a docs update. Run `npm run lint && npm run typecheck &&
 npm test` before pushing.

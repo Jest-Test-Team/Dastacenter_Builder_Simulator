@@ -18,6 +18,7 @@ import { SiteEnvironment } from './SiteEnvironment';
 import { CctvCoverage } from './CctvCoverage';
 import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
 import { score } from '@/lib/scoring';
+import { NetworkOverlay3D } from './NetworkOverlay3D';
 
 export interface BuilderCanvasProps {
   showGrid?: boolean;
@@ -102,6 +103,7 @@ export function BuilderCanvas({
         <SiteEnvironment />
         <VoxelWorld />
         <CctvCoverage />
+        <NetworkOverlay3D />
         {showPreview && <PlacementPreview />}
         <BuildMetricsHud report={report} />
       </Suspense>
@@ -126,7 +128,8 @@ function BuildMetricsHud({ report }: { report: ReturnType<typeof score> }) {
             <Metric label="Budget" value={`$${report.budgetUsd.toLocaleString()}`} />
           </div>
           <div className="mt-2 rounded border border-border/60 bg-bg-subtle p-2 text-[10px] text-fg-muted">
-            Power load: {report.totalITLoadKW.toFixed(0)} kW · Facility: {report.totalFacilityPowerKW.toFixed(0)} kW
+            Power load: {report.totalITLoadKW.toFixed(0)} kW · Facility:{' '}
+            {report.totalFacilityPowerKW.toFixed(0)} kW
             {report.overBudget ? ' · over budget penalty active' : ''}
           </div>
           {visualMode === 'thermal' && report.breakdown.cooling < 50 && (
