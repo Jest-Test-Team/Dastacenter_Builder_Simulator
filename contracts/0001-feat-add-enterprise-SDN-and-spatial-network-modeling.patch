@@ -1,0 +1,1956 @@
+From c6350d8e555ac1ae4a126b35e223b2b6c8379da0 Mon Sep 17 00:00:00 2001
+From: "Dennislee:)" <55692615+dennislee928@users.noreply.github.com>
+Date: Wed, 1 Jul 2026 20:18:48 +0800
+Subject: [PATCH] feat: add enterprise SDN and spatial network modeling
+
+---
+ .gitignore                                  |   2 +-
+ README.md                                   |   4 +
+ docs/NETWORK_SDN.md                         |  39 ++
+ src/app/build/[scenarioId]/page.tsx         | 207 +++++++
+ src/app/build/free/page.tsx                 |   1 +
+ src/app/build/page.tsx                      |   1 +
+ src/components/builder/BuilderCanvas.tsx    |   5 +-
+ src/components/builder/NetworkOverlay3D.tsx |  96 ++++
+ src/components/builder/NetworkWorkspace.tsx | 578 ++++++++++++++++++++
+ src/lib/blocks/types.ts                     |  10 +-
+ src/lib/network/index.ts                    |   2 +
+ src/lib/network/topology.ts                 | 179 ++++++
+ src/lib/network/types.ts                    | 145 +++++
+ src/lib/persist/index.ts                    |  20 +-
+ src/lib/persist/share.ts                    |  15 +
+ src/lib/store/build-store.ts                | 243 +++++++-
+ tests/unit/network-topology.test.ts         | 107 ++++
+ 17 files changed, 1638 insertions(+), 16 deletions(-)
+ create mode 100644 docs/NETWORK_SDN.md
+ create mode 100644 src/app/build/[scenarioId]/page.tsx
+ create mode 100644 src/app/build/free/page.tsx
+ create mode 100644 src/app/build/page.tsx
+ create mode 100644 src/components/builder/NetworkOverlay3D.tsx
+ create mode 100644 src/components/builder/NetworkWorkspace.tsx
+ create mode 100644 src/lib/network/index.ts
+ create mode 100644 src/lib/network/topology.ts
+ create mode 100644 src/lib/network/types.ts
+ create mode 100644 tests/unit/network-topology.test.ts
+
+diff --git a/.gitignore b/.gitignore
+index 2469914..356e550 100644
+--- a/.gitignore
++++ b/.gitignore
+@@ -7,7 +7,7 @@ node_modules/
+ .next/
+ .next-*/
+ out/
+-build/
++/build/
+ dist/
+ .open-next/
+ 
+diff --git a/README.md b/README.md
+index d72066d..5b6cfcb 100644
+--- a/README.md
++++ b/README.md
+@@ -294,6 +294,10 @@ CI workflow (`.github/workflows/ci.yml`) runs typecheck, lint, test, and build o
+ 
+ ## Contributing
+ 
++Enterprise facility hierarchy, network topology, SDN overlays, path/failure
++simulation, and controller intents are documented in
++[`docs/NETWORK_SDN.md`](docs/NETWORK_SDN.md).
++
+ See `docs/ROADMAP.md` and `PLAN.md` for the open work. Major changes should
+ land with tests and a docs update. Run `npm run lint && npm run typecheck &&
+ npm test` before pushing.
+diff --git a/docs/NETWORK_SDN.md b/docs/NETWORK_SDN.md
+new file mode 100644
+index 0000000..f0e7363
+--- /dev/null
++++ b/docs/NETWORK_SDN.md
+@@ -0,0 +1,39 @@
++# Enterprise SDN and spatial modeling
++
++The builder includes a synchronized facility and network model. Open a build and select **Network** to launch the SDN workspace.
++
++## Spatial hierarchy
++
++Network assets can be assigned to a `site → building → floor → room → hall → rack` hierarchy. Every space has metric bounds and independent visibility. Floor, room, and hall bounds appear in the 3D scene; the Spaces tab controls them and can create racks.
++
++## Nodes, ports, and links
++
++Connections are first-class saved entities. A node contains typed physical/logical ports and an optional management address/controller. A link references exact source and target ports and stores medium, bandwidth, redundancy group, VLANs, VRF, VXLAN VNI, security zone, state, and optional routed 3D points.
++
++The Topology tab is synchronized with the 3D scene: selecting either representation selects the same node; adding nodes or links updates both views; clicking a topology link toggles it for failure testing.
++
++Use **Load reference fabric** to add a controller, edge firewall, dual spines, dual leaves, two servers, redundant paths, a segmentation policy, and an SDN intent.
++
++## Logical overlays
++
++The Overlays tab switches 3D link colors between physical, VLAN, VRF, VXLAN, and security views. It summarizes configured identifiers and policies. Policies record source/destination zones, action, protocol, destination port, priority, and enabled state.
++
++## Path and failure simulation
++
++The Paths tab performs path discovery over enabled links, reports bottleneck capacity, and searches for a link-disjoint backup. Highlighted paths appear in 3D. Links can be failed and restored; discovery reroutes or reports lost connectivity.
++
++## SDN controller workflow
++
++An intent names its controller, endpoints, minimum bandwidth, and redundancy requirement. **Validate** checks connectivity, bottleneck capacity, and a link-disjoint backup. **Deploy intent** records `deployed` only after successful validation. The same tab detects missing spaces, disconnected nodes, missing nodes, and missing ports.
++
++## Persistence and compatibility
++
++The network graph is part of `BuildSnapshot`, IndexedDB autosave, JSON export/import, share decoding, and undo history. Older builds without a graph load with the default hierarchy. Empty default graphs are omitted from compact URL shares to retain the existing URL-size limit.
++
++## Verification
++
++```sh
++npm test -- --run tests/unit/network-topology.test.ts tests/unit/persistence.test.ts tests/unit/share.test.ts
++npm run typecheck
++npm run build:next
++```
+diff --git a/src/app/build/[scenarioId]/page.tsx b/src/app/build/[scenarioId]/page.tsx
+new file mode 100644
+index 0000000..ae5bee9
+--- /dev/null
++++ b/src/app/build/[scenarioId]/page.tsx
+@@ -0,0 +1,207 @@
++/**
++ * Builder page.
++ *
++ * Loads the R3F canvas, palette, hotbar, mode bar. Optionally accepts a
++ * ?share=<token> query param to load a build from a shared URL.
++ */
++
++'use client';
++
++import dynamic from 'next/dynamic';
++import { useEffect, useState } from 'react';
++import { useParams, useSearchParams } from 'next/navigation';
++import { useBuildStore } from '@/lib/store/build-store';
++import { useLoadBuild } from '@/lib/persist';
++import { BlockPalette } from '@/components/builder/BlockPalette';
++import { Hotbar } from '@/components/builder/Hotbar';
++import { ModeBar } from '@/components/builder/ModeBar';
++import { PolicyPanel } from '@/components/policy/PolicyPanel';
++import { SecurityFrameworkPanel } from '@/components/builder/SecurityFrameworkPanel';
++import { KeyboardCheatsheet } from '@/components/a11y/KeyboardCheatsheet';
++import { decodeShareToken } from '@/lib/persist/share';
++import { Network, Shield, Target, X } from 'lucide-react';
++import { getScenario, scenarioInventory, SCENARIOS } from '@/lib/scenarios';
++import { getAllBlocks } from '@/lib/blocks/registry';
++import { useT } from '@/lib/i18n/client';
++import { NetworkWorkspace } from '@/components/builder/NetworkWorkspace';
++
++const BuilderCanvas = dynamic(
++  () => import('@/components/builder/BuilderCanvas').then((m) => m.BuilderCanvas),
++  { ssr: false },
++);
++
++export default function BuildPage() {
++  const params = useParams<{ scenarioId: string }>();
++  const search = useSearchParams();
++  const scenarioId = params?.scenarioId ?? 'free';
++  const setScenario = useBuildStore((s) => s.setScenario);
++  const startBuild = useBuildStore((s) => s.startBuild);
++  const loadBuild = useBuildStore((s) => s.loadBuild);
++  const [policyOpen, setPolicyOpen] = useState(false);
++  const [showGoal, setShowGoal] = useState(false);
++  const [mobilePanel, setMobilePanel] = useState<'blocks' | 'security' | null>(null);
++  const [networkOpen, setNetworkOpen] = useState(false);
++  const scenario = (getScenario(scenarioId) ?? SCENARIOS[0])!;
++  const buildId = search?.get('buildId') ?? null;
++  const t = useT();
++
++  useLoadBuild(buildId);
++
++  useEffect(() => {
++    if (buildId) return;
++    if (scenario.freshStart) {
++      startBuild(scenario.id, scenario.name, scenarioInventory(scenario, getAllBlocks()));
++      return;
++    }
++    setScenario(scenario.id, scenario.name);
++    resetInventoryForScenario(scenario);
++  }, [buildId, scenario, setScenario, startBuild]);
++
++  useEffect(() => {
++    const share = search?.get('share');
++    if (!share) return;
++    void (async () => {
++      const snap = await decodeShareToken(decodeURIComponent(share));
++      if (snap) loadBuild(snap);
++    })();
++  }, [search, loadBuild]);
++
++  return (
++    <main id="main" tabIndex={-1} className="flex min-h-[100dvh] flex-col overflow-x-hidden">
++      <ModeBar />
++      <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden md:flex-row">
++        <BlockPalette mobileOpen={mobilePanel === 'blocks'} onClose={() => setMobilePanel(null)} />
++        <div className="relative min-h-[56dvh] flex-1 bg-bg-subtle md:min-h-0">
++          <BuilderCanvas />
++          <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 md:bottom-4">
++            <Hotbar />
++          </div>
++          <div className="pointer-events-none absolute right-2 top-2 md:right-4 md:top-4">
++            <CoordReadout />
++          </div>
++          <div className="absolute left-2 top-2 z-20 flex gap-2 md:hidden">
++            <button
++              onClick={() => setMobilePanel((current) => (current === 'blocks' ? null : 'blocks'))}
++              className="btn-ghost text-xs"
++            >
++              Blocks
++            </button>
++            <button
++              onClick={() => setMobilePanel((current) => (current === 'security' ? null : 'security'))}
++              className="btn-ghost text-xs"
++            >
++              Security
++            </button>
++          </div>
++          <button
++            onClick={() => setPolicyOpen(true)}
++            className="absolute right-2 top-16 max-w-[calc(100vw-1rem)] btn-ghost md:right-4 md:top-20"
++            title={t('builder.policy')}
++          >
++            <Shield className="h-4 w-4" />
++            {t('builder.policy')}
++          </button>
++          <button
++            onClick={() => setNetworkOpen(true)}
++            className="absolute right-2 top-40 z-20 max-w-[calc(100vw-1rem)] btn md:right-4 md:top-44"
++            title="Open enterprise SDN workspace"
++          >
++            <Network className="h-4 w-4" />
++            Network
++          </button>
++          {scenario.goal && (
++            <button
++              onClick={() => setShowGoal(true)}
++              className="absolute right-2 top-28 max-w-[calc(100vw-1rem)] btn-ghost md:right-4 md:top-32"
++              title="Scenario goal"
++            >
++              <Target className="h-4 w-4" />
++              Goal
++            </button>
++          )}
++          <SecurityFrameworkPanel
++            mobileOpen={mobilePanel === 'security'}
++            onClose={() => setMobilePanel(null)}
++          />
++          {networkOpen && <NetworkWorkspace onClose={() => setNetworkOpen(false)} />}
++        </div>
++      </div>
++      <PolicyPanel open={policyOpen} onClose={() => setPolicyOpen(false)} />
++      <KeyboardCheatsheet />
++      {showGoal && (
++        <ScenarioGoalDialog scenario={scenario!} onClose={() => setShowGoal(false)} />
++      )}
++    </main>
++  );
++}
++
++function resetInventoryForScenario(scenario: (typeof SCENARIOS)[number]) {
++  useBuildStore.getState().resetInventory(scenarioInventory(scenario, getAllBlocks()));
++}
++
++function ScenarioGoalDialog({
++  scenario,
++  onClose,
++}: {
++  scenario: { goal?: { tier?: string; maxPue?: number }; focus: string[] };
++  onClose: () => void;
++}) {
++  const t = useT();
++  return (
++    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
++      <div className="panel w-full max-w-md m-4" onClick={(e) => e.stopPropagation()}>
++        <div className="flex items-center justify-between border-b p-4">
++          <h2 className="flex items-center gap-2 font-semibold">
++            <Target className="h-5 w-5" />
++            {t('builder.mode.inspect')} Goal
++          </h2>
++          <button onClick={onClose} className="icon-btn" aria-label={t('common.close')}>
++            <X className="h-4 w-4" />
++          </button>
++        </div>
++        <div className="p-4 space-y-3">
++          {scenario.goal?.tier && (
++            <div className="flex items-center gap-3 p-3 rounded bg-primary/10 border border-primary/20">
++              <div className="text-3xl font-bold text-primary">Tier {scenario.goal.tier}</div>
++              <div className="text-sm text-fg-muted">Target Uptime tier</div>
++            </div>
++          )}
++          {scenario.goal?.maxPue && (
++            <div className="flex items-center gap-3 p-3 rounded bg-accent/10 border border-accent/20">
++              <div className="text-3xl font-bold text-accent">PUE ≤ {scenario.goal.maxPue}</div>
++              <div className="text-sm text-fg-muted">Energy efficiency target</div>
++            </div>
++          )}
++          <div>
++            <p className="text-sm font-medium mb-2">Standards in focus</p>
++            <div className="flex flex-wrap gap-1">
++              {scenario.focus.map((f) => (
++                <span key={f} className="badge text-[10px]">{f}</span>
++              ))}
++            </div>
++          </div>
++        </div>
++        <div className="border-t p-3 text-right">
++          <button onClick={onClose} className="btn">
++            {t('common.close')}
++          </button>
++        </div>
++      </div>
++    </div>
++  );
++}
++
++function CoordReadout() {
++  const hoveredCell = useBuildStore((s) => s.hoveredCell);
++  const voxels = useBuildStore((s) => Object.keys(s.voxels).length);
++  return (
++    <div className="panel pointer-events-auto p-2 font-mono text-xs">
++      <div>blocks: {voxels}</div>
++      {hoveredCell && (
++        <div>
++          x:{hoveredCell.x} y:{hoveredCell.y} z:{hoveredCell.z}
++        </div>
++      )}
++    </div>
++  );
++}
+diff --git a/src/app/build/free/page.tsx b/src/app/build/free/page.tsx
+new file mode 100644
+index 0000000..0e33ee7
+--- /dev/null
++++ b/src/app/build/free/page.tsx
+@@ -0,0 +1 @@
++export { default } from '../[scenarioId]/page';
+diff --git a/src/app/build/page.tsx b/src/app/build/page.tsx
+new file mode 100644
+index 0000000..cd77f79
+--- /dev/null
++++ b/src/app/build/page.tsx
+@@ -0,0 +1 @@
++export { default } from './[scenarioId]/page';
+diff --git a/src/components/builder/BuilderCanvas.tsx b/src/components/builder/BuilderCanvas.tsx
+index 750fa56..ee3a9d4 100644
+--- a/src/components/builder/BuilderCanvas.tsx
++++ b/src/components/builder/BuilderCanvas.tsx
+@@ -18,6 +18,7 @@ import { SiteEnvironment } from './SiteEnvironment';
+ import { CctvCoverage } from './CctvCoverage';
+ import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
+ import { score } from '@/lib/scoring';
++import { NetworkOverlay3D } from './NetworkOverlay3D';
+ 
+ export interface BuilderCanvasProps {
+   showGrid?: boolean;
+@@ -102,6 +103,7 @@ export function BuilderCanvas({
+         <SiteEnvironment />
+         <VoxelWorld />
+         <CctvCoverage />
++        <NetworkOverlay3D />
+         {showPreview && <PlacementPreview />}
+         <BuildMetricsHud report={report} />
+       </Suspense>
+@@ -126,7 +128,8 @@ function BuildMetricsHud({ report }: { report: ReturnType<typeof score> }) {
+             <Metric label="Budget" value={`$${report.budgetUsd.toLocaleString()}`} />
+           </div>
+           <div className="mt-2 rounded border border-border/60 bg-bg-subtle p-2 text-[10px] text-fg-muted">
+-            Power load: {report.totalITLoadKW.toFixed(0)} kW · Facility: {report.totalFacilityPowerKW.toFixed(0)} kW
++            Power load: {report.totalITLoadKW.toFixed(0)} kW · Facility:{' '}
++            {report.totalFacilityPowerKW.toFixed(0)} kW
+             {report.overBudget ? ' · over budget penalty active' : ''}
+           </div>
+           {visualMode === 'thermal' && report.breakdown.cooling < 50 && (
+diff --git a/src/components/builder/NetworkOverlay3D.tsx b/src/components/builder/NetworkOverlay3D.tsx
+new file mode 100644
+index 0000000..8f84ac1
+--- /dev/null
++++ b/src/components/builder/NetworkOverlay3D.tsx
+@@ -0,0 +1,96 @@
++'use client';
++
++import { Line } from '@react-three/drei';
++import * as THREE from 'three';
++import { useBuildStore } from '@/lib/store/build-store';
++
++const LAYER_COLORS = {
++  physical: '#38bdf8',
++  vlan: '#a78bfa',
++  vrf: '#34d399',
++  vxlan: '#f59e0b',
++  security: '#fb7185',
++} as const;
++
++export function NetworkOverlay3D() {
++  const network = useBuildStore((state) => state.network);
++  const layer = useBuildStore((state) => state.networkLayer);
++  const highlighted = useBuildStore((state) => state.highlightedLinkIds);
++  const selectedNodeId = useBuildStore((state) => state.selectedNetworkNodeId);
++  const selectNode = useBuildStore((state) => state.setSelectedNetworkNode);
++
++  return (
++    <group>
++      {Object.values(network.spaces)
++        .filter((space) => space.visible && ['floor', 'room', 'hall'].includes(space.kind))
++        .map((space) => (
++          <lineSegments
++            key={space.id}
++            position={[
++              space.bounds.x + space.bounds.width / 2,
++              space.bounds.y + space.bounds.height / 2,
++              space.bounds.z + space.bounds.depth / 2,
++            ]}
++          >
++            <edgesGeometry
++              args={[
++                new THREE.BoxGeometry(space.bounds.width, space.bounds.height, space.bounds.depth),
++              ]}
++            />
++            <lineBasicMaterial
++              color={space.kind === 'hall' ? '#334155' : '#475569'}
++              transparent
++              opacity={0.35}
++            />
++          </lineSegments>
++        ))}
++      {Object.values(network.links).map((link) => {
++        const source = network.nodes[link.sourceNodeId];
++        const target = network.nodes[link.targetNodeId];
++        if (!source || !target) return null;
++        const points: Array<[number, number, number]> = link.pathPoints?.map((p) => [
++          p.x + 0.5,
++          p.y + 0.7,
++          p.z + 0.5,
++        ]) ?? [
++          [source.position.x + 0.5, source.position.y + 0.7, source.position.z + 0.5],
++          [target.position.x + 0.5, target.position.y + 0.7, target.position.z + 0.5],
++        ];
++        return (
++          <Line
++            key={link.id}
++            points={points}
++            color={
++              link.enabled
++                ? highlighted.includes(link.id)
++                  ? '#fef08a'
++                  : LAYER_COLORS[layer]
++                : '#ef4444'
++            }
++            lineWidth={highlighted.includes(link.id) ? 4 : 2}
++            dashed={!link.enabled}
++            transparent
++            opacity={link.enabled ? 0.9 : 0.45}
++          />
++        );
++      })}
++      {Object.values(network.nodes).map((node) => (
++        <mesh
++          key={node.id}
++          position={[node.position.x + 0.5, node.position.y + 0.5, node.position.z + 0.5]}
++          onClick={(event) => {
++            event.stopPropagation();
++            selectNode(node.id);
++          }}
++        >
++          <sphereGeometry args={[selectedNodeId === node.id ? 0.48 : 0.34, 16, 16]} />
++          <meshStandardMaterial
++            color={selectedNodeId === node.id ? '#fbbf24' : '#22d3ee'}
++            emissive={selectedNodeId === node.id ? '#92400e' : '#164e63'}
++            emissiveIntensity={0.8}
++          />
++        </mesh>
++      ))}
++    </group>
++  );
++}
+diff --git a/src/components/builder/NetworkWorkspace.tsx b/src/components/builder/NetworkWorkspace.tsx
+new file mode 100644
+index 0000000..908b69a
+--- /dev/null
++++ b/src/components/builder/NetworkWorkspace.tsx
+@@ -0,0 +1,578 @@
++'use client';
++
++import { useMemo, useState } from 'react';
++import {
++  Cable,
++  Eye,
++  EyeOff,
++  Network,
++  Plus,
++  Route,
++  ShieldCheck,
++  Unplug,
++  Workflow,
++} from 'lucide-react';
++import { nanoid } from 'nanoid';
++import {
++  findNetworkPath,
++  findRedundantPath,
++  makePort,
++  validateTopology,
++  type NetworkLayer,
++  type NetworkNode,
++} from '@/lib/network';
++import { useBuildStore } from '@/lib/store/build-store';
++import { cn } from '@/lib/utils';
++
++type Tab = 'spaces' | 'topology' | 'overlays' | 'simulation' | 'controller';
++const TABS: Array<{ id: Tab; label: string }> = [
++  { id: 'spaces', label: 'Spaces' },
++  { id: 'topology', label: 'Topology' },
++  { id: 'overlays', label: 'Overlays' },
++  { id: 'simulation', label: 'Paths' },
++  { id: 'controller', label: 'SDN' },
++];
++const LAYERS: NetworkLayer[] = ['physical', 'vlan', 'vrf', 'vxlan', 'security'];
++
++export function NetworkWorkspace({ onClose }: { onClose: () => void }) {
++  const [tab, setTab] = useState<Tab>('topology');
++  const network = useBuildStore((state) => state.network);
++  const loadTemplate = useBuildStore((state) => state.loadNetworkTemplate);
++  const issues = useMemo(() => validateTopology(network), [network]);
++
++  return (
++    <aside
++      className="absolute inset-y-0 right-0 z-30 flex w-full max-w-xl flex-col border-l border-border bg-bg/95 shadow-2xl backdrop-blur md:w-[36rem]"
++      aria-label="Enterprise network workspace"
++    >
++      <header className="flex items-center gap-2 border-b border-border p-3">
++        <Network className="h-5 w-5 text-primary" />
++        <div className="min-w-0 flex-1">
++          <h2 className="font-semibold">Enterprise SDN</h2>
++          <p className="text-xs text-fg-muted">
++            {Object.keys(network.nodes).length} nodes · {Object.keys(network.links).length} links ·{' '}
++            {issues.length} findings
++          </p>
++        </div>
++        <button className="btn-ghost text-xs" onClick={loadTemplate}>
++          Load reference fabric
++        </button>
++        <button className="icon-btn" onClick={onClose} aria-label="Close network workspace">
++          ×
++        </button>
++      </header>
++      <nav className="flex overflow-x-auto border-b border-border p-1" aria-label="Network tools">
++        {TABS.map((item) => (
++          <button
++            key={item.id}
++            className={cn(
++              'rounded px-2 py-1.5 text-xs',
++              tab === item.id ? 'bg-primary text-primary-fg' : 'text-fg-muted hover:bg-bg-subtle',
++            )}
++            onClick={() => setTab(item.id)}
++          >
++            {item.label}
++          </button>
++        ))}
++      </nav>
++      <div className="min-h-0 flex-1 overflow-y-auto p-3">
++        {tab === 'spaces' && <SpacesPanel />}
++        {tab === 'topology' && <TopologyPanel />}
++        {tab === 'overlays' && <OverlayPanel />}
++        {tab === 'simulation' && <SimulationPanel />}
++        {tab === 'controller' && <ControllerPanel />}
++      </div>
++    </aside>
++  );
++}
++
++function SpacesPanel() {
++  const spaces = useBuildStore((state) => state.network.spaces);
++  const toggle = useBuildStore((state) => state.toggleSpaceVisibility);
++  const upsert = useBuildStore((state) => state.upsertSpace);
++  const ordered = useMemo(() => flattenSpaces(Object.values(spaces)), [spaces]);
++  return (
++    <section>
++      <PanelTitle
++        icon={<Eye className="h-4 w-4" />}
++        title="Site → building → floor → room → hall → rack"
++      />
++      <div className="space-y-1">
++        {ordered.map(({ space, depth }) => (
++          <div
++            key={space.id}
++            className="flex items-center gap-2 rounded border border-border bg-bg-subtle px-2 py-1.5"
++            style={{ marginLeft: depth * 12 }}
++          >
++            <span className="badge text-[10px]">{space.kind}</span>
++            <span className="min-w-0 flex-1 truncate text-sm">{space.name}</span>
++            <span className="font-mono text-[10px] text-fg-muted">
++              {space.bounds.width}×{space.bounds.depth}m
++            </span>
++            <button
++              className="icon-btn"
++              onClick={() => toggle(space.id)}
++              aria-label={`${space.visible ? 'Hide' : 'Show'} ${space.name}`}
++            >
++              {space.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
++            </button>
++          </div>
++        ))}
++      </div>
++      <button
++        className="btn-ghost mt-3 text-xs"
++        onClick={() => {
++          const id = `rack-${nanoid(5)}`;
++          upsert({
++            id,
++            parentId: 'hall-a',
++            kind: 'rack',
++            name: `Rack ${Object.values(spaces).filter((s) => s.kind === 'rack').length + 1}`,
++            bounds: { x: 15, y: 0, z: 15, width: 1, height: 3, depth: 1 },
++            visible: true,
++          });
++        }}
++      >
++        <Plus className="h-4 w-4" /> Add rack
++      </button>
++    </section>
++  );
++}
++
++function TopologyPanel() {
++  const network = useBuildStore((state) => state.network);
++  const selected = useBuildStore((state) => state.selectedNetworkNodeId);
++  const select = useBuildStore((state) => state.setSelectedNetworkNode);
++  const upsertNode = useBuildStore((state) => state.upsertNetworkNode);
++  const upsertLink = useBuildStore((state) => state.upsertNetworkLink);
++  const toggleLink = useBuildStore((state) => state.toggleNetworkLink);
++  const nodes = Object.values(network.nodes);
++  const [sourceId, setSourceId] = useState('');
++  const [targetId, setTargetId] = useState('');
++  const addEndpoint = () => {
++    const id = `endpoint-${nanoid(5)}`;
++    const index = nodes.length;
++    upsertNode({
++      id,
++      name: `Endpoint ${index + 1}`,
++      kind: 'endpoint',
++      spaceId: 'hall-a',
++      position: { x: 16 + (index % 12), y: 1, z: 18 + (index % 8) },
++      ports: [makePort(id, 0, 25), makePort(id, 1, 25)],
++    });
++  };
++  const connect = () => {
++    const source = network.nodes[sourceId];
++    const target = network.nodes[targetId];
++    if (!source || !target || source.id === target.id) return;
++    const id = `link-${nanoid(6)}`;
++    upsertLink({
++      id,
++      sourceNodeId: source.id,
++      sourcePortId: source.ports[0]!.id,
++      targetNodeId: target.id,
++      targetPortId: target.ports[0]!.id,
++      medium: 'fiber',
++      bandwidthGbps: Math.min(source.ports[0]!.speedGbps, target.ports[0]!.speedGbps),
++      vlanIds: [10],
++      vrf: 'enterprise',
++      enabled: true,
++    });
++  };
++  return (
++    <section>
++      <PanelTitle icon={<Cable className="h-4 w-4" />} title="Synchronized physical topology" />
++      {nodes.length === 0 ? (
++        <EmptyState message="Load the reference fabric or add an endpoint to begin." />
++      ) : (
++        <svg
++          viewBox="0 0 520 300"
++          className="w-full rounded border border-border bg-[#07101f]"
++          role="img"
++          aria-label="Network topology diagram"
++        >
++          {Object.values(network.links).map((link) => {
++            const a = network.nodes[link.sourceNodeId];
++            const b = network.nodes[link.targetNodeId];
++            if (!a || !b) return null;
++            return (
++              <line
++                key={link.id}
++                x1={toX(a)}
++                y1={toY(a)}
++                x2={toX(b)}
++                y2={toY(b)}
++                stroke={link.enabled ? '#38bdf8' : '#ef4444'}
++                strokeWidth="3"
++                strokeDasharray={link.enabled ? undefined : '6 4'}
++                onClick={() => toggleLink(link.id)}
++                onKeyDown={(event) => {
++                  if (event.key === 'Enter' || event.key === ' ') toggleLink(link.id);
++                }}
++                role="button"
++                tabIndex={0}
++                aria-label={`${link.enabled ? 'Fail' : 'Restore'} link ${a.name} to ${b.name}`}
++                className="cursor-pointer"
++              />
++            );
++          })}
++          {nodes.map((node) => (
++            <g
++              key={node.id}
++              onClick={() => select(node.id)}
++              onKeyDown={(event) => {
++                if (event.key === 'Enter' || event.key === ' ') select(node.id);
++              }}
++              role="button"
++              tabIndex={0}
++              aria-label={`Select ${node.name}`}
++              className="cursor-pointer"
++            >
++              <circle
++                cx={toX(node)}
++                cy={toY(node)}
++                r={selected === node.id ? 15 : 11}
++                fill={selected === node.id ? '#fbbf24' : '#0e7490'}
++                stroke="#cffafe"
++              />
++              <text
++                x={toX(node)}
++                y={toY(node) + 25}
++                fill="#e2e8f0"
++                fontSize="10"
++                textAnchor="middle"
++              >
++                {node.name}
++              </text>
++            </g>
++          ))}
++        </svg>
++      )}
++      <div className="mt-3 grid grid-cols-2 gap-2">
++        <button className="btn-ghost text-xs" onClick={addEndpoint}>
++          <Plus className="h-4 w-4" /> Add endpoint
++        </button>
++        <span className="text-xs text-fg-muted">Click a link to simulate failure</span>
++        <Select value={sourceId} onChange={setSourceId} nodes={nodes} label="Source" />
++        <Select value={targetId} onChange={setTargetId} nodes={nodes} label="Target" />
++        <button
++          className="btn col-span-2 text-xs"
++          onClick={connect}
++          disabled={!sourceId || !targetId || sourceId === targetId}
++        >
++          Connect selected ports
++        </button>
++      </div>
++      {selected && network.nodes[selected] && <NodeInspector node={network.nodes[selected]!} />}
++    </section>
++  );
++}
++
++function OverlayPanel() {
++  const layer = useBuildStore((state) => state.networkLayer);
++  const setLayer = useBuildStore((state) => state.setNetworkLayer);
++  const network = useBuildStore((state) => state.network);
++  const upsertPolicy = useBuildStore((state) => state.upsertNetworkPolicy);
++  return (
++    <section>
++      <PanelTitle icon={<ShieldCheck className="h-4 w-4" />} title="Logical overlays and policy" />
++      <div className="grid grid-cols-5 gap-1">
++        {LAYERS.map((item) => (
++          <button
++            key={item}
++            className={cn(
++              'rounded border px-1 py-2 text-[10px] uppercase',
++              layer === item ? 'border-primary bg-primary/20 text-primary' : 'border-border',
++            )}
++            onClick={() => setLayer(item)}
++          >
++            {item}
++          </button>
++        ))}
++      </div>
++      <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
++        <Stat
++          label="VLANs"
++          value={
++            [...new Set(Object.values(network.links).flatMap((link) => link.vlanIds))].join(', ') ||
++            '—'
++          }
++        />
++        <Stat
++          label="VRFs"
++          value={
++            [
++              ...new Set(
++                Object.values(network.links)
++                  .map((link) => link.vrf)
++                  .filter(Boolean),
++              ),
++            ].join(', ') || '—'
++          }
++        />
++        <Stat
++          label="VXLAN VNIs"
++          value={
++            [
++              ...new Set(
++                Object.values(network.links)
++                  .map((link) => link.vxlanVni)
++                  .filter(Boolean),
++              ),
++            ].join(', ') || '—'
++          }
++        />
++        <Stat
++          label="Security zones"
++          value={
++            [
++              ...new Set(
++                Object.values(network.links)
++                  .map((link) => link.securityZone)
++                  .filter(Boolean),
++              ),
++            ].join(', ') || '—'
++          }
++        />
++      </dl>
++      <h3 className="mt-4 text-sm font-semibold">Policies</h3>
++      {Object.values(network.policies).map((policy) => (
++        <div key={policy.id} className="mt-2 rounded border border-border p-2 text-xs">
++          <strong>{policy.name}</strong>
++          <div className="text-fg-muted">
++            {policy.sourceZone} → {policy.destinationZone} · {policy.action.toUpperCase()}{' '}
++            {policy.protocol}
++            {policy.destinationPort ? `/${policy.destinationPort}` : ''}
++          </div>
++        </div>
++      ))}
++      <button
++        className="btn-ghost mt-2 text-xs"
++        onClick={() => {
++          const id = `policy-${nanoid(5)}`;
++          upsertPolicy({
++            id,
++            name: 'Default segmentation rule',
++            sourceZone: 'user',
++            destinationZone: 'application',
++            action: 'allow',
++            protocol: 'tcp',
++            destinationPort: 443,
++            priority: 200,
++            enabled: true,
++          });
++        }}
++      >
++        <Plus className="h-4 w-4" /> Add segmentation policy
++      </button>
++    </section>
++  );
++}
++
++function SimulationPanel() {
++  const network = useBuildStore((state) => state.network);
++  const setHighlighted = useBuildStore((state) => state.setHighlightedLinks);
++  const toggleLink = useBuildStore((state) => state.toggleNetworkLink);
++  const nodes = Object.values(network.nodes);
++  const [source, setSource] = useState('');
++  const [target, setTarget] = useState('');
++  const path = source && target ? findNetworkPath(network, source, target) : null;
++  const backup = path ? findRedundantPath(network, path) : null;
++  return (
++    <section>
++      <PanelTitle
++        icon={<Route className="h-4 w-4" />}
++        title="Path tracing and failure simulation"
++      />
++      <div className="grid grid-cols-2 gap-2">
++        <Select value={source} onChange={setSource} nodes={nodes} label="Source" />
++        <Select value={target} onChange={setTarget} nodes={nodes} label="Destination" />
++      </div>
++      <button
++        className="btn mt-2 w-full text-xs"
++        disabled={!path}
++        onClick={() => setHighlighted(path?.linkIds ?? [])}
++      >
++        Highlight end-to-end path
++      </button>
++      {source && target && (
++        <div className="mt-3 rounded border border-border bg-bg-subtle p-3 text-xs">
++          {path ? (
++            <>
++              <div>
++                <strong>Primary:</strong>{' '}
++                {path.nodeIds.map((id) => network.nodes[id]?.name).join(' → ')}
++              </div>
++              <div className="mt-1 text-fg-muted">
++                Bottleneck: {path.bottleneckGbps} Gbps ·{' '}
++                {backup ? 'link-disjoint backup available' : 'no disjoint backup'}
++              </div>
++              {path.linkIds.map((id) => (
++                <button
++                  key={id}
++                  className="btn-ghost mr-1 mt-2 text-[10px]"
++                  onClick={() => toggleLink(id)}
++                >
++                  <Unplug className="h-3 w-3" /> Fail {id}
++                </button>
++              ))}
++            </>
++          ) : (
++            <span className="text-danger">No active path exists.</span>
++          )}
++        </div>
++      )}
++    </section>
++  );
++}
++
++function ControllerPanel() {
++  const network = useBuildStore((state) => state.network);
++  const validate = useBuildStore((state) => state.validateControllerIntent);
++  const issues = useMemo(() => validateTopology(network), [network]);
++  return (
++    <section>
++      <PanelTitle icon={<Workflow className="h-4 w-4" />} title="Controller intent workflow" />
++      {Object.values(network.intents).length === 0 ? (
++        <EmptyState message="Load the reference fabric to create a resilient SDN intent." />
++      ) : (
++        Object.values(network.intents).map((intent) => (
++          <article
++            key={intent.id}
++            className="mb-3 rounded border border-border bg-bg-subtle p-3 text-xs"
++          >
++            <div className="flex items-center justify-between">
++              <strong>{intent.name}</strong>
++              <span className="badge">{intent.status}</span>
++            </div>
++            <p className="mt-1 text-fg-muted">
++              {network.nodes[intent.sourceNodeId]?.name} →{' '}
++              {network.nodes[intent.destinationNodeId]?.name} · {intent.requiredBandwidthGbps} Gbps
++              · redundancy {intent.requireRedundancy ? 'required' : 'optional'}
++            </p>
++            {intent.lastMessage && <p className="mt-2">{intent.lastMessage}</p>}
++            <div className="mt-2 flex gap-2">
++              <button className="btn-ghost text-xs" onClick={() => validate(intent.id)}>
++                Validate
++              </button>
++              <button className="btn text-xs" onClick={() => validate(intent.id, true)}>
++                Deploy intent
++              </button>
++            </div>
++          </article>
++        ))
++      )}
++      <h3 className="mt-4 text-sm font-semibold">Topology validation</h3>
++      {issues.length === 0 ? (
++        <p className="mt-2 text-xs text-success">No topology issues.</p>
++      ) : (
++        issues.map((issue, index) => (
++          <p
++            key={`${issue.entityId}-${index}`}
++            className={cn(
++              'mt-1 text-xs',
++              issue.severity === 'error' ? 'text-danger' : 'text-warning',
++            )}
++          >
++            {issue.message}
++          </p>
++        ))
++      )}
++    </section>
++  );
++}
++
++function PanelTitle({ icon, title }: { icon: React.ReactNode; title: string }) {
++  return (
++    <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold">
++      {icon}
++      {title}
++    </h3>
++  );
++}
++function EmptyState({ message }: { message: string }) {
++  return (
++    <div className="rounded border border-dashed border-border p-5 text-center text-xs text-fg-muted">
++      {message}
++    </div>
++  );
++}
++function Select({
++  value,
++  onChange,
++  nodes,
++  label,
++}: {
++  value: string;
++  onChange: (value: string) => void;
++  nodes: NetworkNode[];
++  label: string;
++}) {
++  return (
++    <label className="text-xs text-fg-muted">
++      {label}
++      <select
++        className="mt-1 w-full rounded border border-border bg-bg px-2 py-1.5 text-fg"
++        value={value}
++        onChange={(event) => onChange(event.target.value)}
++      >
++        <option value="">Select node</option>
++        {nodes.map((node) => (
++          <option key={node.id} value={node.id}>
++            {node.name}
++          </option>
++        ))}
++      </select>
++    </label>
++  );
++}
++function Stat({ label, value }: { label: string; value: string }) {
++  return (
++    <div className="rounded border border-border p-2">
++      <dt className="text-fg-muted">{label}</dt>
++      <dd className="mt-1 font-mono">{value}</dd>
++    </div>
++  );
++}
++function NodeInspector({ node }: { node: NetworkNode }) {
++  return (
++    <div className="mt-3 rounded border border-primary/30 bg-primary/5 p-3 text-xs">
++      <strong>{node.name}</strong>
++      <div className="mt-1 text-fg-muted">
++        {node.kind} · {node.spaceId} · x{node.position.x} y{node.position.y} z{node.position.z}
++      </div>
++      <div className="mt-2 grid grid-cols-2 gap-1">
++        {node.ports.map((port) => (
++          <span key={port.id} className="rounded bg-bg px-2 py-1 font-mono">
++            {port.name} {port.speedGbps}G {port.adminUp ? 'up' : 'down'}
++          </span>
++        ))}
++      </div>
++    </div>
++  );
++}
++function toX(node: NetworkNode) {
++  return 28 + (node.position.x / 32) * 464;
++}
++function toY(node: NetworkNode) {
++  return 24 + (node.position.z / 32) * 250;
++}
++function flattenSpaces(
++  spaces: ReturnType<typeof useBuildStore.getState>['network']['spaces'][string][],
++) {
++  const byParent = new Map<string | null, typeof spaces>();
++  for (const space of spaces) {
++    const list = byParent.get(space.parentId) ?? [];
++    list.push(space);
++    byParent.set(space.parentId, list);
++  }
++  const output: Array<{ space: (typeof spaces)[number]; depth: number }> = [];
++  const visit = (parent: string | null, depth: number) => {
++    for (const space of byParent.get(parent) ?? []) {
++      output.push({ space, depth });
++      visit(space.id, depth + 1);
++    }
++  };
++  visit(null, 0);
++  return output;
++}
+diff --git a/src/lib/blocks/types.ts b/src/lib/blocks/types.ts
+index 0a26407..2f985ee 100644
+--- a/src/lib/blocks/types.ts
++++ b/src/lib/blocks/types.ts
+@@ -12,6 +12,7 @@
+ 
+ import { z } from 'zod';
+ import { defaultPolicyState, type PolicyState } from '@/lib/scoring/policy';
++import { createDefaultNetwork, type NetworkState } from '@/lib/network';
+ 
+ export const BlockCategorySchema = z.enum([
+   'structure',
+@@ -69,7 +70,11 @@ export const BlockDefSchema = z.object({
+   shortName: z.string().optional(),
+   description: z.string(),
+   /** 1m voxel size [w, h, d] — minimum 1×1×1. */
+-  size: z.tuple([z.number().int().positive(), z.number().int().positive(), z.number().int().positive()]),
++  size: z.tuple([
++    z.number().int().positive(),
++    z.number().int().positive(),
++    z.number().int().positive(),
++  ]),
+   /** Color for placeholder/ghost rendering (hex). */
+   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+   /** Tags for search/filter. */
+@@ -134,6 +139,8 @@ export interface BuildState {
+   shareToken?: string;
+   /** Non-spatial toggles (deterrence, 5 functions, ESG, privacy). */
+   policies: PolicyState;
++  /** Spatial hierarchy and first-class physical/logical network graph. */
++  network?: NetworkState;
+ }
+ 
+ /** Returns a fresh, fully-defaulted BuildState. */
+@@ -149,5 +156,6 @@ export function emptyState(): BuildState {
+     createdAt: now,
+     updatedAt: now,
+     policies: defaultPolicyState(),
++    network: createDefaultNetwork(),
+   };
+ }
+diff --git a/src/lib/network/index.ts b/src/lib/network/index.ts
+new file mode 100644
+index 0000000..a929cce
+--- /dev/null
++++ b/src/lib/network/index.ts
+@@ -0,0 +1,2 @@
++export * from './types';
++export * from './topology';
+diff --git a/src/lib/network/topology.ts b/src/lib/network/topology.ts
+new file mode 100644
+index 0000000..1002669
+--- /dev/null
++++ b/src/lib/network/topology.ts
+@@ -0,0 +1,179 @@
++import type { ControllerIntent, NetworkLink, NetworkNode, NetworkState } from './types';
++
++export interface PathResult {
++  nodeIds: string[];
++  linkIds: string[];
++  bottleneckGbps: number;
++}
++export interface TopologyIssue {
++  severity: 'error' | 'warning';
++  message: string;
++  entityId?: string;
++}
++
++export function findNetworkPath(
++  network: NetworkState,
++  sourceNodeId: string,
++  destinationNodeId: string,
++  excludedLinkIds: ReadonlySet<string> = new Set(),
++): PathResult | null {
++  if (!network.nodes[sourceNodeId] || !network.nodes[destinationNodeId]) return null;
++  const queue = [sourceNodeId];
++  const visited = new Set(queue);
++  const previous = new Map<string, { nodeId: string; linkId: string }>();
++  while (queue.length > 0) {
++    const current = queue.shift()!;
++    if (current === destinationNodeId) break;
++    for (const link of Object.values(network.links)) {
++      if (!link.enabled || excludedLinkIds.has(link.id)) continue;
++      const next =
++        link.sourceNodeId === current
++          ? link.targetNodeId
++          : link.targetNodeId === current
++            ? link.sourceNodeId
++            : null;
++      if (!next || visited.has(next)) continue;
++      visited.add(next);
++      previous.set(next, { nodeId: current, linkId: link.id });
++      queue.push(next);
++    }
++  }
++  if (!visited.has(destinationNodeId)) return null;
++  const nodeIds = [destinationNodeId];
++  const linkIds: string[] = [];
++  let cursor = destinationNodeId;
++  while (cursor !== sourceNodeId) {
++    const step = previous.get(cursor);
++    if (!step) return null;
++    nodeIds.unshift(step.nodeId);
++    linkIds.unshift(step.linkId);
++    cursor = step.nodeId;
++  }
++  return {
++    nodeIds,
++    linkIds,
++    bottleneckGbps: linkIds.length
++      ? Math.min(...linkIds.map((id) => network.links[id]!.bandwidthGbps))
++      : Infinity,
++  };
++}
++
++export function findRedundantPath(network: NetworkState, primary: PathResult): PathResult | null {
++  return findNetworkPath(
++    network,
++    primary.nodeIds[0]!,
++    primary.nodeIds.at(-1)!,
++    new Set(primary.linkIds),
++  );
++}
++
++export function validateTopology(network: NetworkState): TopologyIssue[] {
++  const issues: TopologyIssue[] = [];
++  for (const node of Object.values(network.nodes)) {
++    if (!network.spaces[node.spaceId])
++      issues.push({
++        severity: 'error',
++        entityId: node.id,
++        message: `${node.name} has no valid space.`,
++      });
++    if (
++      !Object.values(network.links).some(
++        (link) => link.sourceNodeId === node.id || link.targetNodeId === node.id,
++      )
++    )
++      issues.push({
++        severity: 'warning',
++        entityId: node.id,
++        message: `${node.name} is disconnected.`,
++      });
++  }
++  for (const link of Object.values(network.links)) {
++    const source = network.nodes[link.sourceNodeId];
++    const target = network.nodes[link.targetNodeId];
++    if (!source || !target)
++      issues.push({
++        severity: 'error',
++        entityId: link.id,
++        message: `Link ${link.id} references a missing node.`,
++      });
++    else if (
++      !source.ports.some((port) => port.id === link.sourcePortId) ||
++      !target.ports.some((port) => port.id === link.targetPortId)
++    )
++      issues.push({
++        severity: 'error',
++        entityId: link.id,
++        message: `Link ${link.id} references a missing port.`,
++      });
++  }
++  return issues;
++}
++
++export function evaluateIntent(network: NetworkState, intent: ControllerIntent) {
++  const primary = findNetworkPath(network, intent.sourceNodeId, intent.destinationNodeId);
++  if (!primary)
++    return {
++      ok: false,
++      message: 'No active path satisfies this intent.',
++      primary: null,
++      backup: null,
++    };
++  if (primary.bottleneckGbps < intent.requiredBandwidthGbps)
++    return {
++      ok: false,
++      message: `Path bottleneck is ${primary.bottleneckGbps} Gbps.`,
++      primary,
++      backup: null,
++    };
++  const backup = intent.requireRedundancy ? findRedundantPath(network, primary) : null;
++  if (intent.requireRedundancy && !backup)
++    return {
++      ok: false,
++      message: 'No link-disjoint backup path is available.',
++      primary,
++      backup: null,
++    };
++  return {
++    ok: true,
++    message: backup ? 'Primary and backup paths validated.' : 'Primary path validated.',
++    primary,
++    backup,
++  };
++}
++
++export function makePort(
++  nodeId: string,
++  index: number,
++  speedGbps = 100,
++): NetworkNode['ports'][number] {
++  return {
++    id: `${nodeId}-p${index}`,
++    name: `Eth${index}`,
++    kind: 'fiber',
++    speedGbps,
++    adminUp: true,
++  };
++}
++
++export function linkNodes(
++  id: string,
++  source: NetworkNode,
++  target: NetworkNode,
++  sourcePort = 0,
++  targetPort = 0,
++): NetworkLink {
++  return {
++    id,
++    sourceNodeId: source.id,
++    sourcePortId: source.ports[sourcePort]!.id,
++    targetNodeId: target.id,
++    targetPortId: target.ports[targetPort]!.id,
++    medium: 'fiber',
++    bandwidthGbps: Math.min(
++      source.ports[sourcePort]!.speedGbps,
++      target.ports[targetPort]!.speedGbps,
++    ),
++    vlanIds: [],
++    enabled: true,
++  };
++}
+diff --git a/src/lib/network/types.ts b/src/lib/network/types.ts
+new file mode 100644
+index 0000000..c9b495b
+--- /dev/null
++++ b/src/lib/network/types.ts
+@@ -0,0 +1,145 @@
++import type { Cell } from '@/lib/grid';
++
++export type SpaceKind = 'site' | 'building' | 'floor' | 'room' | 'hall' | 'rack';
++export type NetworkNodeKind =
++  | 'controller'
++  | 'router'
++  | 'firewall'
++  | 'load-balancer'
++  | 'spine'
++  | 'leaf'
++  | 'switch'
++  | 'server'
++  | 'storage'
++  | 'endpoint';
++export type NetworkLayer = 'physical' | 'vlan' | 'vrf' | 'vxlan' | 'security';
++
++export interface SpatialUnit {
++  id: string;
++  parentId: string | null;
++  kind: SpaceKind;
++  name: string;
++  bounds: { x: number; y: number; z: number; width: number; height: number; depth: number };
++  visible: boolean;
++}
++
++export interface NetworkPort {
++  id: string;
++  name: string;
++  kind: 'fiber' | 'copper' | 'management' | 'logical';
++  speedGbps: number;
++  adminUp: boolean;
++}
++
++export interface NetworkNode {
++  id: string;
++  name: string;
++  kind: NetworkNodeKind;
++  spaceId: string;
++  blockInstanceId?: string;
++  position: Cell;
++  ports: NetworkPort[];
++  managementIp?: string;
++  controllerId?: string;
++}
++
++export interface NetworkLink {
++  id: string;
++  sourceNodeId: string;
++  sourcePortId: string;
++  targetNodeId: string;
++  targetPortId: string;
++  medium: 'fiber' | 'copper' | 'logical';
++  bandwidthGbps: number;
++  redundancyGroup?: string;
++  vlanIds: number[];
++  vrf?: string;
++  vxlanVni?: number;
++  securityZone?: string;
++  enabled: boolean;
++  pathPoints?: Cell[];
++}
++
++export interface NetworkPolicy {
++  id: string;
++  name: string;
++  sourceZone: string;
++  destinationZone: string;
++  action: 'allow' | 'deny';
++  protocol: 'any' | 'tcp' | 'udp' | 'icmp';
++  destinationPort?: number;
++  priority: number;
++  enabled: boolean;
++}
++
++export interface ControllerIntent {
++  id: string;
++  name: string;
++  controllerNodeId: string;
++  sourceNodeId: string;
++  destinationNodeId: string;
++  requiredBandwidthGbps: number;
++  requireRedundancy: boolean;
++  status: 'draft' | 'validated' | 'deployed' | 'failed';
++  lastMessage?: string;
++}
++
++export interface NetworkState {
++  spaces: Record<string, SpatialUnit>;
++  nodes: Record<string, NetworkNode>;
++  links: Record<string, NetworkLink>;
++  policies: Record<string, NetworkPolicy>;
++  intents: Record<string, ControllerIntent>;
++}
++
++export function createDefaultNetwork(): NetworkState {
++  const spaces: SpatialUnit[] = [
++    {
++      id: 'site-main',
++      parentId: null,
++      kind: 'site',
++      name: 'Primary Site',
++      bounds: { x: 0, y: 0, z: 0, width: 32, height: 8, depth: 32 },
++      visible: true,
++    },
++    {
++      id: 'building-a',
++      parentId: 'site-main',
++      kind: 'building',
++      name: 'Building A',
++      bounds: { x: 1, y: 0, z: 1, width: 30, height: 8, depth: 30 },
++      visible: true,
++    },
++    {
++      id: 'floor-1',
++      parentId: 'building-a',
++      kind: 'floor',
++      name: 'Floor 1',
++      bounds: { x: 1, y: 0, z: 1, width: 30, height: 4, depth: 30 },
++      visible: true,
++    },
++    {
++      id: 'room-network',
++      parentId: 'floor-1',
++      kind: 'room',
++      name: 'Network Room',
++      bounds: { x: 2, y: 0, z: 2, width: 10, height: 4, depth: 10 },
++      visible: true,
++    },
++    {
++      id: 'hall-a',
++      parentId: 'floor-1',
++      kind: 'hall',
++      name: 'Data Hall A',
++      bounds: { x: 13, y: 0, z: 2, width: 17, height: 4, depth: 27 },
++      visible: true,
++    },
++  ];
++  return {
++    spaces: Object.fromEntries(spaces.map((space) => [space.id, space])),
++    nodes: {},
++    links: {},
++    policies: {},
++    intents: {},
++  };
++}
+diff --git a/src/lib/persist/index.ts b/src/lib/persist/index.ts
+index ae3556f..af0d6ce 100644
+--- a/src/lib/persist/index.ts
++++ b/src/lib/persist/index.ts
+@@ -10,19 +10,10 @@
+ 
+ import { useCallback, useEffect } from 'react';
+ import { create } from 'zustand';
+-import {
+-  get as idbGet,
+-  set as idbSet,
+-  del as idbDel,
+-  keys as idbKeys,
+-} from 'idb-keyval';
++import { get as idbGet, set as idbSet, del as idbDel, keys as idbKeys } from 'idb-keyval';
+ import type { BuildSnapshot } from '@/lib/store/build-store';
+ import { useBuildStore } from '@/lib/store/build-store';
+-import {
+-  buildStore,
+-  ensureDatabaseReady,
+-  settingsStore,
+-} from '@/lib/persist/database';
++import { buildStore, ensureDatabaseReady, settingsStore } from '@/lib/persist/database';
+ 
+ export interface PersistedBuild {
+   id: string;
+@@ -125,7 +116,12 @@ export function useAutoSave(enabled = true) {
+     if (!enabled) return;
+     let timer: ReturnType<typeof setTimeout> | null = null;
+     const unsub = useBuildStore.subscribe((state, prev) => {
+-      if (state.voxels === prev.voxels && state.policies === prev.policies) return;
++      if (
++        state.voxels === prev.voxels &&
++        state.policies === prev.policies &&
++        state.network === prev.network
++      )
++        return;
+       if (timer) clearTimeout(timer);
+       timer = setTimeout(() => {
+         void saveBuildToIDB(useBuildStore.getState().exportSnapshot());
+diff --git a/src/lib/persist/share.ts b/src/lib/persist/share.ts
+index 993a3ce..a04a8fb 100644
+--- a/src/lib/persist/share.ts
++++ b/src/lib/persist/share.ts
+@@ -74,6 +74,7 @@ function stripForShare(s: Partial<BuildSnapshot> & Partial<BuildState>) {
+     updatedAt: s.updatedAt ?? 0,
+     shareToken: s.shareToken,
+     policies: (live.policies ?? {}) as BuildSnapshot['policies'],
++    network: hasNetworkContent(s.network) ? s.network : undefined,
+     // UI fields, reset to defaults
+     scenarioName: live.scenarioName ?? '',
+     gridSize: live.gridSize ?? { w: 32, h: 8, d: 32 },
+@@ -83,9 +84,23 @@ function stripForShare(s: Partial<BuildSnapshot> & Partial<BuildState>) {
+     activeBlockType: null,
+     rotation: 0,
+     camera: live.camera ?? { position: [16, 16, 16], target: [0, 0, 0], zoom: 1 },
++    networkLayer: 'physical',
++    selectedNetworkNodeId: null,
++    highlightedLinkIds: [],
+   };
+ }
+ 
++function hasNetworkContent(network: BuildSnapshot['network']): boolean {
++  if (!network) return false;
++  return (
++    Object.keys(network.nodes).length > 0 ||
++    Object.keys(network.links).length > 0 ||
++    Object.keys(network.policies).length > 0 ||
++    Object.keys(network.intents).length > 0 ||
++    Object.keys(network.spaces).length > 5
++  );
++}
++
+ /** Build a shareable URL for a given origin. */
+ export async function buildShareUrl(
+   snapshot: BuildSnapshot,
+diff --git a/src/lib/store/build-store.ts b/src/lib/store/build-store.ts
+index 79de453..8ef08b0 100644
+--- a/src/lib/store/build-store.ts
++++ b/src/lib/store/build-store.ts
+@@ -27,6 +27,16 @@ import {
+ } from '@/lib/blocks';
+ import { cellKey, type Cell, type GridSize, DEFAULT_GRID_SIZE } from '@/lib/grid';
+ import { defaultPolicyState, type PolicyKey } from '@/lib/scoring/policy';
++import {
++  createDefaultNetwork,
++  evaluateIntent,
++  type ControllerIntent,
++  type NetworkLayer,
++  type NetworkLink,
++  type NetworkNode,
++  type NetworkPolicy,
++  type SpatialUnit,
++} from '@/lib/network';
+ 
+ export type BuildMode = 'build' | 'sim' | 'inspect';
+ export type VisualMode = 'standard' | 'thermal';
+@@ -43,6 +53,7 @@ export interface BuildState extends PureBuildState {
+ 
+   // World
+   gridSize: GridSize;
++  network: ReturnType<typeof createDefaultNetwork>;
+ 
+   // UI
+   mode: BuildMode;
+@@ -52,6 +63,9 @@ export interface BuildState extends PureBuildState {
+   rotation: 0 | 1 | 2 | 3;
+   camera: CameraState;
+   visualMode: VisualMode;
++  networkLayer: NetworkLayer;
++  selectedNetworkNodeId: string | null;
++  highlightedLinkIds: string[];
+ }
+ 
+ export interface BuildActions {
+@@ -83,6 +97,21 @@ export interface BuildActions {
+   setRotation: (r: 0 | 1 | 2 | 3) => void;
+   setCamera: (camera: Partial<CameraState>) => void;
+   setVisualMode: (mode: VisualMode) => void;
++  setNetworkLayer: (layer: NetworkLayer) => void;
++  setSelectedNetworkNode: (id: string | null) => void;
++  setHighlightedLinks: (ids: string[]) => void;
++
++  // Spatial and SDN graph
++  upsertSpace: (space: SpatialUnit) => void;
++  toggleSpaceVisibility: (id: string) => void;
++  upsertNetworkNode: (node: NetworkNode) => void;
++  removeNetworkNode: (id: string) => void;
++  upsertNetworkLink: (link: NetworkLink) => void;
++  toggleNetworkLink: (id: string) => void;
++  upsertNetworkPolicy: (policy: NetworkPolicy) => void;
++  upsertControllerIntent: (intent: ControllerIntent) => void;
++  validateControllerIntent: (id: string, deploy?: boolean) => void;
++  loadNetworkTemplate: () => void;
+ 
+   // Meta
+   rename: (name: string) => void;
+@@ -113,6 +142,9 @@ export type BuildSnapshot = PureBuildState &
+       | 'rotation'
+       | 'camera'
+       | 'visualMode'
++      | 'networkLayer'
++      | 'selectedNetworkNodeId'
++      | 'highlightedLinkIds'
+     >
+   >;
+ 
+@@ -168,6 +200,10 @@ function createInitial(scenarioId = 'free', scenarioName = 'Free Build'): BuildS
+       zoom: 1,
+     },
+     visualMode: 'standard',
++    network: createDefaultNetwork(),
++    networkLayer: 'physical',
++    selectedNetworkNodeId: null,
++    highlightedLinkIds: [],
+     name: 'Untitled Build',
+     createdAt: Date.now(),
+     updatedAt: Date.now(),
+@@ -275,6 +311,9 @@ export const useBuildStore = create<BuildStore>()(
+           inventory: defaultInventory(),
+           selectedInstanceId: null,
+           hoveredCell: null,
++          network: createDefaultNetwork(),
++          selectedNetworkNodeId: null,
++          highlightedLinkIds: [],
+           updatedAt: Date.now(),
+         }));
+       },
+@@ -300,6 +339,99 @@ export const useBuildStore = create<BuildStore>()(
+       setRotation: (r) => set({ rotation: r }),
+       setCamera: (camera) => set((s) => ({ camera: { ...s.camera, ...camera } })),
+       setVisualMode: (visualMode) => set({ visualMode }),
++      setNetworkLayer: (networkLayer) => set({ networkLayer }),
++      setSelectedNetworkNode: (selectedNetworkNodeId) => set({ selectedNetworkNodeId }),
++      setHighlightedLinks: (highlightedLinkIds) => set({ highlightedLinkIds }),
++
++      upsertSpace: (space) =>
++        set((s) => ({
++          network: { ...s.network, spaces: { ...s.network.spaces, [space.id]: space } },
++          updatedAt: Date.now(),
++        })),
++      toggleSpaceVisibility: (id) =>
++        set((s) => {
++          const space = s.network.spaces[id];
++          if (!space) return s;
++          return {
++            network: {
++              ...s.network,
++              spaces: { ...s.network.spaces, [id]: { ...space, visible: !space.visible } },
++            },
++          };
++        }),
++      upsertNetworkNode: (node) =>
++        set((s) => ({
++          network: { ...s.network, nodes: { ...s.network.nodes, [node.id]: node } },
++          updatedAt: Date.now(),
++        })),
++      removeNetworkNode: (id) =>
++        set((s) => {
++          const nodes = { ...s.network.nodes };
++          delete nodes[id];
++          const links = Object.fromEntries(
++            Object.entries(s.network.links).filter(
++              ([, link]) => link.sourceNodeId !== id && link.targetNodeId !== id,
++            ),
++          );
++          return {
++            network: { ...s.network, nodes, links },
++            selectedNetworkNodeId: s.selectedNetworkNodeId === id ? null : s.selectedNetworkNodeId,
++            updatedAt: Date.now(),
++          };
++        }),
++      upsertNetworkLink: (link) =>
++        set((s) => ({
++          network: { ...s.network, links: { ...s.network.links, [link.id]: link } },
++          updatedAt: Date.now(),
++        })),
++      toggleNetworkLink: (id) =>
++        set((s) => {
++          const link = s.network.links[id];
++          if (!link) return s;
++          return {
++            network: {
++              ...s.network,
++              links: { ...s.network.links, [id]: { ...link, enabled: !link.enabled } },
++            },
++            updatedAt: Date.now(),
++          };
++        }),
++      upsertNetworkPolicy: (policy) =>
++        set((s) => ({
++          network: { ...s.network, policies: { ...s.network.policies, [policy.id]: policy } },
++          updatedAt: Date.now(),
++        })),
++      upsertControllerIntent: (intent) =>
++        set((s) => ({
++          network: { ...s.network, intents: { ...s.network.intents, [intent.id]: intent } },
++          updatedAt: Date.now(),
++        })),
++      validateControllerIntent: (id, deploy = false) =>
++        set((s) => {
++          const intent = s.network.intents[id];
++          if (!intent) return s;
++          const result = evaluateIntent(s.network, intent);
++          return {
++            network: {
++              ...s.network,
++              intents: {
++                ...s.network.intents,
++                [id]: {
++                  ...intent,
++                  status: result.ok ? (deploy ? 'deployed' : 'validated') : 'failed',
++                  lastMessage: result.message,
++                },
++              },
++            },
++            highlightedLinkIds: result.primary?.linkIds ?? [],
++            updatedAt: Date.now(),
++          };
++        }),
++      loadNetworkTemplate: () =>
++        set((s) => ({
++          network: createEnterpriseTemplate(s.network.spaces),
++          updatedAt: Date.now(),
++        })),
+ 
+       rename: (name) => set({ name, updatedAt: Date.now() }),
+       setScenario: (id, name) => set({ scenarioId: id, scenarioName: name, updatedAt: Date.now() }),
+@@ -311,7 +443,15 @@ export const useBuildStore = create<BuildStore>()(
+         useBuildStore.temporal.getState().clear();
+       },
+ 
+-      loadBuild: (snapshot) => set(() => ({ ...snapshot, updatedAt: Date.now() })),
++      loadBuild: (snapshot) =>
++        set(() => ({
++          ...snapshot,
++          network: snapshot.network ?? createDefaultNetwork(),
++          networkLayer: snapshot.networkLayer ?? 'physical',
++          selectedNetworkNodeId: null,
++          highlightedLinkIds: [],
++          updatedAt: Date.now(),
++        })),
+ 
+       exportSnapshot: () => {
+         const s = get();
+@@ -331,6 +471,10 @@ export const useBuildStore = create<BuildStore>()(
+           rotation: 0,
+           camera: s.camera,
+           visualMode: 'standard',
++          network: s.network,
++          networkLayer: s.networkLayer,
++          selectedNetworkNodeId: null,
++          highlightedLinkIds: [],
+           name: s.name,
+           createdAt: s.createdAt,
+           updatedAt: s.updatedAt,
+@@ -345,6 +489,7 @@ export const useBuildStore = create<BuildStore>()(
+           byCell: state.byCell,
+           inventory: state.inventory,
+           policies: state.policies,
++          network: state.network,
+           name: state.name,
+           scenarioId: state.scenarioId,
+           scenarioName: state.scenarioName,
+@@ -386,3 +531,99 @@ export function countByType(state: BuildState): Record<string, number> {
+ 
+ /** Categories export for UI. */
+ export { CATEGORIES };
++
++function createEnterpriseTemplate(spaces: BuildState['network']['spaces']): BuildState['network'] {
++  const node = (
++    id: string,
++    name: string,
++    kind: NetworkNode['kind'],
++    x: number,
++    z: number,
++    spaceId = 'hall-a',
++  ): NetworkNode => ({
++    id,
++    name,
++    kind,
++    spaceId,
++    position: { x, y: 1, z },
++    ports: [0, 1, 2, 3].map((index) => ({
++      id: `${id}-p${index}`,
++      name: `Eth${index}`,
++      kind: 'fiber',
++      speedGbps: kind === 'server' ? 25 : 100,
++      adminUp: true,
++    })),
++  });
++  const nodes = [
++    node('sdn-1', 'SDN Controller', 'controller', 4, 4, 'room-network'),
++    node('fw-1', 'Edge Firewall', 'firewall', 7, 4, 'room-network'),
++    node('spine-1', 'Spine A', 'spine', 15, 7),
++    node('spine-2', 'Spine B', 'spine', 15, 12),
++    node('leaf-1', 'Leaf A', 'leaf', 21, 7),
++    node('leaf-2', 'Leaf B', 'leaf', 21, 12),
++    node('server-1', 'Application Server', 'server', 27, 7),
++    node('server-2', 'Database Server', 'server', 27, 12),
++  ];
++  const nodeMap = Object.fromEntries(nodes.map((item) => [item.id, item]));
++  const pairs: Array<[string, string, string, number, number]> = [
++    ['l1', 'sdn-1', 'fw-1', 0, 0],
++    ['l2', 'fw-1', 'spine-1', 1, 0],
++    ['l3', 'fw-1', 'spine-2', 2, 0],
++    ['l4', 'spine-1', 'leaf-1', 1, 0],
++    ['l5', 'spine-1', 'leaf-2', 2, 0],
++    ['l6', 'spine-2', 'leaf-1', 1, 1],
++    ['l7', 'spine-2', 'leaf-2', 2, 1],
++    ['l8', 'leaf-1', 'server-1', 2, 0],
++    ['l9', 'leaf-2', 'server-1', 2, 1],
++    ['l10', 'leaf-1', 'server-2', 3, 0],
++    ['l11', 'leaf-2', 'server-2', 3, 1],
++  ];
++  const links = Object.fromEntries(
++    pairs.map(([id, a, b, ap, bp]) => [
++      id,
++      {
++        id,
++        sourceNodeId: a,
++        sourcePortId: nodeMap[a]!.ports[ap]!.id,
++        targetNodeId: b,
++        targetPortId: nodeMap[b]!.ports[bp]!.id,
++        medium: 'fiber' as const,
++        bandwidthGbps: 100,
++        redundancyGroup: a.includes('spine') || b.includes('spine') ? 'fabric' : undefined,
++        vlanIds: [10, 20],
++        vrf: 'enterprise',
++        vxlanVni: 10010,
++        securityZone: b.startsWith('server') ? 'application' : 'infrastructure',
++        enabled: true,
++      },
++    ]),
++  );
++  const policy: NetworkPolicy = {
++    id: 'policy-app-db',
++    name: 'Application to database',
++    sourceZone: 'application',
++    destinationZone: 'database',
++    action: 'allow',
++    protocol: 'tcp',
++    destinationPort: 5432,
++    priority: 100,
++    enabled: true,
++  };
++  const intent: ControllerIntent = {
++    id: 'intent-app-db',
++    name: 'Resilient application path',
++    controllerNodeId: 'sdn-1',
++    sourceNodeId: 'server-1',
++    destinationNodeId: 'server-2',
++    requiredBandwidthGbps: 20,
++    requireRedundancy: true,
++    status: 'draft',
++  };
++  return {
++    spaces,
++    nodes: nodeMap,
++    links,
++    policies: { [policy.id]: policy },
++    intents: { [intent.id]: intent },
++  };
++}
+diff --git a/tests/unit/network-topology.test.ts b/tests/unit/network-topology.test.ts
+new file mode 100644
+index 0000000..bf9e7ff
+--- /dev/null
++++ b/tests/unit/network-topology.test.ts
+@@ -0,0 +1,107 @@
++import { beforeEach, describe, expect, it } from 'vitest';
++import {
++  createDefaultNetwork,
++  evaluateIntent,
++  findNetworkPath,
++  findRedundantPath,
++  makePort,
++  validateTopology,
++  type ControllerIntent,
++  type NetworkNode,
++  type NetworkState,
++} from '@/lib/network';
++import { useBuildStore } from '@/lib/store/build-store';
++
++function node(id: string, x: number): NetworkNode {
++  return {
++    id,
++    name: id,
++    kind: 'switch',
++    spaceId: 'hall-a',
++    position: { x, y: 1, z: 1 },
++    ports: [makePort(id, 0), makePort(id, 1), makePort(id, 2)],
++  };
++}
++
++function network(): NetworkState {
++  const state = createDefaultNetwork();
++  for (const item of [node('a', 1), node('b', 2), node('c', 3), node('d', 4)])
++    state.nodes[item.id] = item;
++  const add = (
++    id: string,
++    source: string,
++    target: string,
++    sourcePort: number,
++    targetPort: number,
++    bandwidthGbps = 100,
++  ) => {
++    state.links[id] = {
++      id,
++      sourceNodeId: source,
++      sourcePortId: state.nodes[source]!.ports[sourcePort]!.id,
++      targetNodeId: target,
++      targetPortId: state.nodes[target]!.ports[targetPort]!.id,
++      medium: 'fiber',
++      bandwidthGbps,
++      vlanIds: [10],
++      vrf: 'enterprise',
++      enabled: true,
++    };
++  };
++  add('ab', 'a', 'b', 0, 0, 40);
++  add('bd', 'b', 'd', 1, 0, 40);
++  add('ac', 'a', 'c', 1, 0);
++  add('cd', 'c', 'd', 1, 1);
++  return state;
++}
++
++describe('enterprise network topology', () => {
++  beforeEach(() => useBuildStore.getState().startBuild('free', 'Free Build'));
++
++  it('traces a path and finds a link-disjoint backup', () => {
++    const state = network();
++    const primary = findNetworkPath(state, 'a', 'd');
++    expect(primary?.nodeIds).toEqual(['a', 'b', 'd']);
++    expect(primary?.bottleneckGbps).toBe(40);
++    expect(findRedundantPath(state, primary!)?.nodeIds).toEqual(['a', 'c', 'd']);
++  });
++
++  it('reroutes after a failed link', () => {
++    const state = network();
++    state.links.ab!.enabled = false;
++    expect(findNetworkPath(state, 'a', 'd')?.nodeIds).toEqual(['a', 'c', 'd']);
++  });
++
++  it('validates ports, spaces, bandwidth, and redundancy intents', () => {
++    const state = network();
++    expect(validateTopology(state)).toEqual([]);
++    const intent: ControllerIntent = {
++      id: 'intent',
++      name: 'Resilient path',
++      controllerNodeId: 'a',
++      sourceNodeId: 'a',
++      destinationNodeId: 'd',
++      requiredBandwidthGbps: 30,
++      requireRedundancy: true,
++      status: 'draft',
++    };
++    expect(evaluateIntent(state, intent)).toMatchObject({ ok: true });
++    expect(evaluateIntent(state, { ...intent, requiredBandwidthGbps: 50 })).toMatchObject({
++      ok: false,
++      message: 'Path bottleneck is 40 Gbps.',
++    });
++  });
++
++  it('loads, persists, validates, and deploys the reference SDN fabric', () => {
++    const store = useBuildStore.getState();
++    store.loadNetworkTemplate();
++    const loaded = useBuildStore.getState();
++    expect(Object.keys(loaded.network.spaces)).toContain('hall-a');
++    expect(Object.keys(loaded.network.nodes)).toHaveLength(8);
++    expect(Object.keys(loaded.network.links)).toHaveLength(11);
++    loaded.validateControllerIntent('intent-app-db', true);
++    const deployed = useBuildStore.getState();
++    expect(deployed.network.intents['intent-app-db']).toMatchObject({ status: 'deployed' });
++    expect(deployed.exportSnapshot().network?.nodes['server-1']?.name).toBe('Application Server');
++  });
++});
+-- 
+2.50.1 (Apple Git-155)
+
