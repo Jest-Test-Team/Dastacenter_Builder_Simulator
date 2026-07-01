@@ -6,17 +6,17 @@ const securityHeaders = [
   { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
   {
     key: 'Permissions-Policy',
-    value: 'camera=(), microphone=(), geolocation=(), browsing-topics=()',
+    value: 'camera=(), microphone=(), geolocation=()',
   },
   {
     key: 'Content-Security-Policy',
     value: [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.posthog.com",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.posthog.com https://static.cloudflareinsights.com",
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://cdn.credly.com https://images.credly.com",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.posthog.com wss://*.posthog.com https://*.walletconnect.com wss://*.walletconnect.org https://*.alchemy.com https://*.infura.io https://api.mainnet-beta.solana.com",
+      "connect-src 'self' https://*.posthog.com wss://*.posthog.com https://cloudflareinsights.com https://*.walletconnect.com wss://*.walletconnect.org https://*.alchemy.com https://*.infura.io https://api.mainnet-beta.solana.com",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
