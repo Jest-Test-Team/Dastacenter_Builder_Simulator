@@ -104,7 +104,11 @@ function SpacesPanel() {
   );
   const selectedFloor = floors.find((floor) => floor.id === selectedFloorId) ?? floors[0];
   const selectedRooms = Object.values(spaces).filter(
-    (space) => space.parentId === selectedFloor?.id && (space.kind === 'room' || space.kind === 'hall'),
+    (space) =>
+      space.parentId === selectedFloor?.id &&
+      (space.kind === 'room' || space.kind === 'hall') &&
+      space.id !== 'room-network' &&
+      space.id !== 'hall-a',
   );
 
   const addLevel = (direction: 'up' | 'down') => {
