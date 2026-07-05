@@ -1,6 +1,6 @@
 'use client';
 
-import { Line, Text } from '@react-three/drei';
+import { Line } from '@react-three/drei';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useMemo, useRef } from 'react';
 import * as THREE from 'three';
@@ -88,15 +88,6 @@ export function NetworkOverlay3D() {
                 depthWrite={false}
               />
             </mesh>
-            <Text
-              position={[-0.1, floor.bounds.y + 1.5, 2]}
-              fontSize={active ? 0.72 : 0.5}
-              color={active ? '#a5f3fc' : '#155e75'}
-              anchorX="right"
-              anchorY="middle"
-            >
-              {floor.name.toUpperCase()}
-            </Text>
           </group>
         );
       })}
