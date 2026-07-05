@@ -24,12 +24,14 @@ export interface BuilderCanvasProps {
   showGrid?: boolean;
   showPreview?: boolean;
   frameloop?: 'always' | 'demand';
+  xrayMode?: boolean;
 }
 
 export function BuilderCanvas({
   showGrid = true,
   showPreview = true,
   frameloop = 'demand',
+  xrayMode = false,
 }: BuilderCanvasProps) {
   const gridSize = useBuildStore((s) => s.gridSize);
   const camera = useBuildStore((s) => s.camera);
@@ -59,9 +61,15 @@ export function BuilderCanvas({
       className="h-full min-h-[56dvh] w-full md:min-h-0"
     >
       <Suspense fallback={null}>
-        <PerspectiveCamera makeDefault position={camera.position} fov={50} near={0.1} far={500} />
+        <PerspectiveCamera
+          makeDefault
+          position={xrayMode ? [44, 30, 44] : camera.position}
+          fov={xrayMode ? 46 : 50}
+          near={0.1}
+          far={500}
+        />
         <OrbitControls
-          target={camera.target}
+          target={xrayMode ? [16, 7, 16] : camera.target}
           enableDamping={!reducedMotion}
           dampingFactor={0.08}
           minDistance={5}
@@ -86,40 +94,46 @@ export function BuilderCanvas({
 
         {showGrid && (
           <Grid
-            position={[0, 0, 0]}
+            position={[0, xrayMode ? -6 : 0, 0]}
             args={[gridSize.w, gridSize.d]}
             cellSize={1}
             cellThickness={0.6}
-            cellColor="#3b4860"
+            cellColor={xrayMode ? '#0e7490' : '#3b4860'}
             sectionSize={4}
             sectionThickness={1.2}
-            sectionColor="#5b6b8a"
+            sectionColor={xrayMode ? '#22d3ee' : '#5b6b8a'}
             fadeDistance={80}
             fadeStrength={1.2}
             infiniteGrid={false}
           />
         )}
 
-        <SiteEnvironment />
+        {!xrayMode && <SiteEnvironment />}
+        {xrayMode && (
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[16, -6.05, 16]}>
+            <planeGeometry args={[42, 42]} />
+            <meshBasicMaterial color="#020617" transparent opacity={0.96} />
+          </mesh>
+        )}
         <VoxelWorld />
         <CctvCoverage />
         <NetworkOverlay3D />
         {showPreview && <PlacementPreview />}
-        <BuildMetricsHud report={report} />
+        <BuildMetricsHud report={report} xrayMode={xrayMode} />
       </Suspense>
     </Canvas>
   );
 }
 
-function BuildMetricsHud({ report }: { report: ReturnType<typeof score> }) {
+function BuildMetricsHud({ report, xrayMode }: { report: ReturnType<typeof score>; xrayMode: boolean }) {
   const visualMode = useBuildStore((s) => s.visualMode);
   return (
     <HtmlOverlay>
       <div className="pointer-events-none absolute left-2 top-2 w-[calc(100vw-1rem)] max-w-xs md:left-4 md:top-4 md:w-72">
-        <div className="panel p-2 text-[10px] md:p-3 md:text-xs">
+        <div className="panel border-cyan-500/30 bg-slate-950/90 p-2 text-[10px] md:p-3 md:text-xs">
           <div className="flex items-center justify-between gap-2">
-            <span className="font-semibold">Milestone HUD</span>
-            <span className="badge">{visualMode === 'thermal' ? 'Thermal' : 'Standard'}</span>
+            <span className="font-semibold">{xrayMode ? 'FACILITY DIGITAL TWIN' : 'Milestone HUD'}</span>
+            <span className="badge">{xrayMode ? 'LIVE SIM' : visualMode === 'thermal' ? 'Thermal' : 'Standard'}</span>
           </div>
           <div className="mt-2 grid grid-cols-2 gap-2">
             <Metric label="PUE" value={report.pue.toFixed(2)} />

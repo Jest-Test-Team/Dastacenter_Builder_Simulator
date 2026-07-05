@@ -72,7 +72,7 @@ export default function BuildPage() {
       <div className="flex min-h-0 flex-1 flex-col overflow-x-hidden md:flex-row">
         <BlockPalette mobileOpen={mobilePanel === 'blocks'} onClose={() => setMobilePanel(null)} />
         <div className="relative min-h-[56dvh] flex-1 bg-bg-subtle md:min-h-0">
-          <BuilderCanvas />
+          <BuilderCanvas xrayMode={networkOpen} />
           <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 md:bottom-4">
             <Hotbar />
           </div>

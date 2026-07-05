@@ -3,8 +3,11 @@
 import { useMemo, useState } from 'react';
 import {
   Cable,
+  Activity,
+  Building2,
   Eye,
   EyeOff,
+  Layers3,
   Network,
   Plus,
   Route,
@@ -35,14 +38,14 @@ const TABS: Array<{ id: Tab; label: string }> = [
 const LAYERS: NetworkLayer[] = ['physical', 'vlan', 'vrf', 'vxlan', 'security'];
 
 export function NetworkWorkspace({ onClose }: { onClose: () => void }) {
-  const [tab, setTab] = useState<Tab>('topology');
+  const [tab, setTab] = useState<Tab>('spaces');
   const network = useBuildStore((state) => state.network);
   const loadTemplate = useBuildStore((state) => state.loadNetworkTemplate);
   const issues = useMemo(() => validateTopology(network), [network]);
 
   return (
     <aside
-      className="absolute inset-y-0 right-0 z-30 flex w-full max-w-xl flex-col border-l border-border bg-bg/95 shadow-2xl backdrop-blur md:w-[36rem]"
+      className="absolute inset-y-0 right-0 z-30 flex w-full max-w-xl flex-col border-l border-cyan-950 bg-[#050a12]/97 shadow-2xl backdrop-blur md:w-[34rem]"
       aria-label="Enterprise network workspace"
     >
       <header className="flex items-center gap-2 border-b border-border p-3">
@@ -88,24 +91,113 @@ export function NetworkWorkspace({ onClose }: { onClose: () => void }) {
 
 function SpacesPanel() {
   const spaces = useBuildStore((state) => state.network.spaces);
+  const selectedFloorId = useBuildStore((state) => state.selectedSpatialFloorId);
+  const selectFloor = useBuildStore((state) => state.setSelectedSpatialFloor);
   const toggle = useBuildStore((state) => state.toggleSpaceVisibility);
   const upsert = useBuildStore((state) => state.upsertSpace);
-  const ordered = useMemo(() => flattenSpaces(Object.values(spaces)), [spaces]);
+  const floors = useMemo(
+    () =>
+      Object.values(spaces)
+        .filter((space) => space.kind === 'floor')
+        .sort((a, b) => (b.floorLevel ?? b.bounds.y) - (a.floorLevel ?? a.bounds.y)),
+    [spaces],
+  );
+  const selectedFloor = floors.find((floor) => floor.id === selectedFloorId) ?? floors[0];
+  const selectedRooms = Object.values(spaces).filter(
+    (space) => space.parentId === selectedFloor?.id && (space.kind === 'room' || space.kind === 'hall'),
+  );
+
+  const addLevel = (direction: 'up' | 'down') => {
+    const existingLevels = floors.map((floor) => floor.floorLevel ?? 0);
+    const level = direction === 'up' ? Math.max(...existingLevels) + 1 : Math.min(...existingLevels) - 1;
+    const id = level < 0 ? `basement-${Math.abs(level)}` : `floor-${level}`;
+    const name = level < 0 ? `Basement ${Math.abs(level)}` : level === 0 ? 'Main Floor' : `Floor ${level}`;
+    upsert({
+      id,
+      parentId: 'building-a',
+      kind: 'floor',
+      name,
+      floorLevel: level,
+      bounds: { x: 1, y: level * 3, z: 1, width: 30, height: 3, depth: 30 },
+      visible: true,
+    });
+    selectFloor(id);
+  };
+
   return (
-    <section>
-      <PanelTitle
-        icon={<Eye className="h-4 w-4" />}
-        title="Site → building → floor → room → hall → rack"
-      />
-      <div className="space-y-1">
-        {ordered.map(({ space, depth }) => (
+    <section className="space-y-4">
+      <div className="rounded-xl border border-cyan-500/25 bg-cyan-950/20 p-3">
+        <div className="flex items-start gap-3">
+          <div className="rounded-lg bg-cyan-400/10 p-2 text-cyan-300"><Building2 className="h-5 w-5" /></div>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="font-semibold text-cyan-50">Building A · X-ray view</h3>
+              <span className="flex items-center gap-1 font-mono text-[10px] text-emerald-300">
+                <Activity className="h-3 w-3" /> LIVE SIM
+              </span>
+            </div>
+            <p className="mt-1 text-xs leading-relaxed text-cyan-100/60">
+              Transparent structural model with simulated facility telemetry. No sonar or surveillance feed is used.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <PanelTitle icon={<Layers3 className="h-4 w-4" />} title="Building levels" />
+        <div className="grid grid-cols-3 gap-1.5">
+          {floors.map((floor) => {
+            const active = floor.id === selectedFloor?.id;
+            return (
+              <button
+                key={floor.id}
+                onClick={() => selectFloor(floor.id)}
+                className={cn(
+                  'rounded-lg border px-2 py-2 text-left transition',
+                  active
+                    ? 'border-cyan-300 bg-cyan-400/15 text-cyan-50 shadow-[0_0_18px_rgba(34,211,238,0.12)]'
+                    : 'border-slate-700 bg-slate-900/60 text-slate-400 hover:border-cyan-700 hover:text-cyan-100',
+                )}
+                aria-pressed={active}
+              >
+                <span className="block truncate text-xs font-semibold">{floor.name}</span>
+                <span className="mt-0.5 block font-mono text-[9px] opacity-60">
+                  LEVEL {(floor.floorLevel ?? 0) >= 0 ? '+' : ''}{floor.floorLevel ?? 0}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-2">
+          <button className="btn-ghost justify-center text-xs" onClick={() => addLevel('up')}>
+            <Plus className="h-3.5 w-3.5" /> Add floor
+          </button>
+          <button className="btn-ghost justify-center text-xs" onClick={() => addLevel('down')}>
+            <Plus className="h-3.5 w-3.5" /> Add basement
+          </button>
+        </div>
+      </div>
+
+      {selectedFloor && (
+        <div>
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-cyan-50">{selectedFloor.name} layout</h3>
+            <button
+              className="icon-btn"
+              onClick={() => toggle(selectedFloor.id)}
+              aria-label={`${selectedFloor.visible ? 'Hide' : 'Show'} ${selectedFloor.name}`}
+            >
+              {selectedFloor.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
+            </button>
+          </div>
+          <div className="space-y-1.5">
+            {selectedRooms.map((space) => (
           <div
             key={space.id}
-            className="flex items-center gap-2 rounded border border-border bg-bg-subtle px-2 py-1.5"
-            style={{ marginLeft: depth * 12 }}
+                className="flex items-center gap-2 rounded-lg border border-cyan-950 bg-slate-950/60 px-2.5 py-2"
           >
-            <span className="badge text-[10px]">{space.kind}</span>
-            <span className="min-w-0 flex-1 truncate text-sm">{space.name}</span>
+                <span className="h-2 w-2 rounded-full bg-cyan-400 shadow-[0_0_8px_#22d3ee]" />
+                <span className="min-w-0 flex-1 truncate text-xs">{space.name}</span>
             <span className="font-mono text-[10px] text-fg-muted">
               {space.bounds.width}×{space.bounds.depth}m
             </span>
@@ -117,18 +209,21 @@ function SpacesPanel() {
               {space.visible ? <Eye className="h-3.5 w-3.5" /> : <EyeOff className="h-3.5 w-3.5" />}
             </button>
           </div>
-        ))}
-      </div>
+            ))}
+          </div>
+        </div>
+      )}
       <button
-        className="btn-ghost mt-3 text-xs"
+        className="btn-ghost w-full justify-center text-xs"
         onClick={() => {
           const id = `rack-${nanoid(5)}`;
           upsert({
             id,
-            parentId: 'hall-a',
+            parentId: selectedRooms.find((space) => space.kind === 'hall')?.id ?? selectedFloor?.id ?? null,
             kind: 'rack',
             name: `Rack ${Object.values(spaces).filter((s) => s.kind === 'rack').length + 1}`,
-            bounds: { x: 15, y: 0, z: 15, width: 1, height: 3, depth: 1 },
+            floorLevel: selectedFloor?.floorLevel,
+            bounds: { x: 15, y: selectedFloor?.bounds.y ?? 0, z: 18, width: 1, height: 2.4, depth: 1 },
             visible: true,
           });
         }}
@@ -156,7 +251,10 @@ function TopologyPanel() {
       id,
       name: `Endpoint ${index + 1}`,
       kind: 'endpoint',
-      spaceId: 'hall-a',
+      spaceId:
+        Object.values(network.spaces).find(
+          (space) => space.kind === 'hall' && space.floorLevel === 0,
+        )?.id ?? Object.values(network.spaces).find((space) => space.kind === 'hall')?.id ?? '',
       position: { x: 16 + (index % 12), y: 1, z: 18 + (index % 8) },
       ports: [makePort(id, 0, 25), makePort(id, 1, 25)],
     });
@@ -556,23 +654,4 @@ function toX(node: NetworkNode) {
 }
 function toY(node: NetworkNode) {
   return 24 + (node.position.z / 32) * 250;
-}
-function flattenSpaces(
-  spaces: ReturnType<typeof useBuildStore.getState>['network']['spaces'][string][],
-) {
-  const byParent = new Map<string | null, typeof spaces>();
-  for (const space of spaces) {
-    const list = byParent.get(space.parentId) ?? [];
-    list.push(space);
-    byParent.set(space.parentId, list);
-  }
-  const output: Array<{ space: (typeof spaces)[number]; depth: number }> = [];
-  const visit = (parent: string | null, depth: number) => {
-    for (const space of byParent.get(parent) ?? []) {
-      output.push({ space, depth });
-      visit(space.id, depth + 1);
-    }
-  };
-  visit(null, 0);
-  return output;
 }

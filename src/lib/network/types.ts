@@ -21,6 +21,8 @@ export interface SpatialUnit {
   name: string;
   bounds: { x: number; y: number; z: number; width: number; height: number; depth: number };
   visible: boolean;
+  /** Signed building level: basements are negative, main floor is 0. */
+  floorLevel?: number;
 }
 
 export interface NetworkPort {
@@ -99,7 +101,7 @@ export function createDefaultNetwork(): NetworkState {
       parentId: null,
       kind: 'site',
       name: 'Primary Site',
-      bounds: { x: 0, y: 0, z: 0, width: 32, height: 8, depth: 32 },
+      bounds: { x: 0, y: -6, z: 0, width: 32, height: 27, depth: 32 },
       visible: true,
     },
     {
@@ -107,32 +109,28 @@ export function createDefaultNetwork(): NetworkState {
       parentId: 'site-main',
       kind: 'building',
       name: 'Building A',
-      bounds: { x: 1, y: 0, z: 1, width: 30, height: 8, depth: 30 },
+      bounds: { x: 1, y: -6, z: 1, width: 30, height: 27, depth: 30 },
       visible: true,
     },
-    {
-      id: 'floor-1',
-      parentId: 'building-a',
-      kind: 'floor',
-      name: 'Floor 1',
-      bounds: { x: 1, y: 0, z: 1, width: 30, height: 4, depth: 30 },
-      visible: true,
-    },
+    ...createBuildingFloors(),
+    // Legacy aliases keep older saved links and integrations valid without rendering duplicates.
     {
       id: 'room-network',
-      parentId: 'floor-1',
+      parentId: 'main-floor',
       kind: 'room',
-      name: 'Network Room',
-      bounds: { x: 2, y: 0, z: 2, width: 10, height: 4, depth: 10 },
-      visible: true,
+      name: 'Network Room (legacy)',
+      floorLevel: 0,
+      bounds: { x: 2, y: 0, z: 2, width: 9, height: 3, depth: 12 },
+      visible: false,
     },
     {
       id: 'hall-a',
-      parentId: 'floor-1',
+      parentId: 'main-floor',
       kind: 'hall',
-      name: 'Data Hall A',
-      bounds: { x: 13, y: 0, z: 2, width: 17, height: 4, depth: 27 },
-      visible: true,
+      name: 'Data Hall A (legacy)',
+      floorLevel: 0,
+      bounds: { x: 2, y: 0, z: 15, width: 28, height: 3, depth: 14 },
+      visible: false,
     },
   ];
   return {
@@ -142,4 +140,69 @@ export function createDefaultNetwork(): NetworkState {
     policies: {},
     intents: {},
   };
+}
+
+function createBuildingFloors(): SpatialUnit[] {
+  const levels = [
+    { id: 'basement-2', name: 'Basement 2', level: -2, y: -6 },
+    { id: 'basement-1', name: 'Basement 1', level: -1, y: -3 },
+    { id: 'main-floor', name: 'Main Floor', level: 0, y: 0 },
+    { id: 'floor-1', name: 'Floor 1', level: 1, y: 3 },
+    { id: 'floor-2', name: 'Floor 2', level: 2, y: 6 },
+    { id: 'floor-3', name: 'Floor 3', level: 3, y: 9 },
+    { id: 'floor-4', name: 'Floor 4', level: 4, y: 12 },
+    { id: 'floor-5', name: 'Floor 5', level: 5, y: 15 },
+    { id: 'floor-6', name: 'Floor 6', level: 6, y: 18 },
+  ];
+
+  return levels.flatMap(({ id, name, level, y }) => {
+    const floor: SpatialUnit = {
+      id,
+      parentId: 'building-a',
+      kind: 'floor',
+      name,
+      floorLevel: level,
+      bounds: { x: 1, y, z: 1, width: 30, height: 3, depth: 30 },
+      visible: true,
+    };
+    const rooms: SpatialUnit[] = [
+      {
+        id: `${id}-west`,
+        parentId: id,
+        kind: 'room',
+        name: level < 0 ? 'Plant & Utilities' : level === 0 ? 'Lobby & Security' : 'Operations West',
+        floorLevel: level,
+        bounds: { x: 2, y, z: 2, width: 9, height: 3, depth: 12 },
+        visible: true,
+      },
+      {
+        id: `${id}-core`,
+        parentId: id,
+        kind: 'room',
+        name: 'Core & Vertical Services',
+        floorLevel: level,
+        bounds: { x: 12, y, z: 2, width: 6, height: 3, depth: 12 },
+        visible: true,
+      },
+      {
+        id: `${id}-east`,
+        parentId: id,
+        kind: 'room',
+        name: level < 0 ? 'Power Distribution' : 'Operations East',
+        floorLevel: level,
+        bounds: { x: 19, y, z: 2, width: 11, height: 3, depth: 12 },
+        visible: true,
+      },
+      {
+        id: `${id}-hall`,
+        parentId: id,
+        kind: 'hall',
+        name: level === 0 ? 'Main Concourse' : `Data Hall ${Math.max(level, 1)}`,
+        floorLevel: level,
+        bounds: { x: 2, y, z: 15, width: 28, height: 3, depth: 14 },
+        visible: true,
+      },
+    ];
+    return [floor, ...rooms];
+  });
 }

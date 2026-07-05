@@ -65,6 +65,7 @@ export interface BuildState extends PureBuildState {
   visualMode: VisualMode;
   networkLayer: NetworkLayer;
   selectedNetworkNodeId: string | null;
+  selectedSpatialFloorId: string | null;
   highlightedLinkIds: string[];
 }
 
@@ -99,6 +100,7 @@ export interface BuildActions {
   setVisualMode: (mode: VisualMode) => void;
   setNetworkLayer: (layer: NetworkLayer) => void;
   setSelectedNetworkNode: (id: string | null) => void;
+  setSelectedSpatialFloor: (id: string | null) => void;
   setHighlightedLinks: (ids: string[]) => void;
 
   // Spatial and SDN graph
@@ -203,6 +205,7 @@ function createInitial(scenarioId = 'free', scenarioName = 'Free Build'): BuildS
     network: createDefaultNetwork(),
     networkLayer: 'physical',
     selectedNetworkNodeId: null,
+    selectedSpatialFloorId: 'main-floor',
     highlightedLinkIds: [],
     name: 'Untitled Build',
     createdAt: Date.now(),
@@ -313,6 +316,7 @@ export const useBuildStore = create<BuildStore>()(
           hoveredCell: null,
           network: createDefaultNetwork(),
           selectedNetworkNodeId: null,
+          selectedSpatialFloorId: 'main-floor',
           highlightedLinkIds: [],
           updatedAt: Date.now(),
         }));
@@ -341,6 +345,7 @@ export const useBuildStore = create<BuildStore>()(
       setVisualMode: (visualMode) => set({ visualMode }),
       setNetworkLayer: (networkLayer) => set({ networkLayer }),
       setSelectedNetworkNode: (selectedNetworkNodeId) => set({ selectedNetworkNodeId }),
+      setSelectedSpatialFloor: (selectedSpatialFloorId) => set({ selectedSpatialFloorId }),
       setHighlightedLinks: (highlightedLinkIds) => set({ highlightedLinkIds }),
 
       upsertSpace: (space) =>
@@ -449,6 +454,9 @@ export const useBuildStore = create<BuildStore>()(
           network: snapshot.network ?? createDefaultNetwork(),
           networkLayer: snapshot.networkLayer ?? 'physical',
           selectedNetworkNodeId: null,
+          selectedSpatialFloorId:
+            snapshot.network?.spaces['main-floor'] ? 'main-floor' :
+              Object.values(snapshot.network?.spaces ?? {}).find((space) => space.kind === 'floor')?.id ?? null,
           highlightedLinkIds: [],
           updatedAt: Date.now(),
         })),
@@ -539,7 +547,7 @@ function createEnterpriseTemplate(spaces: BuildState['network']['spaces']): Buil
     kind: NetworkNode['kind'],
     x: number,
     z: number,
-    spaceId = 'hall-a',
+    spaceId = 'main-floor-hall',
   ): NetworkNode => ({
     id,
     name,
@@ -555,8 +563,8 @@ function createEnterpriseTemplate(spaces: BuildState['network']['spaces']): Buil
     })),
   });
   const nodes = [
-    node('sdn-1', 'SDN Controller', 'controller', 4, 4, 'room-network'),
-    node('fw-1', 'Edge Firewall', 'firewall', 7, 4, 'room-network'),
+    node('sdn-1', 'SDN Controller', 'controller', 4, 4, 'main-floor-west'),
+    node('fw-1', 'Edge Firewall', 'firewall', 7, 4, 'main-floor-west'),
     node('spine-1', 'Spine A', 'spine', 15, 7),
     node('spine-2', 'Spine B', 'spine', 15, 12),
     node('leaf-1', 'Leaf A', 'leaf', 21, 7),

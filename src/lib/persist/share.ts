@@ -11,6 +11,7 @@
 
 import type { BuildSnapshot } from '@/lib/store/build-store';
 import type { BuildState } from '@/lib/blocks';
+import { createDefaultNetwork } from '@/lib/network';
 
 const MAX_URL_SIZE = 1800; // safe under 2KB browser limit
 
@@ -97,7 +98,7 @@ function hasNetworkContent(network: BuildSnapshot['network']): boolean {
     Object.keys(network.links).length > 0 ||
     Object.keys(network.policies).length > 0 ||
     Object.keys(network.intents).length > 0 ||
-    Object.keys(network.spaces).length > 5
+    JSON.stringify(network.spaces) !== JSON.stringify(createDefaultNetwork().spaces)
   );
 }
 
