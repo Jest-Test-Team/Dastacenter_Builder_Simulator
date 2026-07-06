@@ -9,7 +9,6 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { useBuildStore } from '@/lib/store/build-store';
 import { encodeBuildToShareToken } from '@/lib/persist/share';
 import { DEMO_BUILDS, type DemoBuild } from '@/lib/demos';
 import { AppHeader } from '@/components/layout/AppHeader';
@@ -25,6 +24,7 @@ import {
   Cpu,
   Flame,
   Network,
+  Download,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -55,10 +55,6 @@ export default function DemosPage() {
     } catch {
       /* ignore clipboard errors */
     }
-  }
-
-  function handleLoad(demo: DemoBuild) {
-    useBuildStore.getState().loadBuild(demo.snapshot);
   }
 
   const blockCounts = (demo: DemoBuild) => Object.keys(demo.snapshot.voxels).length;
@@ -134,16 +130,24 @@ export default function DemosPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-2 border-t border-border p-4">
+                <div className="flex items-center gap-2 border-t border-border p-4">
                   <Link
-                    href={`/build/${demo.scenarioId}`}
-                    onClick={() => handleLoad(demo)}
+                    href={`/build/${demo.scenarioId}?demo=${encodeURIComponent(demo.id)}`}
                     className="btn flex-1 text-xs"
                   >
                     <Server className="h-3.5 w-3.5" />
                     Load demo
                     <ArrowRight className="h-3 w-3" />
                   </Link>
+                  <a
+                    href={`/demos/templates/${demo.id}.json`}
+                    download
+                    className="icon-btn"
+                    aria-label={`Download ${demo.name} JSON`}
+                    title="Download template JSON"
+                  >
+                    <Download className="h-3.5 w-3.5" />
+                  </a>
                   <button
                     onClick={() => void handleShare(demo)}
                     className="btn-ghost flex-1 text-xs"

@@ -94,7 +94,7 @@ export function BuilderCanvas({
 
         {showGrid && (
           <Grid
-            position={[0, xrayMode ? -6 : 0, 0]}
+            position={[gridSize.w / 2, xrayMode ? -6 : 0, gridSize.d / 2]}
             args={[gridSize.w, gridSize.d]}
             cellSize={1}
             cellThickness={0.6}
@@ -129,7 +129,7 @@ function BuildMetricsHud({ report, xrayMode }: { report: ReturnType<typeof score
   const visualMode = useBuildStore((s) => s.visualMode);
   return (
     <HtmlOverlay>
-      <div className="pointer-events-none absolute left-2 top-2 w-[calc(100vw-1rem)] max-w-xs md:left-4 md:top-4 md:w-72">
+      <div className="pointer-events-none absolute left-2 top-14 w-[min(17rem,calc(100vw-1rem))] md:left-4 md:top-4">
         <div className="panel border-cyan-500/30 bg-slate-950/90 p-2 text-[10px] md:p-3 md:text-xs">
           <div className="flex items-center justify-between gap-2">
             <span className="font-semibold">{xrayMode ? 'FACILITY DIGITAL TWIN' : 'Milestone HUD'}</span>

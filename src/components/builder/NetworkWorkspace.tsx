@@ -44,11 +44,13 @@ export function NetworkWorkspace({ onClose }: { onClose: () => void }) {
   const issues = useMemo(() => validateTopology(network), [network]);
 
   return (
+    <>
+    <button className="absolute inset-0 z-20 cursor-default bg-slate-950/45" onClick={onClose} aria-label="Close network workspace backdrop" />
     <aside
-      className="absolute inset-y-0 right-0 z-30 flex w-full max-w-xl flex-col border-l border-cyan-950 bg-[#050a12]/97 shadow-2xl backdrop-blur md:w-[34rem]"
+      className="absolute inset-y-0 right-0 z-30 flex w-full flex-col border-l border-cyan-900/60 bg-[#07101d]/98 shadow-2xl backdrop-blur-xl sm:w-[min(42rem,calc(100%-2rem))]"
       aria-label="Enterprise network workspace"
     >
-      <header className="flex items-center gap-2 border-b border-border p-3">
+      <header className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-3">
         <Network className="h-5 w-5 text-primary" />
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold">Enterprise SDN</h2>
@@ -57,19 +59,19 @@ export function NetworkWorkspace({ onClose }: { onClose: () => void }) {
             {issues.length} findings
           </p>
         </div>
-        <button className="btn-ghost text-xs" onClick={loadTemplate}>
+        <button className="btn-ghost ml-auto whitespace-nowrap text-xs" onClick={loadTemplate}>
           Load reference fabric
         </button>
         <button className="icon-btn" onClick={onClose} aria-label="Close network workspace">
-          ×
+          <span aria-hidden>×</span>
         </button>
       </header>
-      <nav className="flex overflow-x-auto border-b border-border p-1" aria-label="Network tools">
+      <nav className="grid grid-cols-5 gap-1 border-b border-border p-2" aria-label="Network tools">
         {TABS.map((item) => (
           <button
             key={item.id}
             className={cn(
-              'rounded px-2 py-1.5 text-xs',
+              'min-w-0 rounded px-1 py-2 text-xs font-medium',
               tab === item.id ? 'bg-primary text-primary-fg' : 'text-fg-muted hover:bg-bg-subtle',
             )}
             onClick={() => setTab(item.id)}
@@ -78,7 +80,7 @@ export function NetworkWorkspace({ onClose }: { onClose: () => void }) {
           </button>
         ))}
       </nav>
-      <div className="min-h-0 flex-1 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 overflow-y-auto p-4">
         {tab === 'spaces' && <SpacesPanel />}
         {tab === 'topology' && <TopologyPanel />}
         {tab === 'overlays' && <OverlayPanel />}
@@ -86,6 +88,7 @@ export function NetworkWorkspace({ onClose }: { onClose: () => void }) {
         {tab === 'controller' && <ControllerPanel />}
       </div>
     </aside>
+    </>
   );
 }
 

@@ -181,6 +181,16 @@ function cellsForBlock(type: string, position: Cell, rotation: 0 | 1 | 2 | 3): C
   return cells;
 }
 
+function buildCellIndex(voxels: PureBuildState['voxels']): Record<string, string> {
+  const index: Record<string, string> = {};
+  for (const instance of Object.values(voxels)) {
+    for (const cell of cellsForBlock(instance.type, instance.position, instance.rotation)) {
+      index[cellKey(cell)] = instance.id;
+    }
+  }
+  return index;
+}
+
 function createInitial(scenarioId = 'free', scenarioName = 'Free Build'): BuildState {
   return {
     buildId: makeId(),
@@ -291,20 +301,48 @@ export const useBuildStore = create<BuildStore>()(
       moveBlock: (instanceId, to) => {
         const inst = get().voxels[instanceId];
         if (!inst) return;
-        // simple move: remove + place (preserves history granularity)
-        const type = inst.type;
-        const rotation = inst.rotation;
-        get().removeBlock(instanceId);
-        get().placeBlock(type, to, rotation);
+        const oldCells = cellsForBlock(inst.type, inst.position, inst.rotation);
+        const newCells = cellsForBlock(inst.type, to, inst.rotation);
+        const { gridSize, byCell } = get();
+        const valid = newCells.every((cell) =>
+          cell.x >= 0 && cell.x < gridSize.w && cell.y >= 0 && cell.y < gridSize.h &&
+          cell.z >= 0 && cell.z < gridSize.d && (!byCell[cellKey(cell)] || byCell[cellKey(cell)] === instanceId),
+        );
+        if (!valid) return;
+        set((state) => {
+          const nextByCell = { ...state.byCell };
+          oldCells.forEach((cell) => delete nextByCell[cellKey(cell)]);
+          newCells.forEach((cell) => { nextByCell[cellKey(cell)] = instanceId; });
+          return {
+            voxels: { ...state.voxels, [instanceId]: { ...inst, position: to } },
+            byCell: nextByCell,
+            updatedAt: Date.now(),
+          };
+        });
       },
 
       rotateBlock: (instanceId) => {
         const inst = get().voxels[instanceId];
         if (!inst) return;
         const nextRot = ((inst.rotation + 1) % 4) as 0 | 1 | 2 | 3;
-        const type = inst.type;
-        get().removeBlock(instanceId);
-        get().placeBlock(type, inst.position, nextRot);
+        const oldCells = cellsForBlock(inst.type, inst.position, inst.rotation);
+        const newCells = cellsForBlock(inst.type, inst.position, nextRot);
+        const { gridSize, byCell } = get();
+        const valid = newCells.every((cell) =>
+          cell.x >= 0 && cell.x < gridSize.w && cell.y >= 0 && cell.y < gridSize.h &&
+          cell.z >= 0 && cell.z < gridSize.d && (!byCell[cellKey(cell)] || byCell[cellKey(cell)] === instanceId),
+        );
+        if (!valid) return;
+        set((state) => {
+          const nextByCell = { ...state.byCell };
+          oldCells.forEach((cell) => delete nextByCell[cellKey(cell)]);
+          newCells.forEach((cell) => { nextByCell[cellKey(cell)] = instanceId; });
+          return {
+            voxels: { ...state.voxels, [instanceId]: { ...inst, rotation: nextRot } },
+            byCell: nextByCell,
+            updatedAt: Date.now(),
+          };
+        });
       },
 
       clearAll: () => {
@@ -451,6 +489,7 @@ export const useBuildStore = create<BuildStore>()(
       loadBuild: (snapshot) =>
         set(() => ({
           ...snapshot,
+          byCell: buildCellIndex(snapshot.voxels),
           network: snapshot.network ?? createDefaultNetwork(),
           networkLayer: snapshot.networkLayer ?? 'physical',
           selectedNetworkNodeId: null,

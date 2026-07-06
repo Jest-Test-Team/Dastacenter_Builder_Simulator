@@ -104,4 +104,30 @@ test.describe('Smoke tests', () => {
     // The mode bar should be visible
     await expect(page.locator('[class*="ModeBar"], header').first()).toBeVisible();
   });
+
+  test('demo template loads into the builder and exposes JSON', async ({ page, request }) => {
+    const json = await request.get('/demos/templates/greenfield-tier3.json');
+    expect(json.ok()).toBeTruthy();
+    expect(json.headers()['content-type']).toContain('application/json');
+    const template = await json.json();
+    expect(Object.keys(template.voxels)).toHaveLength(40);
+
+    await page.goto('/build/greenfield?demo=greenfield-tier3');
+    await expect(page.getByText('blocks: 40')).toBeVisible({ timeout: 10_000 });
+  });
+
+  test('network workspace is usable at desktop width', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.goto('/build/free');
+    await page.getByRole('button', { name: 'Open enterprise SDN workspace' }).click();
+    const workspace = page.getByRole('complementary', { name: 'Enterprise network workspace' });
+    await expect(workspace).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Network tools' }).getByRole('button')).toHaveCount(5);
+    const box = await workspace.boundingBox();
+    expect(box).not.toBeNull();
+    expect(box!.width).toBeLessThanOrEqual(672);
+    expect(box!.x).toBeGreaterThanOrEqual(0);
+    await page.getByRole('button', { name: 'Load reference fabric' }).click();
+    await expect(workspace.getByText('8 nodes')).toBeVisible();
+  });
 });

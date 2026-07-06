@@ -88,7 +88,7 @@ export function ModeBar() {
   }
 
   return (
-    <div className="panel flex flex-col gap-2 border-b px-3 py-2 md:flex-row md:items-center">
+    <div className="panel z-30 flex flex-col gap-2 border-b px-3 py-2 lg:flex-row lg:items-center">
       <div className="flex min-w-0 flex-wrap items-center gap-1">
         <ModeButton
           active={mode === 'build'}
@@ -119,7 +119,7 @@ export function ModeBar() {
         />
       </div>
 
-      <div className="hidden mx-2 h-6 w-px bg-border md:block" />
+      <div className="mx-1 hidden h-6 w-px bg-border lg:block" />
 
       <div className="flex min-w-0 flex-wrap items-center gap-1">
         <IconButton onClick={undo} disabled={pastCount === 0} title={t('builder.undo')}>
@@ -130,11 +130,11 @@ export function ModeBar() {
         </IconButton>
       </div>
 
-      <div className="hidden mx-2 h-6 w-px bg-border md:block" />
+      <div className="mx-1 hidden h-6 w-px bg-border lg:block" />
 
-      <div className="hidden flex-1 md:block" />
+      <div className="hidden flex-1 lg:block" />
 
-      <div className="flex min-w-0 flex-wrap items-center gap-2 md:ml-auto">
+      <div className="flex min-w-0 flex-wrap items-center gap-1.5 lg:ml-auto">
         <WalletPicker />
 
         <button

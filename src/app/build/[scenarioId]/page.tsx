@@ -24,6 +24,8 @@ import { getScenario, scenarioInventory, SCENARIOS } from '@/lib/scenarios';
 import { getAllBlocks } from '@/lib/blocks/registry';
 import { useT } from '@/lib/i18n/client';
 import { NetworkWorkspace } from '@/components/builder/NetworkWorkspace';
+import { ObjectInspector } from '@/components/builder/ObjectInspector';
+import { getDemoBuild } from '@/lib/demos';
 
 const BuilderCanvas = dynamic(
   () => import('@/components/builder/BuilderCanvas').then((m) => m.BuilderCanvas),
@@ -43,19 +45,25 @@ export default function BuildPage() {
   const [networkOpen, setNetworkOpen] = useState(false);
   const scenario = (getScenario(scenarioId) ?? SCENARIOS[0])!;
   const buildId = search?.get('buildId') ?? null;
+  const demoId = search?.get('demo') ?? null;
   const t = useT();
 
   useLoadBuild(buildId);
 
   useEffect(() => {
     if (buildId) return;
+    if (demoId) {
+      const demo = getDemoBuild(demoId);
+      if (demo) loadBuild(demo.snapshot);
+      return;
+    }
     if (scenario.freshStart) {
       startBuild(scenario.id, scenario.name, scenarioInventory(scenario, getAllBlocks()));
       return;
     }
     setScenario(scenario.id, scenario.name);
     resetInventoryForScenario(scenario);
-  }, [buildId, scenario, setScenario, startBuild]);
+  }, [buildId, demoId, loadBuild, scenario, setScenario, startBuild]);
 
   useEffect(() => {
     const share = search?.get('share');
@@ -105,6 +113,7 @@ export default function BuildPage() {
             onClick={() => setNetworkOpen(true)}
             className="absolute right-2 top-40 z-20 max-w-[calc(100vw-1rem)] btn md:right-4 md:top-44"
             title="Open enterprise SDN workspace"
+            aria-label="Open enterprise SDN workspace"
           >
             <Network className="h-4 w-4" />
             Network
@@ -123,6 +132,7 @@ export default function BuildPage() {
             mobileOpen={mobilePanel === 'security'}
             onClose={() => setMobilePanel(null)}
           />
+          <ObjectInspector />
           {networkOpen && <NetworkWorkspace onClose={() => setNetworkOpen(false)} />}
         </div>
       </div>
