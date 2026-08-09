@@ -123,11 +123,13 @@ describe('SBT server mint flow', () => {
     mocks.receiptLogs = [
       {
         address: contractAddress,
+        // viem types `args` as the event's named-parameter object and returns a
+        // fixed-arity tuple; the local ReceiptLog shape wants plain string[].
         topics: encodeEventTopics({
           abi: SBT_CONTRACT_ABI,
           eventName: 'CertificateMinted',
-          args: [recipientAddress, 1n],
-        }),
+          args: { recipient: recipientAddress, tokenId: 1n },
+        }) as string[],
         data: encodeAbiParameters(
           [
             { type: 'bytes32' },
