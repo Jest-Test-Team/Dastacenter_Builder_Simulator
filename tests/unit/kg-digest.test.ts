@@ -96,6 +96,34 @@ describe('digest: sensitivity', () => {
   });
 });
 
+describe('digest: cross-runtime agreement', () => {
+  // Mirrors tests/workers/edge-runtime.test.ts, which asserts the same literal
+  // inside workerd. The browser computes this digest and the Worker verifies
+  // proofs against it, so the two runtimes must never diverge.
+  const EDGE_DIGEST = '0xd983e146ffc6dc3e4a36d8749a3347bf470c98745c49d76ed7723d8718edf555';
+
+  it('matches the value workerd produces for the shared fixture', async () => {
+    const state = buildWith([
+      { type: 'utility_feed', at: { x: 20, y: 1, z: 20 } },
+      { type: 'transformer', at: { x: 20, y: 1, z: 19 } },
+      { type: 'switchgear', at: { x: 20, y: 1, z: 18 } },
+      { type: 'ups', at: { x: 20, y: 1, z: 17 } },
+      { type: 'pdu', at: { x: 20, y: 1, z: 16 } },
+      { type: 'server_rack', at: { x: 20, y: 1, z: 15 } },
+      { type: 'crac', at: { x: 22, y: 1, z: 16 } },
+    ], 'edge');
+    state.name = 'Edge build';
+    for (const [id, target] of [['utility_feed-0','utility'],['transformer-0','xfmr'],['switchgear-0','swgr'],['ups-0','ups-1'],['pdu-0','pdu-1'],['server_rack-0','rack-1'],['crac-0','crac-1']] as const) {
+      const instance = state.voxels[id]!;
+      delete state.voxels[id];
+      state.voxels[target] = { ...instance, id: target };
+      for (const [cell, owner] of Object.entries(state.byCell)) if (owner === id) state.byCell[cell] = target;
+    }
+    const graph = buildKnowledgeGraph(state, { now: 1_700_000_000_000 }).graph;
+    expect(await graphDigest(graph)).toBe(EDGE_DIGEST);
+  });
+});
+
 describe('digest: preimage', () => {
   it('is reconstructible by a verifier and carries a version tag', () => {
     const preimage = digestPreimage(graphOf());

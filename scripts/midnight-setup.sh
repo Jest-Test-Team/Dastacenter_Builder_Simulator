@@ -28,6 +28,7 @@ check() {
   local ok=0
   info "Checking the toolchain"
 
+  export PATH="$HOME/.local/bin:$PATH"
   if command -v compact >/dev/null 2>&1; then
     printf '  compact      : %s\n' "$(compact --version 2>/dev/null || echo present)"
   else
@@ -56,6 +57,12 @@ check() {
     printf '  compiled     : not built\n'; ok=1
   fi
 
+  if [ -f "$OUT_DIR/keys/proveThreshold.verifier" ]; then
+    printf '  keys         : prover + verifier generated\n'
+  else
+    printf '  keys         : not generated\n'; ok=1
+  fi
+
   if [ "$ok" -eq 0 ]; then
     info "Ready. Set MIDNIGHT_PROOF_SERVER_URL=http://127.0.0.1:${PROOF_SERVER_PORT} to use the real prover."
   else
@@ -68,14 +75,21 @@ install_toolchain() {
   info "Installing the Compact toolchain"
   command -v curl >/dev/null 2>&1 || die "curl is required"
   # The official installer manages compactc versions.
-  curl --proto '=https' --tlsv1.2 -LsSf https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh | sh
-  info "Adding the latest toolchain"
-  "$HOME/.compact/bin/compact" update || warn "Run 'compact update' manually once the installer is on PATH"
-  info "Add \$HOME/.compact/bin to your PATH, then re-run: $0 check"
+  # The installer places the launcher in $XDG_BIN_HOME, $XDG_DATA_HOME/../bin,
+  # or $HOME/.local/bin — verified: it lands in ~/.local/bin on macOS.
+  curl --proto '=https' --tlsv1.2 -LsSf \
+    https://github.com/midnightntwrk/compact/releases/latest/download/compact-installer.sh \
+    -o /tmp/compact-installer.sh
+  sh /tmp/compact-installer.sh --quiet
+  export PATH="$HOME/.local/bin:$PATH"
+  info "Fetching the compiler toolchain"
+  compact update
+  info "Ensure \$HOME/.local/bin is on your PATH, then re-run: $0 check"
 }
 
 compile() {
   [ -f "$CIRCUIT" ] || die "Circuit not found at $CIRCUIT"
+  export PATH="$HOME/.local/bin:$PATH"
   command -v compact >/dev/null 2>&1 || die "compact not on PATH — run: $0 install"
   info "Compiling $(basename "$CIRCUIT")"
   mkdir -p "$OUT_DIR"

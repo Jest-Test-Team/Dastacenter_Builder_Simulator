@@ -69,14 +69,22 @@ Being precise about this, because "ZK integration" can mean very different thing
 | | |
 |---|---|
 | Circuit source written | yes — `circuits/datacenter-score.compact` |
-| Circuit compiled with `compactc` | **no** — the toolchain is not installed on this machine |
-| A real proof generated end to end | **no** |
+| Circuit compiled with `compactc` | **yes** — compiler 0.31.1, language 0.23.0 |
+| Proving / verifying keys generated | **yes** — `circuits/build/keys/proveThreshold.{prover,verifier}` |
+| Real circuit code executed and tested | **yes** — 12 tests in `tests/integration/zk-circuit.test.ts` |
+| A `proveThreshold` proof generated end to end | **no** — needs the Docker proof server |
 | Real adapter implemented | yes — `src/lib/zk/midnight-prover.ts` |
 | Wiring tested (prove → verify → mint gate) | yes, against `MockProver` — 24 unit + 15 integration tests |
 
-`compactc` and the Docker proof server cannot run inside vitest, Playwright, or the Cloudflare Workers
-runtime, so tests exercise the mock. The code under test is the real code; only the backend swaps.
-Generating one real proof is a local step, below.
+`openCommitment` is declared **pure** (`"pure": true, "proof": false`), so the compiled artefact runs
+it in-process with no proof server and no Docker. That is why the commitment's security properties —
+determinism, blinding, rule-pack binding — are asserted against the real circuit rather than a
+TypeScript imitation. Compiling also corrected two mistakes that were invisible beforehand: the source
+pragma was `0.16` when the compiler wanted `0.23`, and `MidnightProver.open()` was round-tripping a
+pure circuit through the proof server it does not need.
+
+Generating a `proveThreshold` proof still requires the Docker proof server, which is the one step
+below that has not been run.
 
 ## Local setup
 
@@ -118,9 +126,16 @@ one layer down is a gate nobody has actually tried.
 ## Verification
 
 ```sh
-npm test -- tests/unit/zk-prover.test.ts tests/integration/zk-mint-gate.test.ts
+npm run zk:compile                                    # compactc -> circuits/build
+npm test -- tests/unit/zk-prover.test.ts \
+            tests/integration/zk-mint-gate.test.ts \
+            tests/integration/zk-circuit.test.ts      # 51 tests, 12 against the real circuit
+npm run test:workers                                  # the ZK path inside workerd
 ./scripts/midnight-setup.sh check
 ```
+
+The circuit suite skips itself when `circuits/build` is absent, so a checkout without the Compact
+toolchain still gets a green run.
 
 ## Related
 

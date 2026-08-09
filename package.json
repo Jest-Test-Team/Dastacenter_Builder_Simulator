@@ -26,7 +26,10 @@
     "analyze": "ANALYZE=true next build",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:install": "playwright install chromium"
+    "test:e2e:install": "playwright install chromium",
+    "zk:compile": "compact compile circuits/datacenter-score.compact circuits/build",
+    "test:contracts": "npm --prefix contracts test",
+    "test:workers": "vitest run --config vitest.workers.config.ts"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
@@ -65,6 +68,8 @@
     "zustand": "^5.0.1"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "^0.5.40",
+    "@midnight-ntwrk/compact-runtime": "0.16.0",
     "@next/bundle-analyzer": "15.5.19",
     "@opennextjs/cloudflare": "^1.19.11",
     "@playwright/test": "^1.60.0",

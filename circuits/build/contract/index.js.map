@@ -1,0 +1,8 @@
+{
+  "version": 3,
+  "file": "index.js",
+  "sourceRoot": "../../../",
+  "sources": ["circuits/datacenter-score.compact", "compiler/standard-library.compact"],
+  "names": [],
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;EA4BA;;;;;;;;;;;;;;;;;;;MA4BA,AAAA,cAwBC;;;;;cAvBC,kBAA0B;cAC1B,aAAsB;;;;;;;;;;;;;;;;;;;;;;;;;yCADtB,kBAA0B,+BAC1B,aAAsB;;;;;;;;;gDADtB,kBAA0B;gDAC1B,aAAsB;;;OAsBvB;MAQD,AAAA,cAWC;;OAAA;;;;GACA;EAxED;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;IAMA;;;;;;;;;yEAAyC;IAIzC;;;;;;;;;yEAAkC;IAIlC;;;;;;;;;yEAAoC;;;;;;;GA0DnC;ECpGD,AAAA,kBAAA;oEAAA;;;ED8CA,AAAA,cAAiC;;0DAAjC,WAAiC;;;;;;;;;;;;;;GAAA;EACjC,AAAA,mBAAqC;;0DAArC,gBAAqC;;;;;;;;;;;;;;GAAA;EACrC,AAAA,iBAAoC;;0DAApC,cAAoC;;;;;;;;;;;;;;GAAA;EAQpC,AAAA,iBAwBC,4BAvBC,kBAA0B,EAC1B,aAAsB;;UAEhB,QAAsB;UACtB,UAA6B;UAC7B,UAA2B;4BAG1B,UAAQ,IAAI,kBAAgB;;UAK7B,OAKJ,2BAJA,QAAM;4CACN,UAAQ;4CACR,aAAW;;IAIb;;;;;;;2HAAsB,OAAK;;yEAAjB;IACV;;;;;;;2HAAqB,kBAAgB;;yEAA5B;IACT;;;;;;;2HAA2B,aAAW;;yEAAvB;;GAChB;EAQD,AAAA,iBAWC,CAVC,QAAiB,EACjB,UAAmB,EACnB,aAAsB;mCAGpB,QAAM;mCACN,UAAQ;mCACR,aAAW;;GAGd;;;;;;;;;;;;;;;;IAjED;qCAAA;;;;;;;;;;;0GAAyC;KAAA;IAIzC;qCAAA;;;;;;;;;;;0GAAkC;KAAA;IAIlC;qCAAA;;;;;;;;;;;0GAAoC;KAAA;;;;;;;;;;;;EA8CpC,AAAA,cAWC;;;;UAVC,QAAiB;UACjB,UAAmB;UACnB,aAAsB;;;;;;;;;;;;;;;;;;;;;;4CAFtB,QAAiB,EACjB,UAAmB,EACnB,aAAsB;GAQvB;;;;"
+}

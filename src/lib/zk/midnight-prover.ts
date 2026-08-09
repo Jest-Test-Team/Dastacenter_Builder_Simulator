@@ -23,6 +23,43 @@ import {
   type Witness,
 } from './types';
 
+interface CompiledContract {
+  pureCircuits: {
+    openCommitment(digest: Uint8Array, blinding: Uint8Array, packVersion: Uint8Array): Uint8Array;
+  };
+}
+
+/**
+ * Loads the artefacts `compactc` produced. Required only by `open()`; proving
+ * and verifying go through the proof server and do not need this.
+ */
+function loadCompiledContract(): CompiledContract {
+  try {
+    // Resolved at call time so a checkout without the toolchain still imports
+    // this module — the circuit build output is not committed.
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return require('../../../circuits/build/contract/index.js') as CompiledContract;
+  } catch {
+    throw new ProofError(
+      503,
+      'Compiled circuit not found. Run `npm run zk:compile` (needs the Compact toolchain).',
+    );
+  }
+}
+
+/** Pads or truncates a hex string or plain label into the circuit's Bytes<32>. */
+function toBytes32(value: string): Uint8Array {
+  const buffer = new Uint8Array(32);
+  if (/^0x[0-9a-fA-F]*$/.test(value)) {
+    const hex = value.slice(2);
+    const pairs = hex.match(/../g) ?? [];
+    buffer.set(pairs.slice(0, 32).map((pair) => parseInt(pair, 16)));
+    return buffer;
+  }
+  buffer.set(new TextEncoder().encode(value).slice(0, 32));
+  return buffer;
+}
+
 export interface MidnightProverOptions {
   /** Base URL of the proof server, e.g. http://127.0.0.1:6300 */
   url: string;
@@ -151,17 +188,22 @@ export class MidnightProver implements Prover {
     return response.valid === true ? { valid: true } : { valid: false, reason: 'Proof rejected by verifier' };
   }
 
+  /**
+   * Selective disclosure, computed locally.
+   *
+   * `openCommitment` is declared pure in the circuit — `compactc` reports
+   * `"pure": true, "proof": false` — so the compiled artefact runs it in-process
+   * with no proof server and no Docker. Round-tripping it through the server
+   * (as this did originally) would make an auditor's re-derivation depend on
+   * infrastructure that the operation does not actually need.
+   */
   async open(witness: Witness, rulePackVersion: string): Promise<string> {
-    const response = await post<{ commitment?: string; error?: string }>(
-      `${this.url}/call`,
-      {
-        circuit: 'openCommitment',
-        args: [witness.graphDigest, witness.blindingFactor, rulePackVersion],
-      },
-      this.timeoutMs,
+    const { pureCircuits } = loadCompiledContract();
+    const commitment = pureCircuits.openCommitment(
+      toBytes32(witness.graphDigest),
+      toBytes32(witness.blindingFactor),
+      toBytes32(rulePackVersion),
     );
-    if (response.error || !response.commitment)
-      throw new ProofError(502, response.error ?? 'Proof server returned no commitment');
-    return response.commitment;
+    return `0x${[...commitment].map((byte) => byte.toString(16).padStart(2, '0')).join('')}`;
   }
 }
