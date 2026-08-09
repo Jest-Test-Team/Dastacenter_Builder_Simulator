@@ -15,6 +15,22 @@ import {
 import { computeBlueprintHash } from '@/lib/sbt/client';
 import { mintCertificateOnChain } from '@/lib/sbt/server';
 import { stableSnapshotHash } from '@/lib/utils/identity';
+import { buildKnowledgeGraph, graphDigest } from '@/lib/kg';
+import { DEFAULT_THRESHOLD, MockProver, type Proof } from '@/lib/zk';
+
+/** Mints are gated on a threshold proof, so every mint test needs a real one. */
+async function proofFor(snapshot: Parameters<typeof score>[0], rulePackVersion: string): Promise<Proof> {
+  const { graph } = buildKnowledgeGraph(snapshot);
+  return new MockProver().prove({
+    witness: {
+      graphDigest: await graphDigest(graph),
+      competitionScore: Math.max(score(snapshot).competitionScore, DEFAULT_THRESHOLD),
+      blindingFactor: '0xfeed',
+    },
+    threshold: DEFAULT_THRESHOLD,
+    rulePackVersion,
+  });
+}
 
 const contractAddress = '0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB';
 const recipientAddress = getAddress('0x1234567890abcdef1234567890abcdef12345678');
@@ -130,6 +146,7 @@ describe('SBT server mint flow', () => {
       chainId: 11155111,
       buildId: snapshot.buildId,
       baseUrl: 'https://example.com',
+      proof: await proofFor(snapshot, report.rulePackVersion),
     });
 
     expect(result.ok).toBe(true);
@@ -150,7 +167,9 @@ describe('SBT server mint flow', () => {
       'Ada Lovelace',
       'data:image/svg+xml;base64,AAA',
       'https://example.com',
+      expect.objectContaining({ threshold: DEFAULT_THRESHOLD, backend: 'mock' }),
     );
+    expect(result.privacy.commitment).toMatch(/^0x[0-9a-f]{64}$/);
     expect(mocks.contractStub).not.toBeNull();
     expect(mocks.contractStub!.hasCertificate).toHaveBeenCalledWith(blueprintHash);
     expect(mocks.contractStub!.mintCertificate).toHaveBeenCalledWith(

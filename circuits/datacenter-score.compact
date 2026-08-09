@@ -1,0 +1,100 @@
+// Datacenter performance threshold — Midnight Compact circuit.
+//
+// The problem this solves, in the operator's words: a data center's real PUE,
+// cooling architecture and physical layout are commercial secrets. Publishing
+// them to earn a credential is not an option. But the operator still wants to
+// prove to the network that the facility is top-tier.
+//
+// So the circuit proves exactly one sentence and nothing more:
+//
+//   "I know a facility design whose knowledge-graph digest is D, which the
+//    rule pack V scored at or above the threshold T."
+//
+// Public (the verifier learns these):
+//   - commitment       : a hiding commitment to the graph digest
+//   - rulePackVersion  : which rule pack judged it, so a verifier can pin the bar
+//   - threshold        : the bar that was cleared
+//
+// Private (the verifier learns nothing about these):
+//   - the graph digest itself, and therefore the entire design behind it
+//   - the exact score — only that it cleared the bar
+//   - PUE, layout, rack counts, cooling topology, every asset and every edge
+//
+// Deliberately NOT proven here: that the digest corresponds to a well-formed
+// build, or that the score was computed honestly. Those are attested by the
+// scoring service that signs the witness. A circuit cannot re-run the rule pack
+// without ingesting the whole private build, which would defeat the purpose.
+// This boundary is documented in docs/MIDNIGHT_ZK.md rather than left implicit.
+
+pragma language_version 0.16;
+
+import CompactStandardLibrary;
+
+// The rule pack that produced the score. Public so a verifier can reject a
+// proof made under an older, laxer pack.
+export ledger rulePackVersion: Bytes<32>;
+
+// The threshold the score must clear. Public: a claim of "≥ 85" is meaningless
+// if the bar itself is hidden.
+export ledger threshold: Uint<16>;
+
+// Commitment to the private graph digest, published when a proof is accepted so
+// the same design cannot be re-proven under a different claim.
+export ledger commitment: Bytes<32>;
+
+// The prover's secret inputs, supplied by the local wallet/scoring service and
+// never transmitted.
+witness graphDigest(): Bytes<32>;
+witness competitionScore(): Uint<16>;
+witness blindingFactor(): Bytes<32>;
+
+// Proves the threshold claim and publishes only the commitment.
+//
+// `disclose` is required on every value crossing from witness to ledger, which
+// is Compact's way of making leakage explicit rather than accidental. Only the
+// commitment crosses — and it is blinded, so an observer holding a guess at the
+// design cannot confirm it by recomputing the hash.
+export circuit proveThreshold(
+  claimedThreshold: Uint<16>,
+  packVersion: Bytes<32>,
+): [] {
+  const digest = graphDigest();
+  const achieved = competitionScore();
+  const blinding = blindingFactor();
+
+  // The whole claim. If the score is below the bar, no proof exists.
+  assert(achieved >= claimedThreshold, "score below threshold");
+
+  // Bind the commitment to the rule pack and the threshold as well as the
+  // digest. Without this, a proof made against a lax pack could be replayed as
+  // though it had cleared a strict one.
+  const bound = persistentHash<Vector<4, Bytes<32>>>([
+    digest,
+    blinding,
+    packVersion,
+    pad(32, "datacenter-score/v1"),
+  ]);
+
+  commitment = disclose(bound);
+  threshold = disclose(claimedThreshold);
+  rulePackVersion = disclose(packVersion);
+}
+
+// Re-derives the commitment from a digest the holder chooses to reveal.
+//
+// Selective disclosure: an auditor under NDA can be handed the digest and the
+// blinding factor and check they reproduce the on-chain commitment, without the
+// data ever having been public. The circuit above stays the default; this is
+// the escape hatch for the one auditor who is entitled to more.
+export circuit openCommitment(
+  digest: Bytes<32>,
+  blinding: Bytes<32>,
+  packVersion: Bytes<32>,
+): Bytes<32> {
+  return persistentHash<Vector<4, Bytes<32>>>([
+    digest,
+    blinding,
+    packVersion,
+    pad(32, "datacenter-score/v1"),
+  ]);
+}

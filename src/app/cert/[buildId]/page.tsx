@@ -27,6 +27,7 @@ import {
 } from '@/lib/sbt/client';
 import { isTestnetChain, SUPPORTED_CHAINS } from '@/lib/sbt/chains';
 import type { MintCertificateServerResult } from '@/lib/sbt/server';
+import { acquireThresholdProof } from '@/lib/zk/client';
 
 export default function CertPage() {
   const params = useParams<{ buildId: string }>();
@@ -124,17 +125,22 @@ export default function CertPage() {
     setError(null);
     
     try {
+      const snapshot = useBuildStore.getState().exportSnapshot();
+      // The graph digest is computed locally and only the threshold witness
+      // leaves the browser; the mint is gated on the resulting proof.
+      const { proof } = await acquireThresholdProof(snapshot);
       const res = await fetch('/api/sbt/mint', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          snapshot: useBuildStore.getState().exportSnapshot(),
+          snapshot,
           recipientAddress: address,
           recipientName: recipientName || 'Anonymous Builder',
           svgDataUri,
           chainId: selectedChainId,
+          proof,
         }),
       });
 

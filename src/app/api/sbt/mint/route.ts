@@ -10,6 +10,8 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { z } from 'zod';
 import type { BuildSnapshot } from '@/lib/store/build-store';
 import { mintCertificateOnChain, MintError } from '@/lib/sbt/server';
+import { ProofSchema } from '@/lib/zk/schema';
+import type { Proof } from '@/lib/zk';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -21,6 +23,11 @@ const MintRequestSchema = z.object({
   svgDataUri: z.string().min(1),
   chainId: z.number().int().optional(),
   buildId: z.string().optional(),
+  /**
+   * Zero-knowledge threshold proof. Required — the certificate this mints is a
+   * public, permanent claim, so the claim is checked before it is written.
+   */
+  proof: ProofSchema,
 });
 
 export async function POST(req: NextRequest) {
@@ -41,6 +48,7 @@ export async function POST(req: NextRequest) {
       chainId: body.data.chainId,
       buildId: body.data.buildId,
       baseUrl: new URL(req.url).origin,
+      proof: body.data.proof as Proof,
     });
 
     return NextResponse.json(result, { status: 200 });

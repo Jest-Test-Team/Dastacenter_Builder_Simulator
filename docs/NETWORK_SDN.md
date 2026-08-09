@@ -37,3 +37,11 @@ npm test -- --run tests/unit/network-topology.test.ts tests/unit/persistence.tes
 npm run typecheck
 npm run build:next
 ```
+
+## Related
+
+The network plane described here is one source for the facility knowledge graph: nodes, ports, links,
+policies and intents are extracted into typed graph entities, and the spatial hierarchy becomes the
+`Space` containment tree. See [KNOWLEDGE_GRAPH.md](KNOWLEDGE_GRAPH.md). Note that fusion merges the
+legacy `room-network` and `hall-a` aliases described above into their `main-floor-*` equivalents, so
+graph queries see one space where the default hierarchy ships two.

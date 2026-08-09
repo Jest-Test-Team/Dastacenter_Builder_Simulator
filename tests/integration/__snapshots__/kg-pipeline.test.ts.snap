@@ -1,0 +1,112 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`pipeline: shape snapshot > edge-micro produces a stable graph shape 1`] = `
+{
+  "candidateRelations": [
+    "CONFORMS_TO",
+  ],
+  "edgesByRelation": {
+    "ADJACENT_TO": 8,
+    "CITES_STANDARD": 10,
+    "CONTAINS": 48,
+    "COOLS": 8,
+    "INSTANCE_OF": 21,
+    "LOCATED_IN": 23,
+    "PART_OF": 1,
+    "POWERS": 14,
+    "RAISED_IN": 10,
+    "SATISFIES": 19,
+    "SCORED": 1,
+  },
+  "merges": [
+    "Space:hall-a -> Space:main-floor-hall",
+    "Space:room-network -> Space:main-floor-west",
+  ],
+  "nodesByType": {
+    "Asset": 23,
+    "AssetType": 19,
+    "Build": 1,
+    "IssueRaised": 10,
+    "PolicySetting": 49,
+    "ScoreEvaluated": 1,
+    "Space": 49,
+    "Standard": 6,
+  },
+  "orphans": 37,
+  "reviewQueue": 3,
+}
+`;
+
+exports[`pipeline: shape snapshot > greenfield-tier3 produces a stable graph shape 1`] = `
+{
+  "candidateRelations": [
+    "CONFORMS_TO",
+  ],
+  "edgesByRelation": {
+    "ADJACENT_TO": 20,
+    "CITES_STANDARD": 3,
+    "CONTAINS": 48,
+    "COOLS": 20,
+    "INSTANCE_OF": 40,
+    "LOCATED_IN": 40,
+    "PART_OF": 1,
+    "POWERS": 31,
+    "RAISED_IN": 3,
+    "SATISFIES": 67,
+    "SCORED": 1,
+  },
+  "merges": [
+    "Space:hall-a -> Space:main-floor-hall",
+    "Space:room-network -> Space:main-floor-west",
+  ],
+  "nodesByType": {
+    "Asset": 40,
+    "AssetType": 24,
+    "Build": 1,
+    "IssueRaised": 3,
+    "PolicySetting": 49,
+    "ScoreEvaluated": 1,
+    "Space": 49,
+    "Standard": 6,
+  },
+  "orphans": 8,
+  "reviewQueue": 28,
+}
+`;
+
+exports[`pipeline: shape snapshot > tier4-retrofit produces a stable graph shape 1`] = `
+{
+  "candidateRelations": [
+    "CONFORMS_TO",
+  ],
+  "edgesByRelation": {
+    "ADJACENT_TO": 46,
+    "CITES_STANDARD": 3,
+    "CONTAINS": 48,
+    "COOLS": 52,
+    "INSTANCE_OF": 60,
+    "LOCATED_IN": 60,
+    "PART_OF": 1,
+    "POWERS": 48,
+    "RAISED_IN": 3,
+    "SATISFIES": 67,
+    "SCORED": 1,
+  },
+  "merges": [
+    "Space:hall-a -> Space:main-floor-hall",
+    "Space:room-network -> Space:main-floor-west",
+  ],
+  "nodesByType": {
+    "Asset": 60,
+    "AssetType": 26,
+    "Build": 1,
+    "IssueRaised": 3,
+    "PolicySetting": 49,
+    "ScoreEvaluated": 1,
+    "Space": 49,
+    "Standard": 6,
+  },
+  "orphans": 8,
+  "reviewQueue": 57,
+}
+`;

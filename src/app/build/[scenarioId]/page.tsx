@@ -19,11 +19,12 @@ import { PolicyPanel } from '@/components/policy/PolicyPanel';
 import { SecurityFrameworkPanel } from '@/components/builder/SecurityFrameworkPanel';
 import { KeyboardCheatsheet } from '@/components/a11y/KeyboardCheatsheet';
 import { decodeShareToken } from '@/lib/persist/share';
-import { Network, Shield, Target, X } from 'lucide-react';
+import { GitBranch, Network, Shield, Target, X } from 'lucide-react';
 import { getScenario, scenarioInventory, SCENARIOS } from '@/lib/scenarios';
 import { getAllBlocks } from '@/lib/blocks/registry';
 import { useT } from '@/lib/i18n/client';
 import { NetworkWorkspace } from '@/components/builder/NetworkWorkspace';
+import { GraphWorkspace } from '@/components/builder/GraphWorkspace';
 import { ObjectInspector } from '@/components/builder/ObjectInspector';
 import { getDemoBuild } from '@/lib/demos';
 
@@ -43,6 +44,7 @@ export default function BuildPage() {
   const [showGoal, setShowGoal] = useState(false);
   const [mobilePanel, setMobilePanel] = useState<'blocks' | 'security' | null>(null);
   const [networkOpen, setNetworkOpen] = useState(false);
+  const [graphOpen, setGraphOpen] = useState(false);
   const scenario = (getScenario(scenarioId) ?? SCENARIOS[0])!;
   const buildId = search?.get('buildId') ?? null;
   const demoId = search?.get('demo') ?? null;
@@ -118,6 +120,15 @@ export default function BuildPage() {
             <Network className="h-4 w-4" />
             Network
           </button>
+          <button
+            onClick={() => setGraphOpen(true)}
+            className="absolute right-2 top-52 z-20 max-w-[calc(100vw-1rem)] btn md:right-4 md:top-56"
+            title="Open the knowledge graph workspace"
+            aria-label="Open knowledge graph workspace"
+          >
+            <GitBranch className="h-4 w-4" />
+            Graph
+          </button>
           {scenario.goal && (
             <button
               onClick={() => setShowGoal(true)}
@@ -134,6 +145,7 @@ export default function BuildPage() {
           />
           <ObjectInspector />
           {networkOpen && <NetworkWorkspace onClose={() => setNetworkOpen(false)} />}
+          {graphOpen && <GraphWorkspace onClose={() => setGraphOpen(false)} />}
         </div>
       </div>
       <PolicyPanel open={policyOpen} onClose={() => setPolicyOpen(false)} />

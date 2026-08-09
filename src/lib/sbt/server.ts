@@ -5,7 +5,13 @@ import { score, type RatingReport } from '@/lib/scoring';
 import { stableSnapshotHash } from '@/lib/utils/identity';
 import { getChainConfig, getExplorerUrl, getRpcUrl, isTestnetChain } from './chains';
 import { computeBlueprintHash, getSBTContractAddress } from './client';
-import { buildCertificateMetadata, uploadMetadataAuto, type StorageResult } from './metadata';
+import {
+  buildCertificateMetadata,
+  uploadMetadataAuto,
+  type PrivacyClaim,
+  type StorageResult,
+} from './metadata';
+import { DEFAULT_THRESHOLD, getProver, type Proof } from '@/lib/zk';
 import { SBT_CONTRACT_ABI } from './abi';
 
 export interface MintCertificateServerInput {
@@ -16,6 +22,12 @@ export interface MintCertificateServerInput {
   chainId?: number;
   buildId?: string;
   baseUrl?: string;
+  /**
+   * Zero-knowledge threshold proof. Required: the certificate asserts that the
+   * design cleared the bar, and that assertion has to be checked before it is
+   * written to a chain, where it cannot be taken back.
+   */
+  proof: Proof;
 }
 
 export interface SerializableStorageResult {
@@ -39,6 +51,7 @@ export interface MintCertificateServerResult {
   explorerUrl: string;
   report: RatingReport;
   metadata: SerializableStorageResult;
+  privacy: PrivacyClaim;
 }
 
 export class MintError extends Error {
@@ -48,6 +61,28 @@ export class MintError extends Error {
     super(message);
     this.status = status;
   }
+}
+
+/**
+ * Checks the proof and returns the public claim the certificate will carry.
+ * Throws rather than returning a flag: there is no partial success here.
+ */
+async function verifyMintProof(proof: Proof, rulePackVersion: string): Promise<PrivacyClaim> {
+  if (!proof) throw new MintError(400, 'A zero-knowledge threshold proof is required to mint');
+
+  const result = await getProver().verify(proof, {
+    threshold: DEFAULT_THRESHOLD,
+    rulePackVersion,
+  });
+  if (!result.valid) throw new MintError(400, `Proof rejected: ${result.reason ?? 'invalid proof'}`);
+
+  return {
+    commitment: proof.statement.commitment,
+    threshold: proof.statement.threshold,
+    rulePackVersion: proof.statement.rulePackVersion,
+    circuit: proof.statement.circuit,
+    backend: proof.backend,
+  };
 }
 
 export async function mintCertificateOnChain(
@@ -66,6 +101,12 @@ export async function mintCertificateOnChain(
     throw new MintError(400, `Build is not certifiable (score ${report.score}, tier ${report.tier})`);
   }
 
+  // The human gate sits on the irreversible edge. Minting writes to a chain, so
+  // the proof is verified here — before the transaction — and the proof must
+  // have been made under the same rule pack that judged this build, or a lax
+  // pack could be used to clear a strict bar.
+  const privacy = await verifyMintProof(input.proof, report.rulePackVersion);
+
   const snapshotBuildId = await stableSnapshotHash(snapshot);
   const resolvedBuildId = input.buildId ?? snapshot.buildId ?? snapshotBuildId;
   if (input.buildId && input.buildId !== snapshotBuildId && input.buildId !== snapshot.buildId) {
@@ -82,6 +123,7 @@ export async function mintCertificateOnChain(
     input.recipientName ?? 'Anonymous Builder',
     input.svgDataUri,
     input.baseUrl,
+    privacy,
   );
 
   const storageResult = await uploadMetadataAuto(metadata, isTestnetChain(chainId));
@@ -154,5 +196,6 @@ export async function mintCertificateOnChain(
     explorerUrl: getExplorerUrl(chainId, tx.hash, 'tx'),
     report,
     metadata: serializedMetadata,
+    privacy,
   };
 }

@@ -26,6 +26,7 @@ import {
 } from '@/lib/sbt/client';
 import { isTestnetChain, SUPPORTED_CHAINS } from '@/lib/sbt/chains';
 import type { MintCertificateServerResult } from '@/lib/sbt/server';
+import { acquireThresholdProof } from '@/lib/zk/client';
 
 const DEFAULT_CHAIN_ID = 11155111; // Ethereum Sepolia
 const ALL_CHAINS = Object.values(SUPPORTED_CHAINS);
@@ -104,6 +105,10 @@ export function MintCertificateCard({
     setMinting(true);
     setError(null);
     try {
+      const snapshot = useBuildStore.getState().exportSnapshot();
+      // The graph digest is computed locally and only the threshold witness
+      // leaves the browser; the mint is gated on the resulting proof.
+      const { proof } = await acquireThresholdProof(snapshot);
       const res = await fetch('/api/sbt/mint', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -111,11 +116,12 @@ export function MintCertificateCard({
           // buildId is intentionally omitted: the server derives it from the
           // snapshot, which avoids a "Build ID mismatch" when the result page
           // scores an in-memory build whose id differs from the route param.
-          snapshot: useBuildStore.getState().exportSnapshot(),
+          snapshot,
           recipientAddress: address,
           recipientName: recipientName || 'Anonymous Builder',
           svgDataUri,
           chainId: selectedChainId,
+          proof,
         }),
       });
       const data = (await res.json().catch(() => null)) as

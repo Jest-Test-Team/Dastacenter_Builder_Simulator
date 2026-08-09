@@ -1,0 +1,128 @@
+# Midnight ZK Threshold Proofs
+
+Prove a data center design is top-tier without disclosing the design.
+
+## The problem
+
+A facility's real PUE, cooling architecture and physical layout are commercial secrets. Publishing them
+to earn a credential is not an option — but the operator still wants to prove to the network that the
+build qualifies. Before this, `/api/sbt/mint` wrote the exact score and tier straight into certificate
+metadata, which is published permanently.
+
+## What is proven
+
+`circuits/datacenter-score.compact` proves exactly one sentence:
+
+> I know a facility design whose knowledge-graph digest is D, which rule pack V scored at or above
+> threshold T.
+
+| Public — the verifier learns this | Private — the verifier learns nothing |
+|---|---|
+| A blinded commitment to the graph digest | The graph digest, and so the entire design |
+| The rule pack version | The exact score — only that it cleared the bar |
+| The threshold that was cleared (default 85) | PUE, layout, rack counts, cooling topology, every asset and edge |
+
+The commitment binds the digest, a random blinding factor, the rule pack and a circuit tag together.
+Binding the pack matters: without it, a proof made under a lax rule pack could be replayed as though it
+had cleared a strict one. Blinding matters too — without it, anyone holding a guess at the design could
+confirm it by recomputing the hash.
+
+## What is *not* proven
+
+The circuit does not verify that the score was computed honestly, or that the digest describes a
+well-formed build. It cannot: re-running the rule pack inside a circuit would mean ingesting the whole
+private build, which defeats the purpose. Those properties are attested by the scoring service that
+produces the witness. This boundary is stated here rather than left for a reader to discover.
+
+## Where the privacy actually happens
+
+The graph digest is computed **in the browser**, by `acquireThresholdProof` in `src/lib/zk/client.ts`.
+Only the threshold witness leaves the machine, and only as far as the operator's own proof endpoint.
+
+```
+browser: BuildState → buildKnowledgeGraph → graphDigest ─┐
+                                                          ├─→ /api/zk/prove → Proof
+                                          score, blinding ┘
+Proof → /api/sbt/mint → verified → certificate carries the commitment, not the score
+```
+
+Under a privacy claim the certificate's `Score` attribute reads `>= 85`, the description says the design
+is not disclosed, and `certificate.score` records the threshold rather than the figure. The metadata
+document is published forever, so anything left in it is public forever.
+
+## The prover boundary
+
+`src/lib/zk/prover` defines one interface with two implementations:
+
+- **`MidnightProver`** — talks to a real Midnight proof server over HTTP. Active only when
+  `MIDNIGHT_PROOF_SERVER_URL` is set.
+- **`MockProver`** — deterministic, hash-based, used by every test.
+
+`getProver()` picks between them. The mock is **refused in production** unless `ZK_ALLOW_MOCK=true`,
+because it is not sound — anyone can forge a mock proof, and silently degrading to it on a deployed
+instance would turn a privacy credential into a rubber stamp.
+
+## Status: what has and has not been run
+
+Being precise about this, because "ZK integration" can mean very different things.
+
+| | |
+|---|---|
+| Circuit source written | yes — `circuits/datacenter-score.compact` |
+| Circuit compiled with `compactc` | **no** — the toolchain is not installed on this machine |
+| A real proof generated end to end | **no** |
+| Real adapter implemented | yes — `src/lib/zk/midnight-prover.ts` |
+| Wiring tested (prove → verify → mint gate) | yes, against `MockProver` — 24 unit + 15 integration tests |
+
+`compactc` and the Docker proof server cannot run inside vitest, Playwright, or the Cloudflare Workers
+runtime, so tests exercise the mock. The code under test is the real code; only the backend swaps.
+Generating one real proof is a local step, below.
+
+## Local setup
+
+```sh
+./scripts/midnight-setup.sh check      # what's present, what's missing
+./scripts/midnight-setup.sh install    # Compact toolchain
+./scripts/midnight-setup.sh compile    # circuits/ → circuits/build/
+./scripts/midnight-setup.sh serve      # proof server on :6300 (needs Docker running)
+
+export MIDNIGHT_PROOF_SERVER_URL=http://127.0.0.1:6300
+npm run dev
+```
+
+With that set, `getProver()` returns the real adapter and the mint flow generates a genuine proof.
+
+## Selective disclosure
+
+`openCommitment` re-derives the commitment from a revealed digest and blinding factor. An auditor under
+NDA can be handed both and confirm they reproduce the on-chain commitment, without the design ever
+having been public. The threshold proof stays the default; this is the escape hatch for the one auditor
+entitled to more.
+
+## API
+
+| Route | Purpose |
+|---|---|
+| `POST /api/zk/prove` | Witness → proof. Returns 422 when the build is below the bar — no such proof exists. |
+| `POST /api/zk/verify` | Proof → one bit, optionally checked against a required threshold and rule pack. |
+| `POST /api/sbt/mint` | Now **requires** a valid proof. Verified before the transaction. |
+
+## The gate
+
+Minting writes a permanent public claim to a chain — the irreversible edge in this system — so
+verification sits immediately before it, in `verifyMintProof` (`src/lib/sbt/server.ts`). The proof must
+have been made under the same rule pack that judged the build, and must clear at least the required
+threshold. `tests/integration/zk-mint-gate.test.ts` drives the real route handlers: a gate only tested
+one layer down is a gate nobody has actually tried.
+
+## Verification
+
+```sh
+npm test -- tests/unit/zk-prover.test.ts tests/integration/zk-mint-gate.test.ts
+./scripts/midnight-setup.sh check
+```
+
+## Related
+
+- [KNOWLEDGE_GRAPH.md](KNOWLEDGE_GRAPH.md) — the graph whose digest is committed to.
+- [SBT_DEPLOYMENT.md](SBT_DEPLOYMENT.md) — the EVM certificate contracts, unchanged.

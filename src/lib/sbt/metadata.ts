@@ -44,6 +44,27 @@ export interface CertificateMetadata {
     tier: string;
     certLevel: string;
   };
+  /**
+   * Present when the certificate was issued against a zero-knowledge threshold
+   * proof. The commitment stands in for the design: it is what the holder can
+   * later open to an auditor, and it is all a public reader ever gets.
+   */
+  privacy?: {
+    commitment: string;
+    threshold: number;
+    rulePackVersion: string;
+    circuit: string;
+    backend: string;
+  };
+}
+
+/** The public statement a certificate can carry instead of the raw rating. */
+export interface PrivacyClaim {
+  commitment: string;
+  threshold: number;
+  rulePackVersion: string;
+  circuit: string;
+  backend: string;
 }
 
 export type StorageProvider = 'ipfs' | 'arweave' | 'onchain';
@@ -95,7 +116,8 @@ export function buildCertificateMetadata(
   recipientWallet: string,
   recipientName: string,
   svgDataUri: string,
-  baseUrl?: string
+  baseUrl?: string,
+  privacy?: PrivacyClaim
 ): CertificateMetadata {
   const level = report.level;
   const appUrl =
@@ -105,26 +127,44 @@ export function buildCertificateMetadata(
 
   return {
     name: `Datacenter Builder Certificate - ${level}`,
-    description: `Certificate for completing a ${level} level datacenter design. Score: ${report.score}/100, Tier: ${report.tier}`,
+    description: privacy
+      ? `Certificate for a ${level} level datacenter design, proven in zero knowledge to score at least ${privacy.threshold}/100 under rule pack ${privacy.rulePackVersion}. Tier: ${report.tier}. The design itself is not disclosed.`
+      : `Certificate for completing a ${level} level datacenter design. Score: ${report.score}/100, Tier: ${report.tier}`,
     image: svgDataUri,
     external_url: `${appUrl.replace(/\/$/, '')}/cert/${buildId}`,
     attributes: [
       { trait_type: 'Level', value: level },
-      { trait_type: 'Score', value: report.score },
+      // Under a privacy claim the exact score never becomes public — the
+      // certificate asserts only that the bar was cleared, which is the whole
+      // point of proving rather than publishing.
+      privacy
+        ? { trait_type: 'Score', value: `>= ${privacy.threshold}` }
+        : { trait_type: 'Score', value: report.score },
       { trait_type: 'Uptime Tier', value: report.tier },
       { trait_type: 'Recipient', value: recipientName || 'Anonymous Builder' },
       { trait_type: 'Blueprint Hash', value: blueprintHash },
       { trait_type: 'Issued At', value: new Date().toISOString() },
+      ...(privacy
+        ? [
+            { trait_type: 'Graph Commitment', value: privacy.commitment },
+            { trait_type: 'Proof Circuit', value: privacy.circuit },
+            { trait_type: 'Rule Pack', value: privacy.rulePackVersion },
+          ]
+        : []),
     ],
     certificate: {
       buildId,
       blueprintHash,
       recipientWallet,
       issuedAt: new Date().toISOString(),
-      score: report.score,
+      // Under a privacy claim this records the bar that was cleared, not the
+      // exact figure — the metadata document is published, so anything left
+      // here is public forever.
+      score: privacy ? privacy.threshold : report.score,
       tier: report.tier,
       certLevel: level,
     },
+    ...(privacy ? { privacy } : {}),
   };
 }
 
