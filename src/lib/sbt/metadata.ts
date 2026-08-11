@@ -107,6 +107,17 @@ export function createCompactCertificateMetadata(metadata: CertificateMetadata):
 }
 
 /**
+ * Display titles that override the default "Datacenter Builder Certificate - X".
+ *
+ * Only the top level earns one. The `Level` attribute is left untouched, so
+ * anything reading the certificate programmatically (the dividend rate card,
+ * for one) is unaffected by the rename.
+ */
+const CERTIFICATE_TITLES: Partial<Record<RatingReport['level'], string>> = {
+  Platinum: 'Elite Green Architect SBT',
+};
+
+/**
  * 建立憑證 metadata
  */
 export function buildCertificateMetadata(
@@ -126,7 +137,7 @@ export function buildCertificateMetadata(
     'https://datacenter-builder.com';
 
   return {
-    name: `Datacenter Builder Certificate - ${level}`,
+    name: CERTIFICATE_TITLES[level] ?? `Datacenter Builder Certificate - ${level}`,
     description: privacy
       ? `Certificate for a ${level} level datacenter design, proven in zero knowledge to score at least ${privacy.threshold}/100 under rule pack ${privacy.rulePackVersion}. Tier: ${report.tier}. The design itself is not disclosed.`
       : `Certificate for completing a ${level} level datacenter design. Score: ${report.score}/100, Tier: ${report.tier}`,
