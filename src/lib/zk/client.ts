@@ -11,9 +11,23 @@ import type { BuildState } from '@/lib/blocks';
 import { DEFAULT_THRESHOLD, type Proof } from './types';
 import { witnessFromBuild } from './witness';
 
+/**
+ * Stages of proof acquisition, in order. Reported so the UI can show what is
+ * actually happening rather than a spinner — the local/remote split is the
+ * whole privacy claim, and it is worth making visible.
+ */
+export type ProofStage =
+  | { stage: 'graph'; }
+  | { stage: 'witness'; graphDigest: string; rulePackVersion: string; threshold: number }
+  | { stage: 'proving' }
+  | { stage: 'proved'; proof: Proof }
+  | { stage: 'rejected'; message: string };
+
 export interface AcquireProofOptions {
   threshold?: number;
   signal?: AbortSignal;
+  /** Progress reporter. Never receives the build, the score, or the blinding. */
+  onStage?: (event: ProofStage) => void;
 }
 
 export interface AcquiredProof {
@@ -35,8 +49,18 @@ export async function acquireThresholdProof(
   options: AcquireProofOptions = {},
 ): Promise<AcquiredProof> {
   const threshold = options.threshold ?? DEFAULT_THRESHOLD;
-  const { witness, rulePackVersion } = await witnessFromBuild(state, { threshold });
+  const report = options.onStage;
 
+  report?.({ stage: 'graph' });
+  const { witness, rulePackVersion } = await witnessFromBuild(state, { threshold });
+  report?.({
+    stage: 'witness',
+    graphDigest: witness.graphDigest,
+    rulePackVersion,
+    threshold,
+  });
+
+  report?.({ stage: 'proving' });
   const response = await fetch('/api/zk/prove', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -45,8 +69,12 @@ export async function acquireThresholdProof(
   });
 
   const body = (await response.json().catch(() => null)) as { proof?: Proof; error?: string } | null;
-  if (!response.ok || !body?.proof)
-    throw new Error(body?.error ?? `Proof generation failed (${response.status})`);
+  if (!response.ok || !body?.proof) {
+    const message = body?.error ?? `Proof generation failed (${response.status})`;
+    report?.({ stage: 'rejected', message });
+    throw new Error(message);
+  }
+  report?.({ stage: 'proved', proof: body.proof });
 
   return {
     proof: body.proof,

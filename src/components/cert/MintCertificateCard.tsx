@@ -27,6 +27,7 @@ import {
 import { isTestnetChain, SUPPORTED_CHAINS } from '@/lib/sbt/chains';
 import type { MintCertificateServerResult } from '@/lib/sbt/server';
 import { acquireThresholdProof } from '@/lib/zk/client';
+import { ZkProvingConsole, type ConsoleLine } from '@/components/cert/ZkProvingConsole';
 
 const DEFAULT_CHAIN_ID = 11155111; // Ethereum Sepolia
 const ALL_CHAINS = Object.values(SUPPORTED_CHAINS);
@@ -51,6 +52,12 @@ export function MintCertificateCard({
   const [minting, setMinting] = useState(false);
   const [minted, setMinted] = useState<MintCertificateServerResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [trace, setTrace] = useState<ConsoleLine[]>([]);
+  const [consoleOpen, setConsoleOpen] = useState(false);
+  const [consoleStatus, setConsoleStatus] = useState<'running' | 'done' | 'failed'>('running');
+
+  const say = (tone: ConsoleLine['tone'], text: string) =>
+    setTrace((current) => [...current, { tone, text }]);
 
   // Compute the blueprint hash from the current build snapshot.
   useEffect(() => {
@@ -104,11 +111,42 @@ export function MintCertificateCard({
 
     setMinting(true);
     setError(null);
+    setTrace([]);
+    setConsoleStatus('running');
+    setConsoleOpen(true);
     try {
       const snapshot = useBuildStore.getState().exportSnapshot();
       // The graph digest is computed locally and only the threshold witness
       // leaves the browser; the mint is gated on the resulting proof.
-      const { proof } = await acquireThresholdProof(snapshot);
+      const { proof } = await acquireThresholdProof(snapshot, {
+        onStage: (event) => {
+          switch (event.stage) {
+            case 'graph':
+              say('local', 'Building knowledge graph from local build…');
+              break;
+            case 'witness':
+              say('local', `graphDigest = ${event.graphDigest.slice(0, 26)}…`);
+              say('local', 'Design, PUE, layout and asset inventory stay on this machine.');
+              say('info', `Circuit: proveThreshold · rule pack ${event.rulePackVersion}`);
+              say('info', `Claim: competition score >= ${event.threshold}`);
+              break;
+            case 'proving':
+              say('info', 'Requesting threshold proof from prover…');
+              break;
+            case 'proved':
+              say('ok', 'Proof generated. Public statement carries only:');
+              say('ok', `  commitment  ${event.proof.statement.commitment.slice(0, 26)}…`);
+              say('ok', `  threshold   >= ${event.proof.statement.threshold}`);
+              say('ok', `  rule pack   ${event.proof.statement.rulePackVersion}`);
+              break;
+            case 'rejected':
+              say('fail', `Assert (score >= threshold) … FAIL — ${event.message}`);
+              break;
+          }
+        },
+      });
+
+      say('info', 'Verifying proof server-side, then relaying the mint…');
       const res = await fetch('/api/sbt/mint', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -132,9 +170,22 @@ export function MintCertificateCard({
         if (res.status === 409) setAlreadyMinted(true);
         throw new Error(data && 'error' in data && data.error ? data.error : 'Minting failed');
       }
-      setMinted(data as MintCertificateServerResult);
+      const result = data as MintCertificateServerResult;
+      say('ok', `Minted token #${result.tokenId.toString()}`);
+      say('ok', `tx ${result.transactionHash.slice(0, 26)}…`);
+      say('ok', 'Certificate records the commitment — not the score.');
+      setConsoleStatus('done');
+      setMinted(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Minting failed');
+      const message = err instanceof Error ? err.message : 'Minting failed';
+      // A rejected proof already logged its own reason; don't double-report it.
+      setTrace((current) =>
+        current.some((line) => line.tone === 'fail')
+          ? current
+          : [...current, { tone: 'fail', text: message }],
+      );
+      setConsoleStatus('failed');
+      setError(message);
     } finally {
       setMinting(false);
     }
@@ -142,6 +193,12 @@ export function MintCertificateCard({
 
   return (
     <section className="panel p-5">
+      <ZkProvingConsole
+        open={consoleOpen}
+        lines={trace}
+        status={consoleStatus}
+        onClose={() => setConsoleOpen(false)}
+      />
       <h2 className="flex items-center gap-2 font-semibold">
         <Award className="h-5 w-5 text-warn" />
         Mint as Soulbound NFT
@@ -253,14 +310,24 @@ export function MintCertificateCard({
           >
             {minting ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" /> Minting…
+                <Loader2 className="h-4 w-4 animate-spin" /> Proving &amp; minting…
               </>
             ) : (
               <>
-                <Award className="h-4 w-4" /> Mint Certificate
+                <Award className="h-4 w-4" /> Mint Privacy SBT via Midnight
               </>
             )}
           </button>
+
+          {trace.length > 0 && !consoleOpen && (
+            <button
+              type="button"
+              onClick={() => setConsoleOpen(true)}
+              className="w-full text-center text-[10px] text-fg-muted underline-offset-2 hover:underline"
+            >
+              Show proof log
+            </button>
+          )}
 
           {blueprintHash && (
             <p className="text-[10px] text-fg-muted">

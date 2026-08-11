@@ -23,6 +23,9 @@ export default defineConfig({
     env: { NEXT_PUBLIC_CERT_THRESHOLD: '40' },
     coverage: { provider: 'v8', reporter: ['text', 'lcov'] },
   },
+  // Component tests use JSX without importing React; Next compiles with the
+  // automatic runtime, so vitest has to as well.
+  esbuild: { jsx: 'automatic' },
   resolve: {
     alias: { '@': path.resolve(__dirname, 'src') },
   },

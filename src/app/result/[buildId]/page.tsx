@@ -65,7 +65,11 @@ export default function ResultPage() {
         <Scorecard report={report} />
 
         <section className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <StatCard label="Competition score" value={`${report.competitionScore.toFixed(0)}/1000`} />
+          <StatCard
+            label="Local S(t) score"
+            value={`${report.competitionScore.toFixed(0)}/1000`}
+            privateData
+          />
           <StatCard label="Build cost" value={`$${report.buildCostUsd.toLocaleString()}`} />
           <StatCard label="Budget" value={`$${report.budgetUsd.toLocaleString()}`} />
           <StatCard label={report.overBudget ? 'Budget status' : 'Budget status'} value={report.overBudget ? 'Over' : 'Within'} tone={report.overBudget ? 'warn' : 'success'} />
@@ -243,10 +247,13 @@ function StatCard({
   label,
   value,
   tone = 'default',
+  privateData = false,
 }: {
   label: string;
   value: string;
   tone?: 'default' | 'warn' | 'success';
+  /** Marks a figure that is never published — only a threshold claim about it is. */
+  privateData?: boolean;
 }) {
   const toneClass =
     tone === 'warn' ? 'border-warn/30 bg-warn/5 text-warn' : tone === 'success' ? 'border-success/30 bg-success/5 text-success' : 'border-border bg-bg-subtle';
@@ -254,6 +261,14 @@ function StatCard({
     <div className={`panel rounded-md border p-4 ${toneClass}`}>
       <div className="text-xs text-fg-muted">{label}</div>
       <div className="mt-1 font-mono text-lg font-semibold">{value}</div>
+      {privateData && (
+        <div className="mt-2 flex items-center gap-1.5 rounded border border-danger/40 bg-danger/10 px-1.5 py-1">
+          <Lock className="h-3 w-3 flex-shrink-0 text-danger" />
+          <span className="text-[9px] font-semibold uppercase tracking-[0.12em] text-danger">
+            Private data · local only
+          </span>
+        </div>
+      )}
     </div>
   );
 }

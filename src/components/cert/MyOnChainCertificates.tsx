@@ -19,6 +19,7 @@ import {
   type CertificateInfo,
 } from '@/lib/sbt/client';
 import { getChainConfig, getExplorerUrl } from '@/lib/sbt/chains';
+import { PlanetaryDividend } from '@/components/cert/PlanetaryDividend';
 
 // Chains the SBT contract is deployed on.
 const AMOY = 80002;
@@ -121,11 +122,14 @@ export function MyOnChainCertificates() {
   }
 
   return (
-    <div className="grid gap-6 sm:grid-cols-2">
-      {certs.map((cert) => (
-        <CertCard key={`${cert.chainId}-${cert.tokenId.toString()}`} cert={cert} />
-      ))}
-    </div>
+    <>
+      <div className="grid gap-6 sm:grid-cols-2">
+        {certs.map((cert) => (
+          <CertCard key={`${cert.chainId}-${cert.tokenId.toString()}`} cert={cert} />
+        ))}
+      </div>
+      <PlanetaryDividend certs={certs} />
+    </>
   );
 }
 
