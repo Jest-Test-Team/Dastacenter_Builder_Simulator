@@ -30,6 +30,17 @@
     "NEXT_PUBLIC_APP_URL": "https://datacenter-building-simulator.dennisleehappy.org/",
     "NEXT_PUBLIC_WC_PROJECT_ID": "10ab544899577333e1c63767710a9a4b",
     "NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY": "0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB",
-    "NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_SEPOLIA": "0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB"
+    "NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_SEPOLIA": "0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB",
+
+    // Accepts MockProver in a deployed environment. Without it getProver()
+    // refuses to run in production and /api/zk/prove answers 503, which breaks
+    // the demo at the proof step.
+    //
+    // Mock proofs are NOT sound — they are forgeable, so a certificate minted
+    // behind one attests to nothing. This is here to keep the demo flowing, and
+    // should be removed the moment a real proof server is reachable via
+    // MIDNIGHT_PROOF_SERVER_URL (which takes precedence over this flag).
+    // See docs/MIDNIGHT_ZK.md.
+    "ZK_ALLOW_MOCK": "true"
   }
 }
