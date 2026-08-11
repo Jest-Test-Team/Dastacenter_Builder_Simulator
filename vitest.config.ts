@@ -11,6 +11,11 @@ export default defineConfig({
     // it here too would execute edge-runtime assertions under jsdom, where they
     // are meaningless (and the "no DOM" check correctly fails).
     exclude: ['**/node_modules/**', '**/dist/**', 'tests/workers/**'],
+    // The scoring engine reads the certification threshold from the environment
+    // once, at module load. Left ambient, the score-integrity snapshots would
+    // encode whatever threshold the recording machine happened to have — so the
+    // guard would drift instead of catching drift. Pin it to the shipped default.
+    env: { NEXT_PUBLIC_CERT_THRESHOLD: '40' },
     coverage: { provider: 'v8', reporter: ['text', 'lcov'] },
   },
   resolve: {

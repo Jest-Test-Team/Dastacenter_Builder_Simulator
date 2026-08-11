@@ -9,7 +9,7 @@
 
 import type { BuildState } from '@/lib/blocks';
 import { DEFAULT_THRESHOLD, type Proof } from './types';
-import { witnessFromBuild } from './index';
+import { witnessFromBuild } from './witness';
 
 export interface AcquireProofOptions {
   threshold?: number;

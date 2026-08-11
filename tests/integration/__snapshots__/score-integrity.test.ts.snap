@@ -13,7 +13,7 @@ exports[`canonical score integrity > basic resilient site retains its certificat
     "safety": 40,
     "security": 20,
   },
-  "certifiable": false,
+  "certifiable": true,
   "issueRuleIds": [
     "UPTIME.002.cooling_present",
     "COOL.001.heat_load",

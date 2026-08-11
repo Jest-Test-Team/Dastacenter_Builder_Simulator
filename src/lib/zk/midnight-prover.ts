@@ -36,8 +36,10 @@ interface CompiledContract {
 function loadCompiledContract(): CompiledContract {
   try {
     // Resolved at call time so a checkout without the toolchain still imports
-    // this module — the circuit build output is not committed.
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    // this module. Note the build output *is* committed under circuits/build,
+    // so bundlers can follow this path: keep this module off any browser import
+    // chain (see ./witness) or the Compact runtime's WASM lands in the bundle.
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require('../../../circuits/build/contract/index.js') as CompiledContract;
   } catch {
     throw new ProofError(
