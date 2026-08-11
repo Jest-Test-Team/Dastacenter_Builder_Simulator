@@ -1,8 +1,12 @@
 import { defineConfig } from 'vitest/config';
+import os from 'node:os';
 import path from 'node:path';
 
 export default defineConfig({
-  cacheDir: '/private/tmp/vitest-cache',
+  // Keep the cache out of the repo, but resolve the temp root per-platform:
+  // the previous hardcoded /private/tmp exists only on macOS and made CI die
+  // with EACCES trying to mkdir /private.
+  cacheDir: path.join(os.tmpdir(), 'vitest-cache-datacenter-sim'),
   test: {
     environment: 'jsdom',
     globals: true,

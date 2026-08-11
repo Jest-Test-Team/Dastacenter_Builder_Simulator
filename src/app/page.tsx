@@ -17,10 +17,12 @@ import {
 } from 'lucide-react';
 import { LandingHeader } from '@/components/wallet/LandingHeader';
 import { LandingWalletBanner } from '@/components/wallet/LandingWalletBanner';
+import { IntroGate } from '@/components/intro/IntroGate';
 
 export default function HomePage() {
   return (
     <div className="min-h-screen overflow-y-auto bg-bg">
+      <IntroGate />
       <LandingHeader />
 
       <main id="main" tabIndex={-1} className="mx-auto max-w-6xl px-6 py-16">
