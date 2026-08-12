@@ -24,7 +24,7 @@ export interface WitnessResult {
   witness: Witness;
   rulePackVersion: string;
   /** The score, returned for the caller's own UI. Never put in a statement. */
-  competitionScore: number;
+  score: number;
   threshold: number;
 }
 
@@ -47,11 +47,14 @@ export async function witnessFromBuild(
   return {
     witness: {
       graphDigest: digest,
-      competitionScore: report.competitionScore,
+      // The 0-100 rating, not the 0-1000 competition score. DEFAULT_THRESHOLD
+      // is 85, and comparing that against a 0-1000 metric would make the claim
+      // "score >= 85" one that any scoring build clears by a factor of ten.
+      score: report.score,
       blindingFactor: options.blindingFactor ?? randomBlindingFactor(),
     },
     rulePackVersion: report.rulePackVersion,
-    competitionScore: report.competitionScore,
+    score: report.score,
     threshold: options.threshold ?? DEFAULT_THRESHOLD,
   };
 }

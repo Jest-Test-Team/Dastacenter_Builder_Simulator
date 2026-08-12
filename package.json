@@ -29,9 +29,12 @@
     "test:e2e:install": "playwright install chromium",
     "zk:compile": "compact compile circuits/datacenter-score.compact circuits/build",
     "test:contracts": "npm --prefix contracts test",
-    "test:workers": "vitest run --config vitest.workers.config.ts"
+    "test:workers": "vitest run --config vitest.workers.config.ts",
+    "zk:noir:compile": "cd circuits/noir && nargo compile"
   },
   "dependencies": {
+    "@aztec/bb.js": "4.2.0",
+    "@noir-lang/noir_js": "1.0.0-beta.20",
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.6.1",
     "@solana/wallet-adapter-base": "^0.9.23",

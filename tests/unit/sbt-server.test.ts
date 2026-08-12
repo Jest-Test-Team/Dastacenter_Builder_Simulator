@@ -24,7 +24,7 @@ async function proofFor(snapshot: Parameters<typeof score>[0], rulePackVersion: 
   return new MockProver().prove({
     witness: {
       graphDigest: await graphDigest(graph),
-      competitionScore: Math.max(score(snapshot).competitionScore, DEFAULT_THRESHOLD),
+      score: Math.max(score(snapshot).score, DEFAULT_THRESHOLD),
       blindingFactor: '0xfeed',
     },
     threshold: DEFAULT_THRESHOLD,

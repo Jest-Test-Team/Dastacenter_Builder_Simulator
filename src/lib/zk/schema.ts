@@ -15,7 +15,10 @@ export const ProofSchema = z.object({
     circuit: z.string().min(1),
   }),
   proof: z.string().min(1),
-  backend: z.enum(['midnight', 'mock']),
+  // Public inputs travel with the proof so a verifier can check the statement
+  // against what was actually proven. Optional: mock proofs carry none.
+  publicInputs: z.array(z.string()).optional(),
+  backend: z.enum(['noir', 'midnight', 'mock']),
   createdAt: z.number().int().nonnegative(),
 });
 
@@ -32,7 +35,7 @@ export const VerifyRequestSchema = z.object({
 export const ProveRequestSchema = z.object({
   witness: z.object({
     graphDigest: z.string().regex(/^0x[0-9a-f]{64}$/, 'graphDigest must be a 32-byte hex hash'),
-    competitionScore: z.number().finite().nonnegative(),
+    score: z.number().finite().nonnegative(),
     blindingFactor: z.string().min(1),
   }),
   threshold: z.number().int().min(0).max(1000).optional(),

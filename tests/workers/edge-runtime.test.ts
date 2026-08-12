@@ -131,7 +131,7 @@ describe('workerd: the digest is identical to Node', () => {
 describe('workerd: the ZK path works at the edge', () => {
   const witness = {
     graphDigest: `0x${'ab'.repeat(32)}`,
-    competitionScore: 92,
+    score: 92,
     blindingFactor: '0xdeadbeef',
   };
 
@@ -154,7 +154,7 @@ describe('workerd: the ZK path works at the edge', () => {
     const prover = new MockProver();
     await expect(
       prover.prove({
-        witness: { ...witness, competitionScore: 10 },
+        witness: { ...witness, score: 10 },
         threshold: DEFAULT_THRESHOLD,
         rulePackVersion: 'rules-v1',
       }),

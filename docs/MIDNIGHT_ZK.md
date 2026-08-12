@@ -1,5 +1,12 @@
 # Midnight ZK Threshold Proofs
 
+> **Superseded.** The app proves with Noir + Barretenberg - see [NOIR_ZK.md](./NOIR_ZK.md).
+> The Compact circuit here is real and compiles, but no released combination of the Compact
+> compiler and the Midnight proof server can prove it; the evidence is in
+> "Why a real proof cannot be produced yet" below. This document is kept because that finding
+> is worth preserving, and because the path reopens the moment the toolchain generations line
+> up.
+
 Prove a data center design is top-tier without disclosing the design.
 
 ## The problem

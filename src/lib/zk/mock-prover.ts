@@ -46,7 +46,7 @@ async function proofBytes(statement: PublicStatement, witness: Witness): Promise
       statement.circuit,
       // The score is inside the proof but never inside the statement — this is
       // the line the whole design defends.
-      String(witness.competitionScore >= statement.threshold),
+      String(witness.score >= statement.threshold),
     ].join('|'),
   );
 }
@@ -58,12 +58,12 @@ export class MockProver implements Prover {
     const { witness, threshold, rulePackVersion } = request;
     if (!witness.graphDigest) throw new ProofError(400, 'Missing graph digest');
     if (!witness.blindingFactor) throw new ProofError(400, 'Missing blinding factor');
-    if (!Number.isFinite(witness.competitionScore))
+    if (!Number.isFinite(witness.score))
       throw new ProofError(400, 'Missing competition score');
 
     // The circuit's assert, in TypeScript. A below-threshold build has no proof
     // — the request fails rather than returning an invalid one.
-    if (witness.competitionScore < threshold)
+    if (witness.score < threshold)
       throw new ProofError(
         422,
         `Score is below the threshold; no proof exists for this build at ${threshold}`,
@@ -106,7 +106,7 @@ export class MockProver implements Prover {
     const expectedBytes = await proofBytes(proof.statement, {
       graphDigest: '',
       blindingFactor: '',
-      competitionScore: proof.statement.threshold,
+      score: proof.statement.threshold,
     });
     if (expectedBytes !== proof.proof) return { valid: false, reason: 'Proof does not match its statement' };
 

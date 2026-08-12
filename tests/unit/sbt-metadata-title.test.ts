@@ -85,6 +85,7 @@ describe('proof backend in certificate metadata', () => {
   }
 
   it('claims a zero-knowledge proof only when a real one was produced', () => {
+    expect(build('noir').description).toMatch(/proven in zero knowledge/i);
     expect(build('midnight').description).toMatch(/proven in zero knowledge/i);
   });
 

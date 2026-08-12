@@ -31,6 +31,16 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ['lucide-react', '@react-three/drei'],
   },
+  // The Noir prover's WASM must be required from node_modules at runtime, not
+  // bundled. Bundling rewrites the .wasm to a /_next/static/... asset URL, and
+  // the loader then tries to fetch that relative path from the server, where
+  // there is no origin to resolve it against ("Failed to parse URL from ...").
+  serverExternalPackages: [
+    '@noir-lang/noir_js',
+    '@noir-lang/noirc_abi',
+    '@noir-lang/acvm_js',
+    '@aztec/bb.js',
+  ],
   transpilePackages: ['three'],
   images: {
     formats: ['image/avif', 'image/webp'],

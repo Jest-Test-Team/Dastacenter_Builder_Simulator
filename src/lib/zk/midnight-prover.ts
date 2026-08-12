@@ -1,15 +1,23 @@
 /**
- * Midnight proof-server adapter.
+ * Midnight proof-server adapter. CURRENTLY NON-FUNCTIONAL BY DESIGN.
  *
- * Talks to a running Midnight proof server (the Docker image published by
- * midnight-ntwrk) over HTTP, using the artefacts produced by compiling
- * `circuits/datacenter-score.compact` with `compactc`.
+ * Kept because the Compact circuit, its keys and `openCommitment` are real and
+ * still useful, and because the moment Midnight ships a compiler generation
+ * that matches its proof server this becomes viable again. It is no longer the
+ * app's prover: `NoirProver` is, and it produces genuine proofs today.
  *
- * This path is inert unless MIDNIGHT_PROOF_SERVER_URL is set. That is not a
- * convenience: `compactc` and the proof server cannot run inside vitest,
- * Playwright, or the Cloudflare Workers runtime, so tests and the edge deploy
- * use MockProver. See docs/MIDNIGHT_ZK.md for the local setup that lights this
- * up, and for what has and has not been exercised end to end.
+ * Why this cannot work right now, established by testing (docs/MIDNIGHT_ZK.md):
+ *
+ *  - `POST /prove` takes a *binary* `ProofPreimageVersioned`, not the JSON this
+ *    adapter was written to send.
+ *  - There is no `/verify` endpoint at all. It 404s. Verification is local.
+ *  - Compact 0.31.1 — the newest released compiler, which built
+ *    `circuits/build` — pins runtime 0.16.0, which emits the older unversioned
+ *    preimage. Proof-server images 2.0.7, 3.0.7, 4.0.0 and latest all reject
+ *    it. Framing it with ledger-v9 is accepted but then never returns.
+ *
+ * So rather than issue calls that cannot succeed and surface as confusing 400s,
+ * `prove` and `verify` fail immediately with the actual reason.
  */
 
 import {
@@ -18,7 +26,6 @@ import {
   type Proof,
   type ProveRequest,
   type Prover,
-  type PublicStatement,
   type VerificationResult,
   type Witness,
 } from './types';
@@ -71,35 +78,6 @@ export interface MidnightProverOptions {
   timeoutMs?: number;
 }
 
-interface ProveResponse {
-  proof?: string;
-  publicInputs?: { commitment?: string };
-  error?: string;
-}
-
-async function post<T>(url: string, body: unknown, timeoutMs: number): Promise<T> {
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(body),
-      signal: controller.signal,
-    });
-    if (!response.ok)
-      throw new ProofError(502, `Proof server returned ${response.status}: ${await response.text()}`);
-    return (await response.json()) as T;
-  } catch (error) {
-    if (error instanceof ProofError) throw error;
-    if (error instanceof Error && error.name === 'AbortError')
-      throw new ProofError(504, `Proof server timed out after ${timeoutMs}ms`);
-    throw new ProofError(502, error instanceof Error ? error.message : 'Proof server unreachable');
-  } finally {
-    clearTimeout(timer);
-  }
-}
-
 export class MidnightProver implements Prover {
   readonly backend = 'midnight' as const;
   private readonly url: string;
@@ -113,44 +91,23 @@ export class MidnightProver implements Prover {
   }
 
   async prove(request: ProveRequest): Promise<Proof> {
-    const { witness, threshold, rulePackVersion } = request;
+    const { witness, threshold } = request;
 
     // Fail fast rather than paying for a proof attempt that the circuit's own
     // assert would reject anyway.
-    if (witness.competitionScore < threshold)
+    if (witness.score < threshold)
       throw new ProofError(
         422,
         `Score is below the threshold; no proof exists for this build at ${threshold}`,
       );
 
-    const response = await post<ProveResponse>(
-      `${this.url}/prove`,
-      {
-        circuit: this.circuitName,
-        // Public arguments, in the order the circuit declares them.
-        publicArgs: [threshold, rulePackVersion],
-        // Witness values. These leave the process only to the operator's own
-        // local proof server — never to a third party.
-        witness: {
-          graphDigest: witness.graphDigest,
-          competitionScore: witness.competitionScore,
-          blindingFactor: witness.blindingFactor,
-        },
-      },
-      this.timeoutMs,
+    throw new ProofError(
+      503,
+      'The Midnight proof server cannot prove this circuit: the released Compact ' +
+        'compiler (0.31.1, runtime 0.16.0) emits an unversioned proof preimage that ' +
+        'every published proof-server image rejects. Unset MIDNIGHT_PROOF_SERVER_URL ' +
+        'to use the Noir prover, which produces real proofs. See docs/MIDNIGHT_ZK.md.',
     );
-
-    if (response.error) throw new ProofError(502, response.error);
-    if (!response.proof || !response.publicInputs?.commitment)
-      throw new ProofError(502, 'Proof server returned no proof');
-
-    const statement: PublicStatement = {
-      commitment: response.publicInputs.commitment,
-      rulePackVersion,
-      threshold,
-      circuit: CIRCUIT_ID,
-    };
-    return { statement, proof: response.proof, backend: this.backend, createdAt: Date.now() };
   }
 
   async verify(
@@ -172,22 +129,16 @@ export class MidnightProver implements Prover {
         reason: `Proof was made under rule pack ${proof.statement.rulePackVersion}`,
       };
 
-    const response = await post<{ valid?: boolean; error?: string }>(
-      `${this.url}/verify`,
-      {
-        circuit: this.circuitName,
-        proof: proof.proof,
-        publicInputs: {
-          commitment: proof.statement.commitment,
-          threshold: proof.statement.threshold,
-          rulePackVersion: proof.statement.rulePackVersion,
-        },
-      },
-      this.timeoutMs,
-    );
-
-    if (response.error) return { valid: false, reason: response.error };
-    return response.valid === true ? { valid: true } : { valid: false, reason: 'Proof rejected by verifier' };
+    // The proof server has no /verify endpoint - it 404s. Verifying a Midnight
+    // proof means checking it locally against the verifier key, which this
+    // adapter cannot do while proving is broken anyway. Saying so is better
+    // than reporting "proof rejected" for what is actually a missing route.
+    return {
+      valid: false,
+      reason:
+        'The Midnight proof server exposes no /verify endpoint; this adapter cannot ' +
+        'verify while its proving path is blocked. See docs/MIDNIGHT_ZK.md.',
+    };
   }
 
   /**

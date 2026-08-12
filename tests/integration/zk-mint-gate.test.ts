@@ -41,7 +41,7 @@ async function witness(scoreOverride?: number) {
   const { graph } = buildKnowledgeGraph(state);
   return {
     graphDigest: await graphDigest(graph),
-    competitionScore: scoreOverride ?? Math.max(report.competitionScore, DEFAULT_THRESHOLD),
+    score: scoreOverride ?? Math.max(report.score, DEFAULT_THRESHOLD),
     blindingFactor: `0x${'ab'.repeat(32)}`,
   };
 }

@@ -127,8 +127,8 @@ export function MintCertificateCard({
             case 'witness':
               say('local', `graphDigest = ${event.graphDigest.slice(0, 26)}…`);
               say('local', 'Design, PUE, layout and asset inventory stay on this machine.');
-              say('info', `Circuit: proveThreshold · rule pack ${event.rulePackVersion}`);
-              say('info', `Claim: competition score >= ${event.threshold}`);
+              say('info', `Circuit: datacenter-score · rule pack ${event.rulePackVersion}`);
+              say('info', `Claim: efficiency score (0-100) >= ${event.threshold}`);
               break;
             case 'proving':
               say('info', 'Requesting threshold proof from prover…');
@@ -142,6 +142,8 @@ export function MintCertificateCard({
                   'fail',
                   'MOCK PROVER — proof is simulated and forgeable, not cryptographic.',
                 );
+              else if (event.proof.backend === 'noir')
+                say('ok', 'Backend: Noir + Barretenberg UltraHonk (real ZK proof).');
               else say('ok', 'Backend: Midnight proof server (real ZK proof).');
               say('ok', 'Proof generated. Public statement carries only:');
               say('ok', `  commitment  ${event.proof.statement.commitment.slice(0, 26)}…`);

@@ -6,6 +6,7 @@ import {
   DEFAULT_THRESHOLD,
   MidnightProver,
   MockProver,
+  NoirProver,
   ProofError,
   commitmentOf,
   getProver,
@@ -26,7 +27,7 @@ function stateOf(snapshot: unknown): BuildState {
 function witness(overrides: Partial<Witness> = {}): Witness {
   return {
     graphDigest: `0x${'ab'.repeat(32)}`,
-    competitionScore: 92,
+    score: 92,
     blindingFactor: '0xdeadbeef',
     ...overrides,
   };
@@ -45,24 +46,24 @@ describe('prover: proving', () => {
   });
 
   it('refuses to prove a score below the threshold — no such proof exists', async () => {
-    await expect(prove({ competitionScore: DEFAULT_THRESHOLD - 1 })).rejects.toThrow(ProofError);
-    await expect(prove({ competitionScore: DEFAULT_THRESHOLD - 1 })).rejects.toThrow(/below the threshold/);
+    await expect(prove({ score: DEFAULT_THRESHOLD - 1 })).rejects.toThrow(ProofError);
+    await expect(prove({ score: DEFAULT_THRESHOLD - 1 })).rejects.toThrow(/below the threshold/);
   });
 
   it('proves exactly at the threshold', async () => {
-    await expect(prove({ competitionScore: DEFAULT_THRESHOLD })).resolves.toBeDefined();
+    await expect(prove({ score: DEFAULT_THRESHOLD })).resolves.toBeDefined();
   });
 
   it('rejects an incomplete witness', async () => {
     await expect(prove({ graphDigest: '' })).rejects.toThrow(/graph digest/i);
     await expect(prove({ blindingFactor: '' })).rejects.toThrow(/blinding factor/i);
-    await expect(prove({ competitionScore: Number.NaN })).rejects.toThrow(/competition score/i);
+    await expect(prove({ score: Number.NaN })).rejects.toThrow(/competition score/i);
   });
 });
 
 describe('prover: the statement leaks nothing', () => {
   it('never carries the digest, the score, or the blinding factor', async () => {
-    const secret = witness({ graphDigest: `0x${'11'.repeat(32)}`, competitionScore: 97 });
+    const secret = witness({ graphDigest: `0x${'11'.repeat(32)}`, score: 97 });
     const proof = await prover.prove({
       witness: secret,
       threshold: DEFAULT_THRESHOLD,
@@ -75,9 +76,9 @@ describe('prover: the statement leaks nothing', () => {
     // The score must not appear as a value anywhere in the statement. Checked
     // structurally rather than by substring — a two-digit number collides with
     // a random hex commitment often enough to make that assertion meaningless.
-    for (const value of Object.values(proof.statement)) expect(value).not.toBe(secret.competitionScore);
+    for (const value of Object.values(proof.statement)) expect(value).not.toBe(secret.score);
     expect(proof.statement.threshold).toBe(DEFAULT_THRESHOLD);
-    expect(proof.statement.threshold).not.toBe(secret.competitionScore);
+    expect(proof.statement.threshold).not.toBe(secret.score);
 
     expect(Object.keys(proof.statement).sort()).toEqual([
       'circuit',
@@ -176,16 +177,26 @@ describe('prover: selection', () => {
     );
   });
 
-  it('falls back to the mock in development', () => {
-    expect(getProver({ NODE_ENV: 'development' })).toBeInstanceOf(MockProver);
+  it('prefers Noir — real proofs, not the mock — by default', () => {
+    expect(getProver({ NODE_ENV: 'development' })).toBeInstanceOf(NoirProver);
+    // Including in production: it is sound, so there is nothing to refuse.
+    expect(getProver({ NODE_ENV: 'production' })).toBeInstanceOf(NoirProver);
+  });
+
+  it('falls back to the mock in development when Noir is off', () => {
+    expect(getProver({ NODE_ENV: 'development', ZK_NOIR: 'false' })).toBeInstanceOf(MockProver);
   });
 
   it('refuses to silently use the unsound mock in production', () => {
-    expect(() => getProver({ NODE_ENV: 'production' })).toThrow(/No Midnight proof server/);
+    expect(() => getProver({ NODE_ENV: 'production', ZK_NOIR: 'false' })).toThrow(
+      /No Midnight proof server/,
+    );
   });
 
   it('allows the mock in production only on an explicit opt-in', () => {
-    expect(getProver({ NODE_ENV: 'production', ZK_ALLOW_MOCK: 'true' })).toBeInstanceOf(MockProver);
+    expect(
+      getProver({ NODE_ENV: 'production', ZK_NOIR: 'false', ZK_ALLOW_MOCK: 'true' }),
+    ).toBeInstanceOf(MockProver);
   });
 });
 

@@ -23,8 +23,13 @@ export interface PublicStatement {
 export interface Witness {
   /** Canonical knowledge-graph digest — the whole design, in one hash. */
   graphDigest: string;
-  /** The competition score the rule pack produced. */
-  competitionScore: number;
+  /**
+   * The 0-100 rating the rule pack produced — the same number shown as SCORE
+   * on the result page. This is what the threshold is compared against, so the
+   * two must stay on one scale: proving "score >= 85" against a 0-1000 metric
+   * would be a bar cleared by a factor of ten.
+   */
+  score: number;
   /** Randomness that stops an observer confirming a guessed design. */
   blindingFactor: string;
 }
@@ -33,8 +38,14 @@ export interface Proof {
   statement: PublicStatement;
   /** Opaque proof bytes, hex-encoded. Shape depends on the backend. */
   proof: string;
+  /**
+   * Public inputs the proof attests to, in circuit order. Carried so a verifier
+   * can check the statement against what was actually proven rather than
+   * trusting the two to agree.
+   */
+  publicInputs?: string[];
   /** Which backend produced it. Never trusted for verification decisions. */
-  backend: 'midnight' | 'mock';
+  backend: 'noir' | 'midnight' | 'mock';
   createdAt: number;
 }
 

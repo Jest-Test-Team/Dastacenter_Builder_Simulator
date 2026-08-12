@@ -20,7 +20,11 @@ export default defineConfig({
     // once, at module load. Left ambient, the score-integrity snapshots would
     // encode whatever threshold the recording machine happened to have — so the
     // guard would drift instead of catching drift. Pin it to the shipped default.
-    env: { NEXT_PUBLIC_CERT_THRESHOLD: '40' },
+    // Wiring tests assert against MockProver so they stay deterministic and
+    // fast; bb.js ships WASM that has no business loading under jsdom. The real
+    // prover is exercised for real in tests/unit/noir-prover.test.ts, which
+    // opts back in and runs in the node environment.
+    env: { NEXT_PUBLIC_CERT_THRESHOLD: '40', ZK_NOIR: 'false' },
     coverage: { provider: 'v8', reporter: ['text', 'lcov'] },
   },
   // Component tests use JSX without importing React; Next compiles with the
