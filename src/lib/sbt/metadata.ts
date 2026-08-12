@@ -138,8 +138,13 @@ export function buildCertificateMetadata(
 
   return {
     name: CERTIFICATE_TITLES[level] ?? `Datacenter Builder Certificate - ${level}`,
+    // A mock proof is simulated and forgeable. Metadata is written to a public
+    // chain forever, so it must not assert a zero-knowledge proof that was
+    // never produced — the wording changes with the backend that actually ran.
     description: privacy
-      ? `Certificate for a ${level} level datacenter design, proven in zero knowledge to score at least ${privacy.threshold}/100 under rule pack ${privacy.rulePackVersion}. Tier: ${report.tier}. The design itself is not disclosed.`
+      ? privacy.backend === 'mock'
+        ? `Certificate for a ${level} level datacenter design, asserted to score at least ${privacy.threshold} under rule pack ${privacy.rulePackVersion}. Tier: ${report.tier}. NOTE: issued against a SIMULATED (mock) proof, which is not cryptographic and carries no zero-knowledge guarantee.`
+        : `Certificate for a ${level} level datacenter design, proven in zero knowledge to score at least ${privacy.threshold} under rule pack ${privacy.rulePackVersion}. Tier: ${report.tier}. The design itself is not disclosed.`
       : `Certificate for completing a ${level} level datacenter design. Score: ${report.score}/100, Tier: ${report.tier}`,
     image: svgDataUri,
     external_url: `${appUrl.replace(/\/$/, '')}/cert/${buildId}`,
@@ -160,6 +165,9 @@ export function buildCertificateMetadata(
             { trait_type: 'Graph Commitment', value: privacy.commitment },
             { trait_type: 'Proof Circuit', value: privacy.circuit },
             { trait_type: 'Rule Pack', value: privacy.rulePackVersion },
+            // On-chain and machine-readable: a verifier must be able to tell a
+            // simulated proof from a real one without reading the description.
+            { trait_type: 'Proof Backend', value: privacy.backend },
           ]
         : []),
     ],

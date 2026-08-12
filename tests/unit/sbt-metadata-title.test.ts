@@ -61,3 +61,48 @@ describe('certificate title', () => {
     expect(metadata.attributes).toContainEqual({ trait_type: 'Level', value: 'Platinum' });
   });
 });
+
+describe('proof backend in certificate metadata', () => {
+  const claim = (backend: string) => ({
+    commitment: `0x${'ab'.repeat(32)}`,
+    threshold: 85,
+    rulePackVersion: '0.1.0',
+    circuit: 'datacenter-score/v1',
+    backend,
+  });
+
+  function build(backend: string) {
+    return buildCertificateMetadata(
+      reportAt('Platinum', 97),
+      'build-1',
+      `0x${'11'.repeat(32)}`,
+      `0x${'22'.repeat(20)}`,
+      'Tester',
+      'data:image/svg+xml;base64,AA==',
+      'https://example.test',
+      claim(backend),
+    );
+  }
+
+  it('claims a zero-knowledge proof only when a real one was produced', () => {
+    expect(build('midnight').description).toMatch(/proven in zero knowledge/i);
+  });
+
+  it('never claims zero knowledge for a simulated proof', () => {
+    const { description } = build('mock');
+    // This is written to a public chain forever; the claim has to be true.
+    expect(description).not.toMatch(/proven in zero knowledge/i);
+    expect(description).toMatch(/simulated \(mock\) proof/i);
+  });
+
+  it('records the backend as a machine-readable attribute', () => {
+    expect(build('mock').attributes).toContainEqual({
+      trait_type: 'Proof Backend',
+      value: 'mock',
+    });
+    expect(build('midnight').attributes).toContainEqual({
+      trait_type: 'Proof Backend',
+      value: 'midnight',
+    });
+  });
+});

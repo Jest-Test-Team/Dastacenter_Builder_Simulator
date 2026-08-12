@@ -134,6 +134,15 @@ export function MintCertificateCard({
               say('info', 'Requesting threshold proof from prover…');
               break;
             case 'proved':
+              // Name the backend. A mock proof is forgeable, and a console that
+              // renders it identically to a real one is how a demo ends up
+              // claiming more than it did.
+              if (event.proof.backend === 'mock')
+                say(
+                  'fail',
+                  'MOCK PROVER — proof is simulated and forgeable, not cryptographic.',
+                );
+              else say('ok', 'Backend: Midnight proof server (real ZK proof).');
               say('ok', 'Proof generated. Public statement carries only:');
               say('ok', `  commitment  ${event.proof.statement.commitment.slice(0, 26)}…`);
               say('ok', `  threshold   >= ${event.proof.statement.threshold}`);

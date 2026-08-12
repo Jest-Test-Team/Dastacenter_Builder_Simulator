@@ -72,7 +72,7 @@ Being precise about this, because "ZK integration" can mean very different thing
 | Circuit compiled with `compactc` | **yes** — compiler 0.31.1, language 0.23.0 |
 | Proving / verifying keys generated | **yes** — `circuits/build/keys/proveThreshold.{prover,verifier}` |
 | Real circuit code executed and tested | **yes** — 12 tests in `tests/integration/zk-circuit.test.ts` |
-| A `proveThreshold` proof generated end to end | **no** — needs the Docker proof server |
+| A `proveThreshold` proof generated end to end | **no** — blocked by a toolchain/proof-server version gap, see below |
 | Real adapter implemented | yes — `src/lib/zk/midnight-prover.ts` |
 | Wiring tested (prove → verify → mint gate) | yes, against `MockProver` — 24 unit + 15 integration tests |
 
@@ -83,8 +83,29 @@ TypeScript imitation. Compiling also corrected two mistakes that were invisible 
 pragma was `0.16` when the compiler wanted `0.23`, and `MidnightProver.open()` was round-tripping a
 pure circuit through the proof server it does not need.
 
-Generating a `proveThreshold` proof still requires the Docker proof server, which is the one step
-below that has not been run.
+### Why a real proof cannot be produced yet (tested 2026-08-12)
+
+Not a missing config flag — a version gap between Midnight's public releases:
+
+- `MidnightProver` was written against an API that does not exist. The real proof server
+  accepts **binary** payloads on `POST /prove` and exposes **no `/verify` endpoint** (404).
+  Statement checks are local; cryptographic verification is not a server call.
+- `POST /prove` expects the preimage wrapped as `ProofPreimageVersioned`. Compact `0.31.1`
+  — the newest released compiler, and the one that built `circuits/build` — pins runtime
+  `0.16.0`, whose `proofDataIntoSerializedPreimage` emits the older unversioned form.
+  Proof-server images `2.0.7`, `3.0.7`, `4.0.0` and `latest` all reject it with
+  `Unknown discriminant 109`.
+- Framing that same preimage with `ledger-v9`'s `createProvingPayload` **is** accepted —
+  the server logs `Starting to process request for /prove...` — but never returns. On 8
+  CPUs it held 200% CPU at 34 MB RSS for 25+ minutes with no result and no error, which is
+  a spin rather than proving: v3-era key material against a v9-era server.
+- `midnight-js` 4.1.1 (ledger-v8) is no help either: its provider calls `/check`, which
+  proof-server `4.0.0` does not implement (404), and its payload builder produces the
+  unversioned form that `latest` rejects.
+
+Closing this needs a compiler generation targeting the v4 runtime / ledger-v9, and the
+circuit recompiled against it. Until then `getProver()` returns `MockProver`, and both the
+proving console and the certificate metadata state that the proof is simulated.
 
 ## Local setup
 

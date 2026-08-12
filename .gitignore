@@ -62,3 +62,6 @@ storybook-static/
 /.open-next
 .github/workflows/continue.txt
 /contracts/artifacts
+
+# Local-only demo notes (not for the repo)
+/docs/DEMO_VIDEO_GUIDE.md
