@@ -1,6 +1,13 @@
 # Datacenter Builder Simulator — Master Plan
 
-A pure-frontend SaaS that teaches users to build a data center in a Lego/Minecraft style, then rates their creation against international standards (Uptime, TIA-942, EN 50600, ASHRAE, NFPA, ISO 27001, EU EED, etc.) and publishes a verifiable certificate to Credly.
+A pure-frontend SaaS that teaches users to build a data center in a Lego/Minecraft style, then rates their creation against international standards (Uptime, TIA-942, EN 50600, ASHRAE, NFPA, ISO 27001, EU EED, etc.) and issues a verifiable certificate as an on-chain Soulbound Token, gated on a zero-knowledge proof that the design cleared the bar.
+
+> **This document is the original master plan and is kept for provenance.**
+> It predates the ZK / on-chain direction, so parts of it are historical:
+> Credly was replaced by SBT certificates (see `docs/SBT_DEPLOYMENT.md`) and the
+> `/api/credly` route no longer exists.
+> **For current state read [`docs/STATUS.md`](docs/STATUS.md)**, which is the
+> authoritative tracker, and `docs/PHASE-P37-44.md` for everything after P36.
 
 ## Stack
 
@@ -14,7 +21,9 @@ A pure-frontend SaaS that teaches users to build a data center in a Lego/Minecra
 | Persistence | idb-keyval (IndexedDB) |
 | Auth | wagmi + viem (EVM/MetaMask) + @solana/wallet-adapter (Phantom) + SIWE/SIWS |
 | 3D Perf | InstancedMesh per category + drei helpers |
-| 3rd-party | Credly API for certificate issuance |
+| 3rd-party | ~~Credly API~~ → replaced by on-chain SBT (ERC-721 soulbound) |
+| ZK | Noir + `@aztec/bb.js` (UltraHonk, BN254) — real threshold proofs |
+| Graph | In-house knowledge graph: extract → fuse → gate → digest |
 | Telemetry | Sentry (errors) + PostHog (product) — opt-in |
 | i18n | next-intl (en, zh-TW, ja) |
 | Testing | Vitest (unit) + Playwright (e2e, deferred) |

@@ -9,6 +9,14 @@ auth (no email/password). Builds are scored deterministically against
 CN PUE**. A SVG certificate is generated client-side and minted as a
 **Soulbound Token (SBT)** on multiple EVM blockchains (Polygon, Ethereum, BSC, etc.).
 
+The certificate is gated on a **real zero-knowledge proof**: the design is scored
+locally, and only a proof that the score cleared a threshold — plus a blinded
+commitment to the design — ever leaves the machine. The exact score, the PUE, the
+layout and the asset inventory are never published. Noir + Barretenberg UltraHonk,
+~1.4 s to prove. See [`docs/NOIR_ZK.md`](docs/NOIR_ZK.md).
+
+**Current state:** [`docs/STATUS.md`](docs/STATUS.md) is the authoritative tracker.
+
 ---
 ##  demo img 
 
@@ -64,17 +72,25 @@ for the full cheat sheet.
 
 ## Features
 
-- **3D builder** — 32×8×32 voxel grid, 40+ block types across 7 categories
+- **3D builder** — 32×8×32 voxel grid, 47 block types across 7 categories
   (structure, site, power, cooling, IT, safety, network).
 - **Policy panel** — toggle the 3 deterrence categories, 5 security
   functions, privacy, and ESG targets.
-- **Standards-cited scoring** — ~60 rules across Uptime Tier, TIA-942,
+- **Standards-cited scoring** — 37 rules across Uptime Tier, TIA-942,
   EN 50600, ASHRAE TC 9.9, NFPA 75/2001, ISO/IEC 27001, EU EED, SG DIA,
   DE EnEfG, CN PUE, SOC 2, NIST SP 800-30. Per-axis scores (0–100)
   with weighted overall, Uptime tier (I–IV or F), cert level
   (Bronze/Silver/Gold/Platinum).
+- **Zero-knowledge threshold proofs** — prove "my design scored at or above 85 under
+  rule pack V" without disclosing the design. The commitment is a public *output* of the
+  circuit, so it cannot disagree with the witness it was proved about. Real proofs via
+  Noir + Barretenberg (~1.4 s prove, ~0.4 s verify, 16 KB).
+- **Knowledge graph** — extract → fuse → gate → digest → serve. The ZK commitment binds to
+  the canonical digest of the *fused* graph, so any verifier can reproduce it.
 - **Verifiable certificate** — client-side SVG, QR code, downloadable,
   mintable as Soulbound Token (SBT) on Polygon, Ethereum, BSC, and other EVM chains.
+  Metadata records which prover produced the proof, so a simulated proof can never
+  be published as a cryptographic one.
 - **SimCity-like sim** — NPCs walk the rendered build, scheduled events fire,
   power and temperature gauges oscillate, and deterministic L2 projections cover
   staffing, OPEX, carbon, and water. Re-uses the same build state.
@@ -106,7 +122,8 @@ for the full cheat sheet.
 | Scoring     | Pure functions, fully deterministic (no Date.now/Random in core)    |
 | Cert        | SVG, generated client-side; QR via `qrcode.react`                   |
 | Blockchain  | Soulbound Token (SBT) on Polygon, Ethereum, BSC, Base, Arbitrum, Optimism |
-| Tests       | Vitest + Testing Library (jsdom) — 45 tests, all green              |
+| ZK          | Noir 1.0.0-beta.20 + `@aztec/bb.js` 4.2.0 (UltraHonk, BN254) — versions pinned exactly |
+| Tests       | Vitest + Testing Library — **396 unit/integration + 13 workerd**, all green |
 | Styling     | Tailwind + CSS variables (no UI framework)                          |
 | i18n        | Custom in-house (3 locales: en, zh-TW, ja)                          |
 | Analytics   | PostHog, lazy-loaded, consent-gated                                 |
@@ -146,7 +163,7 @@ src/
 │  ├─ grid/                      # Voxel grid utilities
 │  ├─ blocks/                    # Block types, registry, placement
 │  ├─ store/                     # Zustand build store
-│  ├─ scoring/                   # engine + ~60 rules + policy plane
+│  ├─ scoring/                   # engine + 37 rules + policy plane
 │  ├─ persist/                   # IndexedDB + share token
 │  ├─ wallet/                    # wagmi, solana, siwe, siws, iron-session
 │  ├─ sbt/                       # SBT smart contract integration, multi-chain support
@@ -182,7 +199,9 @@ docs/
 | `npm run start:verify`  | Run the isolated verification build               |
 | `npm run lint`          | Next.js + TypeScript ESLint                       |
 | `npm run typecheck`     | `tsc --noEmit` (strict, noUncheckedIndexedAccess) |
-| `npm test`              | Vitest (jsdom) — 45 tests, all green              |
+| `npm test`              | Vitest — 396 tests, all green                     |
+| `npm run test:workers`  | Vitest in real workerd — 13 tests                 |
+| `npm run zk:noir:compile` | Compile the Noir circuit (`nargo`)              |
 | `npm run test:watch`    | Vitest watch                                      |
 | `npm run test:coverage` | Vitest + v8 coverage                              |
 | `npm run format`        | Prettier write                                    |
@@ -307,11 +326,40 @@ npm test` before pushing.
 MIT — see `LICENSE`.
 
 ## todos
-- Deploy SBT contracts to all supported chains
+
+See [`docs/STATUS.md`](docs/STATUS.md) for the tracked list. The short version:
+
+- **Move `/api/zk/prove` to a Node host.** `bb.js` ships WASM that cannot run in the
+  Cloudflare Workers runtime, so the deployed site falls back to the mock prover.
+  This is the gap between claiming real ZK and having it in production.
+- Deploy the current `main` (the live site is behind it).
+- Deploy SBT contracts to the remaining supported chains
 - Set up IPFS/Arweave storage API keys
 - Configure the leaderboard D1 binding
 
 ## smart contract
-- Contract address: 0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB  
-- Network: Polygon Amoy testnet (chain 80002)
-- You can view it: https://amoy.polygonscan.com/address/0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB
+
+`DatacenterCertificateSBT` — soulbound ERC-721, OpenZeppelin v5, Solidity 0.8.24.
+Deterministic deployment, so the address is the same on both chains. Bytecode verified
+live on-chain 2026-08-11.
+
+| Network | Address | Explorer |
+|---|---|---|
+| Polygon Amoy (80002) | `0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB` | [polygonscan](https://amoy.polygonscan.com/address/0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB) |
+| Ethereum Sepolia (11155111) | `0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB` | [etherscan](https://sepolia.etherscan.io/address/0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB) |
+
+Sepolia is the default mint chain. `mintCertificate` is `onlyOwner`, so the server relays
+the transaction and minting is gasless for the user.
+
+## Documentation
+
+| Doc | What it covers |
+|---|---|
+| [`docs/STATUS.md`](docs/STATUS.md) | **Authoritative progress tracker** — verified numbers, phases, open items |
+| [`docs/NOIR_ZK.md`](docs/NOIR_ZK.md) | The ZK stack that works: circuit, timings, pinned versions |
+| [`docs/MIDNIGHT_ZK.md`](docs/MIDNIGHT_ZK.md) | The Compact circuit, and why no released Midnight toolchain can prove it |
+| [`docs/PHASE-P37-44.md`](docs/PHASE-P37-44.md) | KG, SBT, ZK, CI recovery, intro, demo path |
+| [`docs/KNOWLEDGE_GRAPH.md`](docs/KNOWLEDGE_GRAPH.md) | Graph pipeline and digest |
+| [`docs/SBT_DEPLOYMENT.md`](docs/SBT_DEPLOYMENT.md) | Contract deployment and minting |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | System diagram and data flow |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Product sequencing |

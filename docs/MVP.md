@@ -6,12 +6,13 @@ credible, demoable product in ~6 weeks. Everything else is post-launch.
 ## In MVP
 
 - **Builder**: 1 scenario (free), 1 grid (32×8×32), all 7 categories,
-  40+ block types, undo/redo, share, autosave.
+  47 block types, undo/redo, share, autosave.
 - **Wallet**: MetaMask + WalletConnect + Coinbase. No Solana.
 - **Scoring**: Uptime tier + ASHRAE + NFPA + ISO 27001 + TIA-942 +
   EN 50600 + ESG (PUE/WUE). One unified 0–100 score.
-- **Cert**: SVG + QR; downloadable. Credly push behind a "publish"
-  checkbox; no credly-required onboarding.
+- **Cert**: SVG + QR; downloadable. (Historical: the Credly push described
+  here was replaced by on-chain SBT minting gated on a ZK proof — see
+  `docs/SBT_DEPLOYMENT.md` and `docs/NOIR_ZK.md`.)
 - **Sim**: 1-minute auto-run, deterministic for the score, animated
   for the demo.
 - **i18n**: English only. Strings externalized for v2.
