@@ -13,7 +13,7 @@
 
 import { http, createConfig } from 'wagmi';
 import { mainnet, sepolia, base, optimism, arbitrum, polygon, bsc, bscTestnet } from 'wagmi/chains';
-import { injected, walletConnect, coinbaseWallet } from 'wagmi/connectors';
+import { injected, walletConnect } from 'wagmi/connectors';
 
 // Polygon Amoy Testnet (不在 wagmi/chains 中，需要手動定義)
 const polygonAmoy = {
@@ -59,9 +59,13 @@ export const wagmiConfig = createConfig({
     bscTestnet,
   ],
   connectors: [
+    // The Coinbase Wallet browser extension is still discovered here via
+    // EIP-6963. The dedicated coinbaseWallet() connector is deliberately not
+    // registered: it bundles the Coinbase Wallet SDK, whose analytics beacon to
+    // cca-lite.coinbase.com throws a "Failed to fetch" in the console on every
+    // load (and is blocked outright by ad blockers) for no user-facing benefit.
     injected({ shimDisconnect: true }),
     ...(wcProjectId ? [walletConnect({ projectId: wcProjectId, showQrModal: true })] : []),
-    coinbaseWallet({ appName: 'Datacenter Builder Simulator' }),
   ],
   transports: {
     // Mainnets

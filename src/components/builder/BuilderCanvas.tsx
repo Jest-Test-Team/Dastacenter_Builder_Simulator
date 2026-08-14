@@ -54,9 +54,18 @@ export function BuilderCanvas({
       dpr={dpr}
       frameloop={frameloop}
       gl={{ antialias: true, alpha: false, powerPreference: 'high-performance' }}
-      onCreated={({ gl, scene }) => {
+      onCreated={({ gl, scene, invalidate }) => {
         gl.setClearColor(new THREE.Color('#0b1020'));
         scene.fog = new THREE.Fog('#0b1020', 30, 200);
+
+        // A WebGL context is a scarce browser resource; the GPU can drop it when
+        // the tab is backgrounded, under memory pressure, or when too many live
+        // canvases exist. The default outcome is a permanently blank canvas.
+        // Calling preventDefault on the loss lets the browser fire a restore,
+        // and invalidating on restore forces a redraw (frameloop is "demand").
+        const canvas = gl.domElement;
+        canvas.addEventListener('webglcontextlost', (event) => event.preventDefault(), false);
+        canvas.addEventListener('webglcontextrestored', () => invalidate(), false);
       }}
       className="h-full min-h-[56dvh] w-full md:min-h-0"
     >

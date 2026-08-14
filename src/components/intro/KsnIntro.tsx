@@ -476,7 +476,18 @@ export function KsnIntro({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="fixed inset-0 z-[60] overflow-hidden bg-[#04070f]">
-      <Canvas camera={{ position: [0, 0.25, 13], fov: 55 }} dpr={[1, 2]}>
+      <Canvas
+        camera={{ position: [0, 0.25, 13], fov: 55 }}
+        dpr={[1, 2]}
+        onCreated={({ gl }) => {
+          // Recover a dropped GPU context instead of leaving a blank canvas.
+          gl.domElement.addEventListener(
+            'webglcontextlost',
+            (event) => event.preventDefault(),
+            false,
+          );
+        }}
+      >
         <Scene clock={clock} punching={punching} onTick={handleTick} />
       </Canvas>
 

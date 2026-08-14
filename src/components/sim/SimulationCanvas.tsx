@@ -10,7 +10,18 @@ import { useReducedMotion } from '@/lib/hooks/useReducedMotion';
 export function SimulationCanvas({ elapsedSeconds }: { elapsedSeconds: number }) {
   const reducedMotion = useReducedMotion();
   return (
-    <Canvas camera={{ position: [16, 16, 16], fov: 50 }} dpr={[1, 2]}>
+    <Canvas
+      camera={{ position: [16, 16, 16], fov: 50 }}
+      dpr={[1, 2]}
+      onCreated={({ gl }) => {
+        // Recover a dropped GPU context instead of leaving a blank canvas.
+        gl.domElement.addEventListener(
+          'webglcontextlost',
+          (event) => event.preventDefault(),
+          false,
+        );
+      }}
+    >
       <ambientLight intensity={0.4} />
       <directionalLight position={[10, 20, 5]} intensity={1} />
       <OrbitControls enableDamping={!reducedMotion} />
