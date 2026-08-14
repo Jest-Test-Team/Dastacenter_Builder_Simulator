@@ -12,6 +12,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useAccount, usePublicClient } from 'wagmi';
 import type { Hash } from 'viem';
 import { Award, CheckCircle2, AlertCircle, Loader2, ExternalLink, ArrowRight } from 'lucide-react';
@@ -41,6 +42,7 @@ export function MintCertificateCard({
   report: RatingReport;
   buildId: string;
 }) {
+  const router = useRouter();
   const { address, isConnected, chain } = useAccount();
   const [selectedChainId, setSelectedChainId] = useState<number>(DEFAULT_CHAIN_ID);
   // Read from the chain the SBT lives on, not whatever the wallet is on.
@@ -59,6 +61,22 @@ export function MintCertificateCard({
 
   const say = (tone: ConsoleLine['tone'], text: string) =>
     setTrace((current) => [...current, { tone, text }]);
+
+  // Warm the dashboard route so the post-mint hand-off is instant.
+  useEffect(() => {
+    router.prefetch('/dashboard');
+  }, [router]);
+
+  // The finale hand-off ([2:05–2:45]): once the mint lands, carry the user to
+  // the dashboard so "Mint Successful → My Certificates → KSN Planetary Dividend"
+  // plays without a manual click. A short pause lets the success register first.
+  useEffect(() => {
+    if (!minted) return;
+    const timer = window.setTimeout(() => {
+      router.push('/dashboard?minted=1');
+    }, 2200);
+    return () => window.clearTimeout(timer);
+  }, [minted, router]);
 
   // Compute the blueprint hash from the current build snapshot.
   useEffect(() => {
@@ -270,6 +288,7 @@ export function MintCertificateCard({
             View in My Certificates
             <ArrowRight className="h-4 w-4" />
           </Link>
+          <p className="mt-1 text-center text-[10px] text-fg-muted">Taking you to your dashboard…</p>
           <a
             href={minted.explorerUrl}
             target="_blank"
