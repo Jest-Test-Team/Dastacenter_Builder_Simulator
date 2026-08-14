@@ -9,7 +9,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
+import { Html, Line } from '@react-three/drei';
 import * as THREE from 'three';
 import { useBuildStore, evaluatePlacement, findNearestLegalCell } from '@/lib/store/build-store';
 import { getBlock } from '@/lib/blocks';
@@ -22,6 +22,8 @@ export function PlacementPreview() {
   const [size, setSize] = useState<[number, number, number]>([1, 1, 1]);
   // True when the ghost was auto-navigated to a legal cell away from the cursor.
   const [snapped, setSnapped] = useState(false);
+  // Where the cursor actually points, so we can draw a hint line to the snapped spot.
+  const [cursorPos, setCursorPos] = useState<THREE.Vector3>(new THREE.Vector3(0, 0, 0));
 
   const activeType = useBuildStore((s) => s.activeBlockType);
   const rotation = useBuildStore((s) => s.rotation);
@@ -100,9 +102,11 @@ export function PlacementPreview() {
     // anywhere (grid full or inventory exhausted).
     const resolve = (cx: number, cy: number, cz: number) => {
       const target = { x: cx, y: cy, z: cz };
+      const cursorVec = new THREE.Vector3(cx + size[0] / 2, cy + size[1] / 2, cz + size[2] / 2);
+      setCursorPos(cursorVec);
       const direct = evaluatePlacement({ type: activeType, position: target, rotation, gridSize, byCell, inventory });
       if (direct.ok) {
-        setPos(new THREE.Vector3(cx + size[0] / 2, cy + size[1] / 2, cz + size[2] / 2));
+        setPos(cursorVec);
         setHoveredCell(target);
         setValid(true);
         setSnapped(false);
@@ -121,7 +125,7 @@ export function PlacementPreview() {
       }
 
       // Nothing fits anywhere — show the honest reason at the cursor.
-      setPos(new THREE.Vector3(cx + size[0] / 2, cy + size[1] / 2, cz + size[2] / 2));
+      setPos(cursorVec);
       setHoveredCell(target);
       setValid(false);
       setSnapped(false);
@@ -154,35 +158,55 @@ export function PlacementPreview() {
   if (!activeType) return null;
 
   return (
-    <mesh
-      ref={meshRef}
-      position={pos}
-      scale={size}
-      renderOrder={999}
-    >
-      <boxGeometry args={[1, 1, 1]} />
-      <meshBasicMaterial
-        // Green = legal at cursor, cyan = auto-navigated to a nearby free spot,
-        // red = nothing fits anywhere.
-        color={!valid ? '#ef4444' : snapped ? '#22d3ee' : '#22c55e'}
-        transparent
-        opacity={0.35}
-        wireframe={!valid}
-      />
-      <Html center position={[0, size[1] / 2 + 0.9, 0]} style={{ pointerEvents: 'none' }}>
-        <div
-          className={`rounded-full border px-2 py-1 text-[10px] font-semibold shadow-lg ${
-            !valid
-              ? 'border-danger/40 bg-danger/20 text-danger'
-              : snapped
-                ? 'border-cyan-400/40 bg-cyan-400/20 text-cyan-300'
-                : 'border-success/40 bg-success/20 text-success'
-          }`}
-        >
-          {snapped && valid ? '↪ ' : ''}
-          {reason}
-        </div>
-      </Html>
-    </mesh>
+    <group>
+      {/* Auto-navigation hint: when the ghost was snapped away from the cursor,
+          draw a dashed line from where the cursor points to the free spot it
+          jumped to, plus a small marker at the cursor, so the direction to the
+          nearest available spot is obvious. */}
+      {snapped && (
+        <>
+          <Line
+            points={[cursorPos, pos]}
+            color="#22d3ee"
+            lineWidth={2}
+            dashed
+            dashSize={0.4}
+            gapSize={0.25}
+            transparent
+            opacity={0.9}
+          />
+          <mesh position={cursorPos}>
+            <boxGeometry args={[size[0], size[1], size[2]]} />
+            <meshBasicMaterial color="#ef4444" transparent opacity={0.12} wireframe />
+          </mesh>
+        </>
+      )}
+
+      <mesh ref={meshRef} position={pos} scale={size} renderOrder={999}>
+        <boxGeometry args={[1, 1, 1]} />
+        <meshBasicMaterial
+          // Green = legal at cursor, cyan = auto-navigated to a nearby free spot,
+          // red = nothing fits anywhere.
+          color={!valid ? '#ef4444' : snapped ? '#22d3ee' : '#22c55e'}
+          transparent
+          opacity={0.35}
+          wireframe={!valid}
+        />
+        <Html center position={[0, size[1] / 2 + 0.9, 0]} style={{ pointerEvents: 'none' }}>
+          <div
+            className={`rounded-full border px-2 py-1 text-[10px] font-semibold shadow-lg ${
+              !valid
+                ? 'border-danger/40 bg-danger/20 text-danger'
+                : snapped
+                  ? 'border-cyan-400/40 bg-cyan-400/20 text-cyan-300'
+                  : 'border-success/40 bg-success/20 text-success'
+            }`}
+          >
+            {snapped && valid ? '↪ ' : ''}
+            {reason}
+          </div>
+        </Html>
+      </mesh>
+    </group>
   );
 }

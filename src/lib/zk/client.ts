@@ -8,7 +8,7 @@
  */
 
 import type { BuildState } from '@/lib/blocks';
-import { DEFAULT_THRESHOLD, type Proof } from './types';
+import { CIRCUIT_ID, DEFAULT_THRESHOLD, type Proof } from './types';
 import { witnessFromBuild } from './witness';
 
 /**
@@ -17,10 +17,20 @@ import { witnessFromBuild } from './witness';
  * whole privacy claim, and it is worth making visible.
  */
 export type ProofStage =
-  | { stage: 'graph'; }
-  | { stage: 'witness'; graphDigest: string; rulePackVersion: string; threshold: number }
+  | { stage: 'graph'; nodeCount?: number; edgeCount?: number }
+  | {
+      stage: 'witness';
+      graphDigest: string;
+      commitment?: string;
+      rulePackVersion: string;
+      threshold: number;
+      circuit: string;
+    }
+  | { stage: 'backend'; name: string }
   | { stage: 'proving' }
-  | { stage: 'proved'; proof: Proof }
+  | { stage: 'proved'; proof: Proof; proofBytes: number; publicInputCount: number; elapsedMs: number }
+  | { stage: 'verifying' }
+  | { stage: 'verified'; ok: boolean; elapsedMs: number }
   | { stage: 'rejected'; message: string };
 
 export interface AcquireProofOptions {
@@ -52,24 +62,30 @@ export async function acquireThresholdProof(
   const report = options.onStage;
 
   report?.({ stage: 'graph' });
-  const { witness, rulePackVersion } = await witnessFromBuild(state, { threshold });
+  const { witness, rulePackVersion, graphNodeCount, graphEdgeCount } = await witnessFromBuild(
+    state,
+    { threshold },
+  );
+  report?.({ stage: 'graph', nodeCount: graphNodeCount, edgeCount: graphEdgeCount });
   report?.({
     stage: 'witness',
     graphDigest: witness.graphDigest,
     rulePackVersion,
     threshold,
+    circuit: CIRCUIT_ID,
   });
-
-  report?.({ stage: 'proving' });
 
   // Proving runs in the browser. bb.js ships a multi-megabyte WASM module that
   // the Cloudflare Workers runtime cannot load (no filesystem for its
   // `acvm_js_bg.wasm`), so the old `/api/zk/prove` round-trip 502s in
   // production. Doing it here also strengthens the privacy claim: the witness
   // never leaves the machine at all — only the finished proof does, at mint.
+  report?.({ stage: 'backend', name: 'Noir + Barretenberg UltraHonk (WASM)' });
   const { BrowserProver } = await import('./browser-prover');
   const prover = new BrowserProver();
 
+  report?.({ stage: 'proving' });
+  const proveStart = Date.now();
   let proof: Proof;
   try {
     proof = await prover.prove({ witness, threshold, rulePackVersion });
@@ -79,17 +95,26 @@ export async function acquireThresholdProof(
     report?.({ stage: 'rejected', message });
     throw new Error(message);
   }
+  const proofBytes = Math.floor(proof.proof.replace(/^0x/, '').length / 2);
+  report?.({
+    stage: 'proved',
+    proof,
+    proofBytes,
+    publicInputCount: proof.publicInputs?.length ?? 0,
+    elapsedMs: Date.now() - proveStart,
+  });
 
   // Verify locally before it is ever submitted: a proof the holder's own
   // machine will not accept has no business being relayed to a mint.
+  report?.({ stage: 'verifying' });
+  const verifyStart = Date.now();
   const check = await prover.verify(proof, { threshold, rulePackVersion });
   if (!check.valid) {
     const message = check.reason ?? 'Generated proof failed local verification';
     report?.({ stage: 'rejected', message });
     throw new Error(message);
   }
-
-  report?.({ stage: 'proved', proof });
+  report?.({ stage: 'verified', ok: true, elapsedMs: Date.now() - verifyStart });
 
   return {
     proof,

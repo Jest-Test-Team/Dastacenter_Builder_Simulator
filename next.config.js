@@ -29,6 +29,10 @@ const securityHeaders = [
         // uses `blob:`. Without these the fetch is blocked and proving fails
         // with "Failed to fetch" at "Requesting threshold proof from prover…".
         'data: blob:',
+        // UltraHonk also downloads the trusted-setup CRS (g1.dat/g2.dat) from
+        // Aztec's CDN at prove time; blocking it fails proving with
+        // "Fetch API cannot load https://crs.aztec-*/g1.dat … violates CSP".
+        'https://crs.aztec-cdn.foundation https://crs.aztec-labs.com https://*.aztec-labs.com https://*.aztec-cdn.foundation',
         'https://*.posthog.com wss://*.posthog.com https://cloudflareinsights.com',
         'https://*.walletconnect.com wss://*.walletconnect.org https://*.coinbase.com https://cca-lite.coinbase.com https://*.walletlink.org wss://*.walletlink.org',
         'https://*.alchemy.com https://*.infura.io https://api.mainnet-beta.solana.com',

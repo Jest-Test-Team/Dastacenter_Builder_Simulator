@@ -26,6 +26,9 @@ export interface WitnessResult {
   /** The score, returned for the caller's own UI. Never put in a statement. */
   score: number;
   threshold: number;
+  /** Size of the fused knowledge graph the digest commits to (for progress UI). */
+  graphNodeCount: number;
+  graphEdgeCount: number;
 }
 
 /**
@@ -56,5 +59,7 @@ export async function witnessFromBuild(
     rulePackVersion: report.rulePackVersion,
     score: report.score,
     threshold: options.threshold ?? DEFAULT_THRESHOLD,
+    graphNodeCount: Object.keys(graph.nodes).length,
+    graphEdgeCount: Object.keys(graph.edges).length,
   };
 }

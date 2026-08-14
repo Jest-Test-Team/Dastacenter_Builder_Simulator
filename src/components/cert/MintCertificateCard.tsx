@@ -123,16 +123,31 @@ export function MintCertificateCard({
         onStage: (event) => {
           switch (event.stage) {
             case 'graph':
-              say('local', 'Building knowledge graph from local build…');
+              // Fires twice: once at the start, once with the graph size.
+              if (event.nodeCount === undefined)
+                say('local', 'Building knowledge graph from local build…');
+              else
+                say(
+                  'local',
+                  `Graph fused: ${event.nodeCount} nodes · ${event.edgeCount} edges (local).`,
+                );
               break;
             case 'witness':
-              say('local', `graphDigest = ${event.graphDigest.slice(0, 26)}…`);
+              say('local', 'Deriving threshold witness in-browser…');
+              say('local', `  graphDigest  = ${event.graphDigest.slice(0, 30)}…`);
+              say('local', '  blindingFactor = ****  (random, never transmitted)');
               say('local', 'Design, PUE, layout and asset inventory stay on this machine.');
-              say('info', `Circuit: datacenter-score · rule pack ${event.rulePackVersion}`);
+              say('info', `Circuit: ${event.circuit} · rule pack ${event.rulePackVersion}`);
               say('info', `Claim: efficiency score (0-100) >= ${event.threshold}`);
+              say('info', 'Private inputs: digest, blinding, score · Public: commitment, threshold, rule pack');
+              break;
+            case 'backend':
+              say('info', `Loading prover backend: ${event.name}`);
+              say('info', 'Compiling ACIR → UltraHonk, fetching trusted-setup CRS (g1)…');
               break;
             case 'proving':
               say('info', 'Requesting threshold proof from prover…');
+              say('info', 'Executing circuit witness, then generating UltraHonk proof…');
               break;
             case 'proved':
               // Name the backend. A mock proof is forgeable, and a console that
@@ -146,10 +161,18 @@ export function MintCertificateCard({
               else if (event.proof.backend === 'noir')
                 say('ok', 'Backend: Noir + Barretenberg UltraHonk (real ZK proof).');
               else say('ok', 'Backend: Midnight proof server (real ZK proof).');
-              say('ok', 'Proof generated. Public statement carries only:');
-              say('ok', `  commitment  ${event.proof.statement.commitment.slice(0, 26)}…`);
+              say('ok', `Proof generated in ${(event.elapsedMs / 1000).toFixed(1)}s · ${event.proofBytes} bytes · ${event.publicInputCount} public inputs.`);
+              say('ok', 'Public statement carries only:');
+              say('ok', `  commitment  ${event.proof.statement.commitment.slice(0, 30)}…`);
               say('ok', `  threshold   >= ${event.proof.statement.threshold}`);
               say('ok', `  rule pack   ${event.proof.statement.rulePackVersion}`);
+              say('local', 'Score, digest and blinding are NOT in the proof — verifier never sees them.');
+              break;
+            case 'verifying':
+              say('info', 'Verifying the proof locally before submitting…');
+              break;
+            case 'verified':
+              say('ok', `Local verification passed in ${(event.elapsedMs / 1000).toFixed(1)}s — proof is self-consistent.`);
               break;
             case 'rejected':
               say('fail', `Assert (score >= threshold) … FAIL — ${event.message}`);

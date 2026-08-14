@@ -67,7 +67,18 @@ describe('acquireThresholdProof stage reporting', () => {
 
     await acquireThresholdProof(build, { onStage: (event) => seen.push(event.stage) });
 
-    expect(seen).toEqual(['graph', 'witness', 'proving', 'proved']);
+    // 'graph' fires twice (start, then with counts); the flow now also reports
+    // backend load and the local verify step.
+    expect(seen).toEqual([
+      'graph',
+      'graph',
+      'witness',
+      'backend',
+      'proving',
+      'proved',
+      'verifying',
+      'verified',
+    ]);
   });
 
   it('reports the digest that was actually committed to', async () => {
