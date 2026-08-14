@@ -13,8 +13,10 @@ import { importBuildFromFile } from '@/lib/export/build-import';
 import type { BuildExportPayload } from '@/lib/export/build-export';
 import { getDemoBuild } from '@/lib/demos';
 
+// jsdom's File does not implement text(); importBuildFromFile only needs that.
 function jsonFile(value: unknown): File {
-  return new File([JSON.stringify(value)], 'build.json', { type: 'application/json' });
+  const text = JSON.stringify(value);
+  return { name: 'build.json', text: async () => text } as unknown as File;
 }
 
 const demoSnapshot = getDemoBuild('greenfield-tier3')!.snapshot;
@@ -36,7 +38,7 @@ describe('importBuildFromFile', () => {
       wallet: { address: '0xABCDEF0000000000000000000000000000000001' },
       build: demoSnapshot,
     };
-    const result = await importBuildFromFile(payload.wallet.address ? jsonFile(payload) : jsonFile(payload), '0xabcdef0000000000000000000000000000000001');
+    const result = await importBuildFromFile(jsonFile(payload), '0xabcdef0000000000000000000000000000000001');
     expect(result.success).toBe(true);
     expect(result.snapshot?.buildId).toBe(demoSnapshot.buildId);
     // Same wallet (case-insensitive) → not a mismatch.
