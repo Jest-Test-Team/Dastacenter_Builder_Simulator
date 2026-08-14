@@ -101,15 +101,26 @@ serve() {
   command -v docker >/dev/null 2>&1 || die "docker not found"
   docker info >/dev/null 2>&1 || die "the Docker daemon is not running"
   info "Starting the proof server on :$PROOF_SERVER_PORT"
+  # The current proof-server image (7.x) takes --num-workers, not --network.
   docker run --rm -p "${PROOF_SERVER_PORT}:6300" "$PROOF_SERVER_IMAGE" \
-    -- 'midnight-proof-server --network testnet'
+    midnight-proof-server --num-workers "${MIDNIGHT_PROOF_WORKERS:-4}"
 }
+
+# Headless deploy/mint via the SDK (scripts/midnight-cli.mjs). Needs env:
+# MIDNIGHT_WALLET_SEED, MIDNIGHT_INDEXER_URL, MIDNIGHT_NODE_URL (+ contract addr
+# for mint). See docs/MIDNIGHT_ZK.md.
+smoke()  { node "$ROOT/scripts/midnight-cli.mjs" smoke; }
+deploy() { node "$ROOT/scripts/midnight-cli.mjs" deploy; }
+mint()   { node "$ROOT/scripts/midnight-cli.mjs" mint; }
 
 case "${1:-check}" in
   check)   check ;;
   install) install_toolchain ;;
   compile) compile ;;
   serve)   serve ;;
+  smoke)   smoke ;;
+  deploy)  deploy ;;
+  mint)    mint ;;
   all)     install_toolchain; compile; serve ;;
-  *)       die "Usage: $0 [check|install|compile|serve|all]" ;;
+  *)       die "Usage: $0 [check|install|compile|serve|smoke|deploy|mint|all]" ;;
 esac

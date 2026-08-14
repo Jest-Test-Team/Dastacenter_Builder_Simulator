@@ -73,6 +73,13 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.5.40",
     "@midnight-ntwrk/compact-runtime": "0.16.0",
+    "@midnight-ntwrk/midnight-js-contracts": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-http-client-proof-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-indexer-public-data-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-level-private-state-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-network-id": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-node-zk-config-provider": "^4.1.1",
+    "@midnight-ntwrk/midnight-js-types": "^4.1.1",
     "@next/bundle-analyzer": "15.5.19",
     "@opennextjs/cloudflare": "^1.19.11",
     "@playwright/test": "^1.60.0",

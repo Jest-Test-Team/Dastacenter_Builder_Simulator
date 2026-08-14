@@ -114,6 +114,26 @@ Closing this needs a compiler generation targeting the v4 runtime / ledger-v9, a
 circuit recompiled against it. Until then `getProver()` returns `MockProver`, and both the
 proving console and the certificate metadata state that the proof is simulated.
 
+### Update (2026-08-14) — the proof-server generation moved
+
+Re-tested against the **current** `midnightnetwork/proof-server:latest`, which is now
+**7.0.0-rc.1** (the 2026-08-12 finding above was against 4.0.0). Two of the three blockers
+are gone:
+
+- The server **implements `/check` and `/prove`** now (POST returns 400 for a bad payload,
+  not 404). midnight-js 4.1.1's proof provider targets exactly those endpoints, so the
+  "server has no `/check`" wall no longer stands.
+- A headless smoke (`./scripts/midnight-setup.sh smoke`, i.e. `scripts/midnight-cli.mjs`)
+  confirms end to end that the SDK imports, the compiled 0.31.1 prover keys load
+  (`proveThreshold` + `mintCertificate`, ~2.8 MB each) via `NodeZkConfigProvider`, and the
+  `httpClientProofProvider` constructs a working `proveTx` against the running server.
+
+What is *not* yet confirmed from a headless sandbox: a full `proveTx` of a real
+`mintCertificate` call, because building the unproven call tx needs a wallet coin key and a
+funded Preview account. That is what the CLI's `deploy` / `mint` do — run them with a
+funded Preview seed to complete the loop and see the real result (a tx, or a precise
+proof-server error — never a fabricated tx).
+
 ## Minting the certificate on Midnight (the mint target)
 
 The certificate can be minted on the **Midnight Preview** testnet as well as the EVM
@@ -132,11 +152,22 @@ chains. On Midnight this is a Compact contract call, not an ERC-721:
   `MidnightMintPanel` + `MidnightWalletBadge`.
 
 The wallet connection, unshielded-NIGHT balance and the compiled `mintCertificate`
-circuit are real and work today. The **on-chain call is gated by the same upstream
-version gap** documented above (compiler 0.31.1 / midnight-js 4.1.1 vs proof server):
-`mint.ts` reports that precisely rather than issuing a call that cannot succeed, and
-the `deployContract`/`callTx` wiring drops in unchanged once Midnight ships a matching
-compiler generation.
+circuit are real and work today. The **on-chain submission runs through the headless
+CLI** — `scripts/midnight-cli.mjs`, wrapped by `./scripts/midnight-setup.sh`:
+
+```sh
+./scripts/midnight-setup.sh serve     # proof server on :6300 (Docker; --num-workers)
+./scripts/midnight-setup.sh smoke     # verify SDK + keys + server, no wallet needed
+MIDNIGHT_WALLET_SEED=... MIDNIGHT_INDEXER_URL=... MIDNIGHT_NODE_URL=... \
+  ./scripts/midnight-setup.sh deploy  # deploy the contract, prints the address
+MIDNIGHT_CERT_CONTRACT_ADDRESS=... ... ./scripts/midnight-setup.sh mint
+```
+
+The browser does **not** bundle the midnight-js SDK (it is a `devDependency`, kept out of
+the Cloudflare Worker build); the browser connects the wallet, shows the balance and
+derives the witness, then hands off to the CLI. Neither path fabricates a transaction. See
+the 2026-08-14 update below — the current proof server exposes the endpoints the SDK needs,
+so the remaining step is a funded Preview wallet.
 
 ### Env for a live Midnight mint
 
