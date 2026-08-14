@@ -10,9 +10,10 @@
 
 import { useState } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
-import { Wallet, X, LogOut, Copy, Check } from 'lucide-react';
+import { Wallet, X, LogOut, Copy, Check, ShieldOff } from 'lucide-react';
 import { cn, shortAddress } from '@/lib/utils';
 import { useT } from '@/lib/i18n/client';
+import { MidnightWalletBadge } from '@/components/cert/MidnightWalletBadge';
 
 export function WalletPicker() {
   const t = useT();
@@ -85,10 +86,11 @@ function WalletModal({
             <X className="h-4 w-4" />
           </button>
         </div>
-        <p className="mb-4 text-sm text-fg-muted">
-          EVM chains (Ethereum, Base, Optimism, Arbitrum). MetaMask, WalletConnect, Coinbase.
-        </p>
 
+        {/* EVM wallets — for the on-chain Soulbound certificate (Sepolia / Amoy). */}
+        <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-fg-muted">
+          EVM (Ethereum / Base / Optimism / Arbitrum · Soulbound cert)
+        </p>
         {error && (
           <div className="mb-4 rounded border border-danger/30 bg-danger/10 p-2 text-sm text-danger">
             {error.message}
@@ -112,10 +114,23 @@ function WalletModal({
             </li>
           ))}
         </ul>
-
-        <p className="mt-4 text-[10px] text-fg-muted">
+        <p className="mt-2 text-[10px] text-fg-muted">
           Phantom (EVM) and Coinbase Wallet are also supported.
         </p>
+
+        {/* Midnight (Lace) — the privacy chain. Connect + read unshielded NIGHT. */}
+        <div className="mt-5 border-t border-border pt-4">
+          <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-indigo-300">
+            <ShieldOff className="h-3.5 w-3.5" /> Midnight Preview (Lace · privacy)
+          </p>
+          <p className="mb-3 text-[11px] leading-relaxed text-fg-muted">
+            Midnight is a Cardano partner chain with built-in zero-knowledge proofs. Connect{' '}
+            <strong>Lace (Midnight)</strong> on the <strong>Preview</strong> network to read your
+            unshielded NIGHT and mint the certificate as a private Compact-contract commitment. Fees
+            are paid in DUST generated from NIGHT.
+          </p>
+          <MidnightWalletBadge />
+        </div>
       </div>
     </div>
   );
