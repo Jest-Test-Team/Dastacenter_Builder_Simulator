@@ -70,6 +70,32 @@ describe.skipIf(!compiled)('compiled circuit: artefacts', () => {
     expect(existsSync(path.join(BUILD_DIR, 'keys/proveThreshold.verifier'))).toBe(true);
     expect(existsSync(path.join(BUILD_DIR, 'zkir/proveThreshold.zkir'))).toBe(true);
   });
+
+  it('emits proving and verifying keys for the mint circuit (Midnight target)', () => {
+    expect(existsSync(path.join(BUILD_DIR, 'keys/mintCertificate.prover'))).toBe(true);
+    expect(existsSync(path.join(BUILD_DIR, 'keys/mintCertificate.verifier'))).toBe(true);
+    expect(existsSync(path.join(BUILD_DIR, 'zkir/mintCertificate.zkir'))).toBe(true);
+  });
+});
+
+describe.skipIf(!compiled)('compiled circuit: mintCertificate (Midnight registry)', () => {
+  it('is a proof circuit taking the same public args as proveThreshold', () => {
+    const mint = info.circuits.find((c) => c.name === 'mintCertificate');
+    expect(mint).toBeDefined();
+    expect(mint!.proof).toBe(true);
+    expect(mint!.pure).toBe(false);
+    expect(mint!.arguments.map((a) => a.name)).toEqual(['claimedThreshold', 'packVersion']);
+    expect(mint!.arguments[1]!.type.length).toBe(32);
+  });
+
+  it('records the certificate registry in the public ledger', () => {
+    // The registry (Map + Counter) is what makes a mint an on-chain, per-build
+    // record rather than a single overwritten commitment.
+    const source = readFileSync(path.resolve(__dirname, '../../circuits/datacenter-score.compact'), 'utf8');
+    expect(source).toMatch(/export ledger tokenCounter: Counter/);
+    expect(source).toMatch(/export ledger certifiedThreshold: Map<Bytes<32>, Uint<16>>/);
+    expect(source).toMatch(/export ledger certifiedRulePack: Map<Bytes<32>, Bytes<32>>/);
+  });
 });
 
 describe.skipIf(!compiled)('compiled circuit: the statement shape TypeScript assumes', () => {

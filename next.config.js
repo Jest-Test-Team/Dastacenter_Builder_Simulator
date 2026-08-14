@@ -36,6 +36,10 @@ const securityHeaders = [
         'https://*.posthog.com wss://*.posthog.com https://cloudflareinsights.com',
         'https://*.walletconnect.com wss://*.walletconnect.org https://*.coinbase.com https://cca-lite.coinbase.com https://*.walletlink.org wss://*.walletlink.org',
         'https://*.alchemy.com https://*.infura.io https://api.mainnet-beta.solana.com',
+        // Midnight Preview: indexer (GraphQL https + wss), node RPC, proof
+        // server. The proof server runs locally (it sees the witness in clear),
+        // so localhost is allowed for dev; hosted indexers may be Blockfrost.
+        'https://*.midnight.network wss://*.midnight.network https://*.blockfrost.io wss://*.blockfrost.io http://localhost:6300 http://127.0.0.1:6300',
         // Chain RPC endpoints (EVM SBT chains).
         'https://*.rpc.thirdweb.com https://*.polygon.technology https://polygon-rpc.com',
         'https://*.llamarpc.com https://eth.llamarpc.com https://*.binance.org',

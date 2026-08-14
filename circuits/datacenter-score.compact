@@ -42,6 +42,26 @@ export ledger threshold: Uint<16>;
 // the same design cannot be re-proven under a different claim.
 export ledger commitment: Bytes<32>;
 
+// ---------------------------------------------------------------------------
+// Certificate registry (the "NFT" side).
+//
+// `proveThreshold` proves the claim; `mintCertificate` (below) additionally
+// *records* the accepted certificate to a public registry keyed by its blinded
+// commitment, so the Midnight ledger holds a permanent, non-transferable entry
+// per certified build — the certificate a holder can later point an auditor at.
+// The design stays private (it is only the witness); the registry entries are
+// public, unshielded ledger state (no per-read ZK overhead).
+// ---------------------------------------------------------------------------
+
+// How many certificates have been minted — doubles as the next token id.
+export ledger tokenCounter: Counter;
+
+// commitment -> the threshold that certificate cleared.
+export ledger certifiedThreshold: Map<Bytes<32>, Uint<16>>;
+
+// commitment -> the rule pack it was certified under.
+export ledger certifiedRulePack: Map<Bytes<32>, Bytes<32>>;
+
 // The prover's secret inputs, supplied by the local wallet/scoring service and
 // never transmitted.
 witness graphDigest(): Bytes<32>;
@@ -78,6 +98,47 @@ export circuit proveThreshold(
   commitment = disclose(bound);
   threshold = disclose(claimedThreshold);
   rulePackVersion = disclose(packVersion);
+}
+
+// Mints a certificate: proves the threshold claim AND records the accepted
+// commitment in the public registry so it lives on the Midnight ledger.
+//
+// Same claim and same blinded commitment as `proveThreshold`; the difference is
+// that the commitment, its threshold and its rule pack are inserted into the
+// registry maps and the token counter advances. Idempotent per commitment: a
+// re-mint of the same design overwrites its own entry rather than double-count.
+export circuit mintCertificate(
+  claimedThreshold: Uint<16>,
+  packVersion: Bytes<32>,
+): [] {
+  const digest = graphDigest();
+  const achieved = competitionScore();
+  const blinding = blindingFactor();
+
+  assert(achieved >= claimedThreshold, "score below threshold");
+
+  const bound = persistentHash<Vector<4, Bytes<32>>>([
+    digest,
+    blinding,
+    packVersion,
+    pad(32, "datacenter-score/v1"),
+  ]);
+
+  const boundCommitment = disclose(bound);
+  const boundThreshold = disclose(claimedThreshold);
+  const boundPack = disclose(packVersion);
+
+  // Publish the singleton view (kept for compatibility with proveThreshold).
+  commitment = boundCommitment;
+  threshold = boundThreshold;
+  rulePackVersion = boundPack;
+
+  // Record the certificate in the public registry.
+  if (!certifiedThreshold.member(disclose(boundCommitment))) {
+    tokenCounter.increment(1);
+  }
+  certifiedThreshold.insert(boundCommitment, boundThreshold);
+  certifiedRulePack.insert(boundCommitment, boundPack);
 }
 
 // Re-derives the commitment from a digest the holder chooses to reveal.

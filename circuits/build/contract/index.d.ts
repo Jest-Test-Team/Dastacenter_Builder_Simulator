@@ -10,12 +10,18 @@ export type ImpureCircuits<PS> = {
   proveThreshold(context: __compactRuntime.CircuitContext<PS>,
                  claimedThreshold_0: bigint,
                  packVersion_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+  mintCertificate(context: __compactRuntime.CircuitContext<PS>,
+                  claimedThreshold_0: bigint,
+                  packVersion_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
 }
 
 export type ProvableCircuits<PS> = {
   proveThreshold(context: __compactRuntime.CircuitContext<PS>,
                  claimedThreshold_0: bigint,
                  packVersion_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+  mintCertificate(context: __compactRuntime.CircuitContext<PS>,
+                  claimedThreshold_0: bigint,
+                  packVersion_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
 }
 
 export type PureCircuits = {
@@ -28,6 +34,9 @@ export type Circuits<PS> = {
   proveThreshold(context: __compactRuntime.CircuitContext<PS>,
                  claimedThreshold_0: bigint,
                  packVersion_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
+  mintCertificate(context: __compactRuntime.CircuitContext<PS>,
+                  claimedThreshold_0: bigint,
+                  packVersion_0: Uint8Array): __compactRuntime.CircuitResults<PS, []>;
   openCommitment(context: __compactRuntime.CircuitContext<PS>,
                  digest_0: Uint8Array,
                  blinding_0: Uint8Array,
@@ -38,6 +47,21 @@ export type Ledger = {
   readonly rulePackVersion: Uint8Array;
   readonly threshold: bigint;
   readonly commitment: Uint8Array;
+  readonly tokenCounter: bigint;
+  certifiedThreshold: {
+    isEmpty(): boolean;
+    size(): bigint;
+    member(key_0: Uint8Array): boolean;
+    lookup(key_0: Uint8Array): bigint;
+    [Symbol.iterator](): Iterator<[Uint8Array, bigint]>
+  };
+  certifiedRulePack: {
+    isEmpty(): boolean;
+    size(): bigint;
+    member(key_0: Uint8Array): boolean;
+    lookup(key_0: Uint8Array): Uint8Array;
+    [Symbol.iterator](): Iterator<[Uint8Array, Uint8Array]>
+  };
 }
 
 export type ContractReferenceLocations = any;

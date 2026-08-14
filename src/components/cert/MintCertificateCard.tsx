@@ -30,6 +30,7 @@ import { isTestnetChain, SUPPORTED_CHAINS } from '@/lib/sbt/chains';
 import type { MintCertificateServerResult } from '@/lib/sbt/server';
 import { acquireThresholdProof } from '@/lib/zk/client';
 import { ZkProvingConsole, type ConsoleLine } from '@/components/cert/ZkProvingConsole';
+import { MidnightMintPanel } from '@/components/cert/MidnightMintPanel';
 
 const DEFAULT_CHAIN_ID = 11155111; // Ethereum Sepolia
 const ALL_CHAINS = Object.values(SUPPORTED_CHAINS);
@@ -58,6 +59,8 @@ export function MintCertificateCard({
   const [trace, setTrace] = useState<ConsoleLine[]>([]);
   const [consoleOpen, setConsoleOpen] = useState(false);
   const [consoleStatus, setConsoleStatus] = useState<'running' | 'done' | 'failed'>('running');
+  // Which chain to mint the certificate on: the EVM SBT, or Midnight Preview.
+  const [target, setTarget] = useState<'evm' | 'midnight'>('evm');
 
   const say = (tone: ConsoleLine['tone'], text: string) =>
     setTrace((current) => [...current, { tone, text }]);
@@ -271,7 +274,29 @@ export function MintCertificateCard({
         />
       </div>
 
-      {minted ? (
+      {/* Target selector: EVM soulbound token, or Midnight Preview. */}
+      <div className="mt-3 grid grid-cols-2 gap-1 rounded-lg border border-border bg-bg-subtle p-1 text-xs font-medium">
+        <button
+          type="button"
+          onClick={() => setTarget('evm')}
+          className={`rounded px-2 py-1.5 transition ${target === 'evm' ? 'bg-bg-panel text-fg shadow' : 'text-fg-muted'}`}
+        >
+          Ethereum / Polygon (SBT)
+        </button>
+        <button
+          type="button"
+          onClick={() => setTarget('midnight')}
+          className={`rounded px-2 py-1.5 transition ${target === 'midnight' ? 'bg-bg-panel text-fg shadow' : 'text-fg-muted'}`}
+        >
+          Midnight Preview (NIGHT)
+        </button>
+      </div>
+
+      {target === 'midnight' ? (
+        <div className="mt-4">
+          <MidnightMintPanel />
+        </div>
+      ) : minted ? (
         <div className="mt-4 rounded-lg border border-success/30 bg-success/10 p-4 text-sm">
           <p className="flex items-center gap-2 text-lg font-bold text-success">
             <CheckCircle2 className="h-5 w-5" /> Mint Successful!

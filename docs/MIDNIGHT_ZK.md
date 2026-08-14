@@ -114,6 +114,41 @@ Closing this needs a compiler generation targeting the v4 runtime / ledger-v9, a
 circuit recompiled against it. Until then `getProver()` returns `MockProver`, and both the
 proving console and the certificate metadata state that the proof is simulated.
 
+## Minting the certificate on Midnight (the mint target)
+
+The certificate can be minted on the **Midnight Preview** testnet as well as the EVM
+chains. On Midnight this is a Compact contract call, not an ERC-721:
+
+- `circuits/datacenter-score.compact` adds `mintCertificate(claimedThreshold, packVersion)`,
+  which proves the threshold claim (same assert + blinded commitment as `proveThreshold`)
+  and records the accepted commitment in a public registry — `certifiedThreshold` /
+  `certifiedRulePack` maps keyed by commitment, plus a `tokenCounter`. The design stays
+  private (witness only); only the blinded commitment reaches the ledger.
+- `src/lib/midnight/` is the client: `wallet.ts` connects Lace via `window.midnight`
+  (`mnLace`) and reads the **unshielded NIGHT** balance; `config.ts` reads the Preview
+  endpoints from `NEXT_PUBLIC_MIDNIGHT_*`; `mint.ts` derives the witness locally and
+  performs the mint. Fees are paid in tDUST generated from unshielded tNIGHT.
+- `MintCertificateCard` exposes a target switch (EVM SBT ⟷ Midnight Preview) with
+  `MidnightMintPanel` + `MidnightWalletBadge`.
+
+The wallet connection, unshielded-NIGHT balance and the compiled `mintCertificate`
+circuit are real and work today. The **on-chain call is gated by the same upstream
+version gap** documented above (compiler 0.31.1 / midnight-js 4.1.1 vs proof server):
+`mint.ts` reports that precisely rather than issuing a call that cannot succeed, and
+the `deployContract`/`callTx` wiring drops in unchanged once Midnight ships a matching
+compiler generation.
+
+### Env for a live Midnight mint
+
+```
+NEXT_PUBLIC_MIDNIGHT_NETWORK=preview
+NEXT_PUBLIC_MIDNIGHT_INDEXER_URL=...        # GraphQL https
+NEXT_PUBLIC_MIDNIGHT_INDEXER_WS_URL=...     # GraphQL wss
+NEXT_PUBLIC_MIDNIGHT_NODE_URL=...           # node RPC
+NEXT_PUBLIC_MIDNIGHT_PROOF_SERVER_URL=http://localhost:6300   # local; sees the witness
+NEXT_PUBLIC_MIDNIGHT_CERT_CONTRACT_ADDRESS=...               # from deploying the contract
+```
+
 ## Local setup
 
 ```sh
