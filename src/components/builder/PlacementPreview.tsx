@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
-import { useBuildStore } from '@/lib/store/build-store';
+import { useBuildStore, evaluatePlacement } from '@/lib/store/build-store';
 import { getBlock } from '@/lib/blocks';
 
 export function PlacementPreview() {
@@ -27,6 +27,7 @@ export function PlacementPreview() {
   const setHoveredCell = useBuildStore((s) => s.setHoveredCell);
   const gridSize = useBuildStore((s) => s.gridSize);
   const byCell = useBuildStore((s) => s.byCell);
+  const inventory = useBuildStore((s) => s.inventory);
 
   const raycaster = useRef(new THREE.Raycaster());
   const groundPlane = useRef(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0));
@@ -59,9 +60,12 @@ export function PlacementPreview() {
       const cell = useBuildStore.getState().hoveredCell;
       if (!cell) return;
       const result = placeBlock(activeType, cell, rotation);
-      if (!result.ok) {
-        // could show toast
-        console.warn('Placement failed:', result.reason);
+      if (result.ok) {
+        useBuildStore.getState().setPlacementError(null);
+      } else {
+        // Surface the reason: a silent failure is what makes a green
+        // "Legal placement" ghost look like it should have dropped a block.
+        useBuildStore.getState().setPlacementError(result.reason);
       }
     }
     function onKey(e: KeyboardEvent) {
@@ -101,15 +105,19 @@ export function PlacementPreview() {
       const cx = Math.floor(groundHit.x + gridSize.w / 2);
       const cz = Math.floor(groundHit.z + gridSize.d / 2);
       const cy = 0;
-      if (cx < 0 || cx >= gridSize.w || cz < 0 || cz >= gridSize.d) {
-        setValid(false);
-        setReason('Outside the build footprint');
-        return;
-      }
       setPos(new THREE.Vector3(cx + size[0] / 2, cy + size[1] / 2, cz + size[2] / 2));
       setHoveredCell({ x: cx, y: cy, z: cz });
-      setValid(true);
-      setReason('Legal placement');
+      // Same rule the click will run, so the ghost never lies about legality.
+      const check = evaluatePlacement({
+        type: activeType,
+        position: { x: cx, y: cy, z: cz },
+        rotation,
+        gridSize,
+        byCell,
+        inventory,
+      });
+      setValid(check.ok);
+      setReason(check.ok ? 'Legal placement' : check.reason);
       return;
     }
     // For now, just snap to ground using first hit
@@ -119,23 +127,18 @@ export function PlacementPreview() {
     const cy = Math.max(0, Math.floor(hit.point.y));
     setPos(new THREE.Vector3(cx + size[0] / 2, cy + size[1] / 2, cz + size[2] / 2));
     setHoveredCell({ x: cx, y: cy, z: cz });
-    // Validate
-    let ok = true;
-    let failureReason = 'Placement blocked';
-    for (let dx = 0; dx < size[0]; dx++) {
-      for (let dy = 0; dy < size[1]; dy++) {
-        for (let dz = 0; dz < size[2]; dz++) {
-          const c = `${cx + dx},${cy + dy},${cz + dz}`;
-          if (byCell[c]) {
-            ok = false;
-            failureReason = 'Cell occupied';
-            break;
-          }
-        }
-      }
-    }
-    setValid(ok);
-    setReason(ok ? 'Legal placement' : failureReason);
+    // One evaluator for bounds + occupancy + inventory, so the ghost's colour
+    // and label match exactly what placeBlock will do on click.
+    const check = evaluatePlacement({
+      type: activeType,
+      position: { x: cx, y: cy, z: cz },
+      rotation,
+      gridSize,
+      byCell,
+      inventory,
+    });
+    setValid(check.ok);
+    setReason(check.ok ? 'Legal placement' : check.reason);
   });
 
   if (!activeType) return null;

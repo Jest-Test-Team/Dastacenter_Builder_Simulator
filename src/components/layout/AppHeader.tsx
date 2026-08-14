@@ -3,7 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { LocaleSwitcher } from '@/components/i18n/LocaleSwitcher';
 import { DEFAULT_LOCALE, type Locale } from '@/lib/i18n';
 
-export function AppHeader({ locale = DEFAULT_LOCALE, current }: { locale?: Locale; current?: 'build' | 'learn' | 'pricing' | 'about' }) {
+export function AppHeader({ locale = DEFAULT_LOCALE, current }: { locale?: Locale; current?: 'build' | 'learn' | 'pricing' | 'about' | 'dashboard' }) {
   return (
     <header className="border-b border-border bg-bg-panel/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6">
@@ -26,6 +26,13 @@ export function AppHeader({ locale = DEFAULT_LOCALE, current }: { locale?: Local
             className={`btn-ghost text-sm ${current === 'pricing' ? 'text-fg' : ''}`}
           >
             Pricing
+          </Link>
+          <Link
+            href="/dashboard"
+            aria-current={current === 'dashboard' ? 'page' : undefined}
+            className={`btn-ghost text-sm ${current === 'dashboard' ? 'text-fg' : ''}`}
+          >
+            My Certificates
           </Link>
           <Link href="/build/free" className="btn text-sm">
             Build

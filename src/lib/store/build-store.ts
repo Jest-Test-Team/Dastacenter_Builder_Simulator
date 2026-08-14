@@ -19,7 +19,6 @@ import { nanoid } from 'nanoid';
 import type { TemporalState } from 'zundo';
 import {
   type BlockInstance,
-  type BlockDef,
   type BuildState as PureBuildState,
   getBlock,
   CATEGORIES,
@@ -60,6 +59,8 @@ export interface BuildState extends PureBuildState {
   selectedInstanceId: string | null;
   hoveredCell: Cell | null;
   activeBlockType: string | null; // for placement
+  /** Transient reason the last placement attempt was refused, for a UI toast. */
+  placementError: string | null;
   rotation: 0 | 1 | 2 | 3;
   camera: CameraState;
   visualMode: VisualMode;
@@ -95,6 +96,7 @@ export interface BuildActions {
   setSelected: (id: string | null) => void;
   setHoveredCell: (cell: Cell | null) => void;
   setActiveBlockType: (type: string | null) => void;
+  setPlacementError: (message: string | null) => void;
   setRotation: (r: 0 | 1 | 2 | 3) => void;
   setCamera: (camera: Partial<CameraState>) => void;
   setVisualMode: (mode: VisualMode) => void;
@@ -181,6 +183,52 @@ function cellsForBlock(type: string, position: Cell, rotation: 0 | 1 | 2 | 3): C
   return cells;
 }
 
+export type PlacementCheck = { ok: true } | { ok: false; reason: string };
+
+/**
+ * The single source of truth for "can this block go here?".
+ *
+ * `placeBlock` and the placement ghost (PlacementPreview) both call this, so the
+ * green/red the cursor shows can never disagree with what actually happens on
+ * click. It mirrors every rule the mutation enforces — grid bounds (including
+ * the y ceiling), cell occupancy, and inventory for non-decorative blocks —
+ * because a check that skips one is exactly how "Legal placement" ends up on a
+ * block that then silently refuses to drop.
+ */
+export function evaluatePlacement(args: {
+  type: string;
+  position: Cell;
+  rotation: 0 | 1 | 2 | 3;
+  gridSize: GridSize;
+  byCell: Record<string, string>;
+  inventory: Record<string, number>;
+}): PlacementCheck {
+  const def = getBlock(args.type);
+  if (!def) return { ok: false, reason: `Unknown block: ${args.type}` };
+
+  const cells = cellsForBlock(args.type, args.position, args.rotation);
+  if (cells.length === 0) return { ok: false, reason: 'No cells for block' };
+
+  for (const c of cells) {
+    if (
+      c.x < 0 ||
+      c.x >= args.gridSize.w ||
+      c.y < 0 ||
+      c.y >= args.gridSize.h ||
+      c.z < 0 ||
+      c.z >= args.gridSize.d
+    ) {
+      return { ok: false, reason: 'Outside the build footprint' };
+    }
+    if (args.byCell[cellKey(c)]) return { ok: false, reason: 'Cell occupied' };
+  }
+
+  if ((args.inventory[args.type] ?? 0) <= 0 && !def.decorative)
+    return { ok: false, reason: `No ${def.displayName} left in inventory` };
+
+  return { ok: true };
+}
+
 function buildCellIndex(voxels: PureBuildState['voxels']): Record<string, string> {
   const index: Record<string, string> = {};
   for (const instance of Object.values(voxels)) {
@@ -205,6 +253,7 @@ function createInitial(scenarioId = 'free', scenarioName = 'Free Build'): BuildS
     selectedInstanceId: null,
     hoveredCell: null,
     activeBlockType: null,
+    placementError: null,
     rotation: 0,
     camera: {
       position: [20, 20, 20],
@@ -229,34 +278,13 @@ export const useBuildStore = create<BuildStore>()(
       ...createInitial(),
 
       placeBlock: (type, position, rotation) => {
-        const def = getBlock(type) as BlockDef | undefined;
-        if (!def) return { ok: false, reason: `Unknown block type: ${type}` };
-
         const rot = rotation ?? get().rotation;
-        const cells = cellsForBlock(type, position, rot);
-        if (cells.length === 0) return { ok: false, reason: 'No cells for block' };
-
         const { gridSize, byCell, inventory } = get();
-        for (const c of cells) {
-          if (
-            c.x < 0 ||
-            c.x >= gridSize.w ||
-            c.y < 0 ||
-            c.y >= gridSize.h ||
-            c.z < 0 ||
-            c.z >= gridSize.d
-          ) {
-            return { ok: false, reason: 'Out of bounds' };
-          }
-          if (byCell[cellKey(c)]) {
-            return { ok: false, reason: 'Cell occupied' };
-          }
-        }
 
-        if ((inventory[type] ?? 0) <= 0 && !def.decorative) {
-          return { ok: false, reason: 'No inventory' };
-        }
+        const check = evaluatePlacement({ type, position, rotation: rot, gridSize, byCell, inventory });
+        if (!check.ok) return check;
 
+        const cells = cellsForBlock(type, position, rot);
         const id = makeId();
         set((s) => {
           const newByCell: Record<string, string> = { ...s.byCell };
@@ -378,6 +406,7 @@ export const useBuildStore = create<BuildStore>()(
       setSelected: (id) => set({ selectedInstanceId: id }),
       setHoveredCell: (cell) => set({ hoveredCell: cell }),
       setActiveBlockType: (type) => set({ activeBlockType: type }),
+      setPlacementError: (message) => set({ placementError: message }),
       setRotation: (r) => set({ rotation: r }),
       setCamera: (camera) => set((s) => ({ camera: { ...s.camera, ...camera } })),
       setVisualMode: (visualMode) => set({ visualMode }),

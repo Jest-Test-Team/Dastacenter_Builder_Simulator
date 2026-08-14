@@ -104,6 +104,7 @@
   "sim.event.audit": "Compliance audit",
   "sim.event.dga_overheat": "DGA overheat",
   "sim.downloadWorks": "Download your works",
+  "sim.slogan": "PRIVATE DATA (Local Only)",
   "sim.downloadWorks.hint": "Connect your wallet to export this build as JSON.",
   "wallet.connect": "Connect wallet",
   "learn.title": "Curriculum",

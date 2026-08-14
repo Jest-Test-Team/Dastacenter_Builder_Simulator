@@ -8,13 +8,36 @@
  *
  * It also guards the privacy claim in the only place a regression could hide:
  * no stage may carry the score, the blinding factor, or the build itself.
+ *
+ * Proving now runs in the browser (lib/zk/browser-prover.ts), so these tests
+ * mock that module rather than `fetch`. The real BrowserProver loads bb.js's
+ * WASM, which does not run under the node test runtime — but its contract is the
+ * same Prover interface the mock stands in for here.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { emptyState, type BuildState } from '@/lib/blocks';
 import { DEMO_BUILDS } from '@/lib/demos';
-import { acquireThresholdProof, type ProofStage } from '@/lib/zk/client';
-import { MockProver, DEFAULT_THRESHOLD } from '@/lib/zk';
+import { MockProver, DEFAULT_THRESHOLD, ProofError, type ProveRequest } from '@/lib/zk';
+
+// Control the browser prover's behaviour per test.
+const proveImpl = vi.fn<(request: ProveRequest) => Promise<unknown>>();
+
+vi.mock('@/lib/zk/browser-prover', () => ({
+  BrowserProver: class {
+    readonly backend = 'noir' as const;
+    prove(request: ProveRequest) {
+      return proveImpl(request);
+    }
+    async verify() {
+      return { valid: true as const };
+    }
+  },
+}));
+
+// Import after the mock is registered so the dynamic import resolves to it.
+const { acquireThresholdProof } = await import('@/lib/zk/client');
+type ProofStage = import('@/lib/zk/client').ProofStage;
 
 function stateOf(snapshot: unknown): BuildState {
   return { ...emptyState(), ...(snapshot as BuildState) };
@@ -22,30 +45,24 @@ function stateOf(snapshot: unknown): BuildState {
 
 const build = stateOf(DEMO_BUILDS[2]?.snapshot ?? DEMO_BUILDS[0]?.snapshot);
 
-/** Answers /api/zk/prove with a genuine mock proof over the posted witness. */
+/** Have the mocked prover answer with a genuine mock proof over the witness. */
 function respondWithProof() {
-  return vi.fn(async (_url: string, init?: RequestInit) => {
-    const body = JSON.parse(String(init?.body)) as {
-      witness: Parameters<MockProver['prove']>[0]['witness'];
-      threshold: number;
-      rulePackVersion: string;
-    };
-    const proof = await new MockProver().prove({
-      witness: body.witness,
-      threshold: body.threshold,
-      rulePackVersion: body.rulePackVersion,
-    });
-    return { ok: true, status: 200, json: async () => ({ proof }) } as unknown as Response;
-  });
+  proveImpl.mockImplementation((request: ProveRequest) =>
+    new MockProver().prove({
+      witness: request.witness,
+      threshold: request.threshold,
+      rulePackVersion: request.rulePackVersion,
+    }),
+  );
 }
 
 afterEach(() => {
-  vi.unstubAllGlobals();
+  proveImpl.mockReset();
 });
 
 describe('acquireThresholdProof stage reporting', () => {
   it('reports the stages in order', async () => {
-    vi.stubGlobal('fetch', respondWithProof());
+    respondWithProof();
     const seen: ProofStage['stage'][] = [];
 
     await acquireThresholdProof(build, { onStage: (event) => seen.push(event.stage) });
@@ -54,7 +71,7 @@ describe('acquireThresholdProof stage reporting', () => {
   });
 
   it('reports the digest that was actually committed to', async () => {
-    vi.stubGlobal('fetch', respondWithProof());
+    respondWithProof();
     const events: ProofStage[] = [];
 
     const result = await acquireThresholdProof(build, {
@@ -71,7 +88,7 @@ describe('acquireThresholdProof stage reporting', () => {
   });
 
   it('never leaks the score or the blinding factor through a stage', async () => {
-    vi.stubGlobal('fetch', respondWithProof());
+    respondWithProof();
     const events: ProofStage[] = [];
 
     const result = await acquireThresholdProof(build, {
@@ -84,14 +101,7 @@ describe('acquireThresholdProof stage reporting', () => {
   });
 
   it('reports a rejection before throwing', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => ({
-        ok: false,
-        status: 422,
-        json: async () => ({ error: 'score below the threshold' }),
-      }) as unknown as Response),
-    );
+    proveImpl.mockRejectedValue(new ProofError(422, 'score below the threshold'));
     const events: ProofStage[] = [];
 
     await expect(

@@ -16,7 +16,23 @@ const securityHeaders = [
       "style-src 'self' 'unsafe-inline'",
       "img-src 'self' data: blob: https://cdn.credly.com https://images.credly.com",
       "font-src 'self' data:",
-      "connect-src 'self' https://*.posthog.com wss://*.posthog.com https://cloudflareinsights.com https://*.walletconnect.com wss://*.walletconnect.org https://*.alchemy.com https://*.infura.io https://api.mainnet-beta.solana.com",
+      // connect-src must list every host the app can dial: analytics, wallet
+      // infra, and the JSON-RPC endpoint of every chain in lib/sbt/chains.ts +
+      // lib/wallet/wagmi.ts. A missing host shows up as a "violates the
+      // document's Content Security Policy" console error and a dead wallet
+      // read/mint precheck, so the chain RPCs and Coinbase Wallet's telemetry
+      // (cca-lite.coinbase.com) are enumerated here.
+      [
+        "connect-src 'self'",
+        'https://*.posthog.com wss://*.posthog.com https://cloudflareinsights.com',
+        'https://*.walletconnect.com wss://*.walletconnect.org https://*.coinbase.com https://cca-lite.coinbase.com https://*.walletlink.org wss://*.walletlink.org',
+        'https://*.alchemy.com https://*.infura.io https://api.mainnet-beta.solana.com',
+        // Chain RPC endpoints (EVM SBT chains).
+        'https://*.rpc.thirdweb.com https://*.polygon.technology https://polygon-rpc.com',
+        'https://*.llamarpc.com https://eth.llamarpc.com https://*.binance.org',
+        'https://*.arbitrum.io https://mainnet.optimism.io https://*.optimism.io https://*.base.org',
+        'https://*.drpc.org https://*.publicnode.com https://*.merkle.io',
+      ].join(' '),
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",

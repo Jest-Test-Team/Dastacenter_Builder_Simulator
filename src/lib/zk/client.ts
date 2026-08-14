@@ -61,23 +61,38 @@ export async function acquireThresholdProof(
   });
 
   report?.({ stage: 'proving' });
-  const response = await fetch('/api/zk/prove', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ witness, threshold, rulePackVersion }),
-    signal: options.signal,
-  });
 
-  const body = (await response.json().catch(() => null)) as { proof?: Proof; error?: string } | null;
-  if (!response.ok || !body?.proof) {
-    const message = body?.error ?? `Proof generation failed (${response.status})`;
+  // Proving runs in the browser. bb.js ships a multi-megabyte WASM module that
+  // the Cloudflare Workers runtime cannot load (no filesystem for its
+  // `acvm_js_bg.wasm`), so the old `/api/zk/prove` round-trip 502s in
+  // production. Doing it here also strengthens the privacy claim: the witness
+  // never leaves the machine at all — only the finished proof does, at mint.
+  const { BrowserProver } = await import('./browser-prover');
+  const prover = new BrowserProver();
+
+  let proof: Proof;
+  try {
+    proof = await prover.prove({ witness, threshold, rulePackVersion });
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : `Proof generation failed`;
     report?.({ stage: 'rejected', message });
     throw new Error(message);
   }
-  report?.({ stage: 'proved', proof: body.proof });
+
+  // Verify locally before it is ever submitted: a proof the holder's own
+  // machine will not accept has no business being relayed to a mint.
+  const check = await prover.verify(proof, { threshold, rulePackVersion });
+  if (!check.valid) {
+    const message = check.reason ?? 'Generated proof failed local verification';
+    report?.({ stage: 'rejected', message });
+    throw new Error(message);
+  }
+
+  report?.({ stage: 'proved', proof });
 
   return {
-    proof: body.proof,
+    proof,
     blindingFactor: witness.blindingFactor,
     graphDigest: witness.graphDigest,
   };

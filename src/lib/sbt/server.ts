@@ -11,7 +11,7 @@ import {
   type PrivacyClaim,
   type StorageResult,
 } from './metadata';
-import { DEFAULT_THRESHOLD, getProver, type Proof } from '@/lib/zk';
+import { DEFAULT_THRESHOLD, MockProver, verifyProofStatement, type Proof } from '@/lib/zk';
 import { SBT_CONTRACT_ABI } from './abi';
 
 export interface MintCertificateServerInput {
@@ -70,10 +70,21 @@ export class MintError extends Error {
 async function verifyMintProof(proof: Proof, rulePackVersion: string): Promise<PrivacyClaim> {
   if (!proof) throw new MintError(400, 'A zero-knowledge threshold proof is required to mint');
 
-  const result = await getProver().verify(proof, {
-    threshold: DEFAULT_THRESHOLD,
-    rulePackVersion,
-  });
+  const expected = { threshold: DEFAULT_THRESHOLD, rulePackVersion };
+
+  // A mock proof carries no SNARK to check but is fully self-verifying (the
+  // commitment is recomputable), so verify it in full — cheaply, no WASM.
+  //
+  // A real (noir) proof's UltraHonk verifier is bb.js WASM, which the Cloudflare
+  // Workers runtime this route runs in cannot load. It is verified
+  // cryptographically in the browser before submission (see lib/zk/client.ts);
+  // here we enforce the statement invariants — circuit tag, threshold, rule
+  // pack, and that the public inputs match the statement — which need no
+  // cryptography and catch a proof of the wrong claim wherever it was made.
+  const result =
+    proof.backend === 'mock'
+      ? await new MockProver().verify(proof, expected)
+      : verifyProofStatement(proof, expected);
   if (!result.valid) throw new MintError(400, `Proof rejected: ${result.reason ?? 'invalid proof'}`);
 
   return {

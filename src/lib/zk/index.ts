@@ -11,6 +11,10 @@ export * from './types';
 export { MockProver, commitmentOf } from './mock-prover';
 export { MidnightProver } from './midnight-prover';
 export { NoirProver } from './noir-prover';
+// BrowserProver is intentionally not re-exported here: it is loaded via a
+// dynamic import in the client, so it (and its circuit JSON) stay out of the
+// server bundle. Import it from './browser-prover' directly where needed.
+export { verifyProofStatement } from './noir-shared';
 export { randomBlindingFactor, witnessFromBuild, type WitnessResult } from './witness';
 
 export interface ProverEnv {

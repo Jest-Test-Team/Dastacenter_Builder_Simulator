@@ -156,6 +156,9 @@ export function ModeBar() {
           <Download className="h-4 w-4" />
           {t('sim.downloadWorks')}
         </button>
+        <text>
+          <span className="text-xs text-fg-muted">{t('sim.slogan')}</span>
+        </text>
 
         <button
           onClick={() => {

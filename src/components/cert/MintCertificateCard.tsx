@@ -11,9 +11,10 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
 import { useAccount, usePublicClient } from 'wagmi';
 import type { Hash } from 'viem';
-import { Award, CheckCircle2, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
+import { Award, CheckCircle2, AlertCircle, Loader2, ExternalLink, ArrowRight } from 'lucide-react';
 import type { RatingReport } from '@/lib/scoring';
 import { useBuildStore } from '@/lib/store/build-store';
 import { CertificateSvg } from '@/components/cert/CertificateSvg';
@@ -230,9 +231,9 @@ export function MintCertificateCard({
       </div>
 
       {minted ? (
-        <div className="mt-4 rounded border border-success/30 bg-success/10 p-3 text-sm">
-          <p className="flex items-center gap-2 text-success">
-            <CheckCircle2 className="h-4 w-4" /> Certificate minted!
+        <div className="mt-4 rounded-lg border border-success/30 bg-success/10 p-4 text-sm">
+          <p className="flex items-center gap-2 text-lg font-bold text-success">
+            <CheckCircle2 className="h-5 w-5" /> Mint Successful!
           </p>
           <p className="mt-1 text-xs text-fg-muted">Token ID: #{minted.tokenId.toString()}</p>
           <p className="mt-1 text-[10px] text-fg-muted">
@@ -241,6 +242,11 @@ export function MintCertificateCard({
           <p className="mt-1 text-[10px] text-fg-muted">
             Storage: {minted.metadata.provider.toUpperCase()}
           </p>
+          <Link href="/dashboard?minted=1" className="btn mt-3 w-full">
+            <Award className="h-4 w-4" />
+            View in My Certificates
+            <ArrowRight className="h-4 w-4" />
+          </Link>
           <a
             href={minted.explorerUrl}
             target="_blank"

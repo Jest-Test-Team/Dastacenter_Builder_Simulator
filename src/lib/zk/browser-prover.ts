@@ -1,23 +1,19 @@
 /**
- * Noir + Barretenberg prover. This is the real one.
+ * Noir + Barretenberg prover that runs entirely in the browser.
  *
- * Proves `circuits/noir/src/main.nr`: the holder knows a design whose graph
- * digest is D and whose score cleared threshold T under rule pack V. The
- * commitment is a *public output* of the circuit rather than an input, so a
- * prover cannot publish a commitment that disagrees with the witness it proved
- * about.
+ * This is the prover the deployed app uses. The server route cannot: on
+ * Cloudflare Workers bb.js's WASM has no filesystem to read `acvm_js_bg.wasm`
+ * from, so `/api/zk/prove` 502s there. In the browser both libraries load their
+ * WASM the way they were designed to, and the design never leaves the machine —
+ * the witness is derived locally and the proof is generated locally too. Only
+ * the finished proof (carrying just the public statement) is sent on to mint.
  *
- * Why Noir rather than Midnight: the Compact toolchain and every published
- * Midnight proof-server image are a protocol generation apart, so no released
- * combination can prove this circuit today — see docs/MIDNIGHT_ZK.md for the
- * evidence. Noir has no such gap and proves in ~2s.
- *
- * Everything here is Node-only: bb.js carries a multi-megabyte WASM module and
- * will not run in the Cloudflare Workers runtime. Both libraries and the
- * compiled circuit are therefore loaded lazily, inside the call — a static
- * import would drag the WASM into the edge bundle and break the build.
+ * The circuit JSON is imported statically so it is bundled into this lazily
+ * loaded chunk; both heavy libraries are dynamically imported inside the call so
+ * their multi-megabyte WASM only downloads when the user actually proves.
  */
 
+import circuitJson from '../../../circuits/noir/target/datacenter_score.json';
 import {
   ProofError,
   type Proof,
@@ -36,52 +32,44 @@ import {
   type NoirCircuit,
 } from './noir-shared';
 
-/** Circuit artefact produced by `nargo compile`. */
-const CIRCUIT_PATH = 'circuits/noir/target/datacenter_score.json';
+const circuit = circuitJson as unknown as NoirCircuit;
 
-let cached: { circuit: NoirCircuit; makeBackend: () => Promise<Backend>; execute: (inputs: Record<string, string>) => Promise<{ witness: Uint8Array; returnValue: unknown }> } | null = null;
+interface Loaded {
+  execute: (
+    inputs: Record<string, string>,
+  ) => Promise<{ witness: Uint8Array; returnValue: unknown }>;
+  makeBackend: () => Promise<Backend>;
+}
 
-/**
- * Loads the circuit and both WASM libraries once, on first use.
- *
- * `circuits/noir/target` is committed, so a checkout can prove without the Noir
- * toolchain installed — only `nargo compile` needs nargo.
- */
-async function load() {
+let cached: Loaded | null = null;
+
+/** Loads noir_js + bb.js and binds them to the bundled circuit, once. */
+async function load(): Promise<Loaded> {
   if (cached) return cached;
 
-  const [{ Noir }, bb, { readFile }, path] = await Promise.all([
+  const [{ Noir }, bb] = await Promise.all([
     import('@noir-lang/noir_js'),
     import('@aztec/bb.js'),
-    import('node:fs/promises'),
-    import('node:path'),
   ]);
 
-  let raw: string;
-  try {
-    raw = await readFile(path.join(process.cwd(), CIRCUIT_PATH), 'utf8');
-  } catch {
-    throw new ProofError(
-      503,
-      `Compiled circuit not found at ${CIRCUIT_PATH}. Run \`npm run zk:noir:compile\`.`,
-    );
-  }
-
-  const circuit = JSON.parse(raw) as NoirCircuit;
   const noir = new Noir(circuit as never);
 
   cached = {
-    circuit,
-    execute: (inputs) => noir.execute(inputs as never) as Promise<{ witness: Uint8Array; returnValue: unknown }>,
+    execute: (inputs) =>
+      noir.execute(inputs as never) as Promise<{ witness: Uint8Array; returnValue: unknown }>,
     makeBackend: async () => {
-      const api = await bb.Barretenberg.new();
+      // Single-threaded: a plain https page is not cross-origin isolated, so
+      // SharedArrayBuffer (and bb.js's worker pool) is unavailable. Forcing one
+      // thread on the Barretenberg instance avoids that requirement — proving is
+      // a couple of seconds slower but works on any page.
+      const api = await bb.Barretenberg.new({ threads: 1 });
       return new bb.UltraHonkBackend(circuit.bytecode, api) as unknown as Backend;
     },
   };
   return cached;
 }
 
-export class NoirProver implements Prover {
+export class BrowserProver implements Prover {
   readonly backend = 'noir' as const;
 
   async prove(request: ProveRequest): Promise<Proof> {
@@ -111,8 +99,6 @@ export class NoirProver implements Prover {
     const backendInstance = await makeBackend();
     const bundle = await backendInstance.generateProof(executed.witness);
 
-    // The circuit returns the commitment, so read it from the proof's own
-    // public inputs rather than trusting anything computed alongside.
     let statement: PublicStatement;
     try {
       statement = statementFromPublicInputs(bundle.publicInputs, rulePackVersion, threshold);
@@ -133,9 +119,6 @@ export class NoirProver implements Prover {
     proof: Proof,
     expected: { threshold?: number; rulePackVersion?: string } = {},
   ): Promise<VerificationResult> {
-    // Statement checks first: cheap, and a cryptographically valid proof of the
-    // wrong claim is still the wrong claim. Shared with the browser prover and
-    // the Workers mint path so all three read the public inputs identically.
     const statementCheck = verifyProofStatement(proof, expected);
     if (!statementCheck.valid) return statementCheck;
 
@@ -160,12 +143,7 @@ export class NoirProver implements Prover {
     }
   }
 
-  /**
-   * Selective disclosure. Re-runs the circuit on a revealed digest and blinding
-   * and returns the commitment it derives, so an auditor under NDA can confirm
-   * they reproduce the published commitment without the design ever being
-   * public. No proof is generated — this is the escape hatch, not the default.
-   */
+  /** Selective disclosure — re-runs the circuit to re-derive the commitment. */
   async open(witness: Witness, rulePackVersion: string): Promise<string> {
     const { execute } = await load();
     const { returnValue } = await execute(

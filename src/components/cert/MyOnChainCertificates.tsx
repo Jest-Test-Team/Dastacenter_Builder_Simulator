@@ -8,77 +8,14 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useAccount, usePublicClient } from 'wagmi';
 import { Loader2, ExternalLink, ImageOff, Wallet } from 'lucide-react';
 import { WalletPicker } from '@/components/wallet/WalletPicker';
-import {
-  getUserCertificates,
-  getCertificateInfo,
-  getSBTContractAddress,
-  type CertificateInfo,
-} from '@/lib/sbt/client';
 import { getChainConfig, getExplorerUrl } from '@/lib/sbt/chains';
 import { PlanetaryDividend } from '@/components/cert/PlanetaryDividend';
-
-// Chains the SBT contract is deployed on.
-const AMOY = 80002;
-const SEPOLIA = 11155111;
-
-type OwnedCert = CertificateInfo & { chainId: number };
+import { useOwnedCertificates, type OwnedCert } from '@/lib/sbt/use-owned-certificates';
 
 export function MyOnChainCertificates() {
-  const { address, isConnected } = useAccount();
-  // Force public clients on the chains the contracts live on, regardless of
-  // which network the wallet is currently switched to.
-  const amoyClient = usePublicClient({ chainId: AMOY });
-  const sepoliaClient = usePublicClient({ chainId: SEPOLIA });
-
-  const [loading, setLoading] = useState(false);
-  const [certs, setCerts] = useState<OwnedCert[]>([]);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!isConnected || !address) {
-      setCerts([]);
-      return;
-    }
-
-    const targets = [
-      { chainId: AMOY, client: amoyClient },
-      { chainId: SEPOLIA, client: sepoliaClient },
-    ].filter((t) => t.client && getSBTContractAddress(t.chainId));
-
-    if (targets.length === 0) {
-      setError('No SBT contract address is configured.');
-      return;
-    }
-
-    let cancelled = false;
-    void (async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const all: OwnedCert[] = [];
-        for (const { chainId, client } of targets) {
-          const tokenIds = await getUserCertificates(address, chainId, client!);
-          const infos = await Promise.all(
-            tokenIds.map((id) => getCertificateInfo(id, chainId, client!)),
-          );
-          for (const info of infos) if (info) all.push({ ...info, chainId });
-        }
-        if (!cancelled) setCerts(all);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load certificates');
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [address, isConnected, amoyClient, sepoliaClient]);
+  const { certs, loading, error, isConnected } = useOwnedCertificates();
 
   if (!isConnected) {
     return (
@@ -133,7 +70,7 @@ export function MyOnChainCertificates() {
   );
 }
 
-function CertCard({ cert }: { cert: OwnedCert }) {
+export function CertCard({ cert }: { cert: OwnedCert }) {
   const md = cert.metadata;
   const image = md?.image;
   const attrs = md?.attributes ?? [];

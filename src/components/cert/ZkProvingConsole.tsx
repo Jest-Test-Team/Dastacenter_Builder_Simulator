@@ -65,12 +65,12 @@ export function ZkProvingConsole({
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4 backdrop-blur-lg"
       role="dialog"
       aria-modal="true"
       aria-label="Zero-knowledge proof progress"
     >
-      <div className="w-full max-w-2xl overflow-hidden rounded-lg border border-sky-500/30 bg-[#05080f] shadow-2xl">
+      <div className="w-full max-w-4xl overflow-hidden rounded-lg border border-sky-500/30 bg-[#05080f] shadow-2xl ring-1 ring-sky-400/10">
         <div className="flex items-center gap-2 border-b border-sky-500/20 px-4 py-2.5">
           {status === 'running' && <Loader2 className="h-4 w-4 animate-spin text-sky-400" />}
           {status === 'done' && <ShieldCheck className="h-4 w-4 text-emerald-400" />}
@@ -80,7 +80,7 @@ export function ZkProvingConsole({
           </span>
         </div>
 
-        <div className="max-h-[60vh] overflow-y-auto px-4 py-3 font-mono text-[12px] leading-relaxed md:text-[13px]">
+        <div className="max-h-[75vh] min-h-[16rem] overflow-y-auto px-4 py-3 font-mono text-[13px] leading-relaxed md:text-[14px]">
           {lines.map((line, index) => (
             <div key={index} className={TONE_CLASS[line.tone]}>
               <span className="select-none text-white/25">{'> '}</span>

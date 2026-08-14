@@ -14,6 +14,7 @@ import { useBuildStore } from '@/lib/store/build-store';
 import { useLoadBuild } from '@/lib/persist';
 import { BlockPalette } from '@/components/builder/BlockPalette';
 import { Hotbar } from '@/components/builder/Hotbar';
+import { PlacementToast } from '@/components/builder/PlacementToast';
 import { ModeBar } from '@/components/builder/ModeBar';
 import { PolicyPanel } from '@/components/policy/PolicyPanel';
 import { SecurityFrameworkPanel } from '@/components/builder/SecurityFrameworkPanel';
@@ -83,7 +84,8 @@ export default function BuildPage() {
         <BlockPalette mobileOpen={mobilePanel === 'blocks'} onClose={() => setMobilePanel(null)} />
         <div className="relative min-h-[56dvh] flex-1 bg-bg-subtle md:min-h-0">
           <BuilderCanvas xrayMode={networkOpen} />
-          <div className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 md:bottom-4">
+          <div className="pointer-events-none absolute bottom-3 left-1/2 flex -translate-x-1/2 flex-col items-center gap-2 md:bottom-4">
+            <PlacementToast />
             <Hotbar />
           </div>
           <div className="pointer-events-none absolute right-2 top-2 md:right-4 md:top-4">
