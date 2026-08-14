@@ -24,6 +24,11 @@ const securityHeaders = [
       // (cca-lite.coinbase.com) are enumerated here.
       [
         "connect-src 'self'",
+        // bb.js (the in-browser ZK prover) ships its Barretenberg WASM inlined
+        // as a gzipped `data:` URL and fetches it at prove time; its worker pool
+        // uses `blob:`. Without these the fetch is blocked and proving fails
+        // with "Failed to fetch" at "Requesting threshold proof from prover…".
+        'data: blob:',
         'https://*.posthog.com wss://*.posthog.com https://cloudflareinsights.com',
         'https://*.walletconnect.com wss://*.walletconnect.org https://*.coinbase.com https://cca-lite.coinbase.com https://*.walletlink.org wss://*.walletlink.org',
         'https://*.alchemy.com https://*.infura.io https://api.mainnet-beta.solana.com',
@@ -33,6 +38,9 @@ const securityHeaders = [
         'https://*.arbitrum.io https://mainnet.optimism.io https://*.optimism.io https://*.base.org',
         'https://*.drpc.org https://*.publicnode.com https://*.merkle.io',
       ].join(' '),
+      // bb.js may run its prover in a worker created from a blob: URL; without
+      // this it falls back to default-src 'self' and the worker is blocked.
+      "worker-src 'self' blob:",
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "form-action 'self'",
