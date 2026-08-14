@@ -68,3 +68,4 @@ storybook-static/
 
 # Midnight testnet wallet seed (never commit)
 .midnight/
+.__wstest.mjs
