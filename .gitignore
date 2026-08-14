@@ -65,3 +65,6 @@ storybook-static/
 
 # Local-only demo notes (not for the repo)
 /docs/DEMO_VIDEO_GUIDE.md
+
+# Midnight testnet wallet seed (never commit)
+.midnight/

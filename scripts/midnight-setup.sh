@@ -109,18 +109,22 @@ serve() {
 # Headless deploy/mint via the SDK (scripts/midnight-cli.mjs). Needs env:
 # MIDNIGHT_WALLET_SEED, MIDNIGHT_INDEXER_URL, MIDNIGHT_NODE_URL (+ contract addr
 # for mint). See docs/MIDNIGHT_ZK.md.
-smoke()  { node "$ROOT/scripts/midnight-cli.mjs" smoke; }
-deploy() { node "$ROOT/scripts/midnight-cli.mjs" deploy; }
-mint()   { node "$ROOT/scripts/midnight-cli.mjs" mint; }
+smoke()      { node "$ROOT/scripts/midnight-cli.mjs" smoke; }
+new_wallet() { node "$ROOT/scripts/midnight-cli.mjs" new-wallet; }
+address()    { node "$ROOT/scripts/midnight-cli.mjs" address; }
+deploy()  { node "$ROOT/scripts/midnight-cli.mjs" deploy; }
+mint()    { node "$ROOT/scripts/midnight-cli.mjs" mint; }
 
 case "${1:-check}" in
   check)   check ;;
   install) install_toolchain ;;
   compile) compile ;;
   serve)   serve ;;
-  smoke)   smoke ;;
-  deploy)  deploy ;;
-  mint)    mint ;;
-  all)     install_toolchain; compile; serve ;;
-  *)       die "Usage: $0 [check|install|compile|serve|smoke|deploy|mint|all]" ;;
+  smoke)      smoke ;;
+  new-wallet) new_wallet ;;
+  address)    address ;;
+  deploy)     deploy ;;
+  mint)       mint ;;
+  all)        install_toolchain; compile; serve ;;
+  *)          die "Usage: $0 [check|install|compile|serve|smoke|new-wallet|address|deploy|mint|all]" ;;
 esac
