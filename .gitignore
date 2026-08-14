@@ -69,3 +69,6 @@ storybook-static/
 # Midnight testnet wallet seed (never commit)
 .midnight/
 .__wstest.mjs
+
+# Midnight ZK keys served to the browser (regenerate via zk:compile + copy)
+public/midnight-zk/
