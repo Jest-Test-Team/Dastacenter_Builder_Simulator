@@ -229,6 +229,57 @@ export function evaluatePlacement(args: {
   return { ok: true };
 }
 
+/**
+ * Auto-navigation for placement: given a target cell the cursor is over, find
+ * the nearest cell (on the ground plane) where the block legally fits.
+ *
+ * Used by the placement ghost so that when the cursor lands outside the
+ * footprint or on an occupied cell, the block snaps to the closest free spot
+ * instead of just refusing — the user can always drop it somewhere sensible.
+ * Returns null only when no legal spot exists at all (grid full, or the block's
+ * inventory is exhausted, which no amount of moving can fix).
+ *
+ * Searches outward in rings of increasing Chebyshev distance and, within a
+ * ring, returns the Euclidean-closest fit — bounded by the grid size.
+ */
+export function findNearestLegalCell(args: {
+  type: string;
+  target: Cell;
+  rotation: 0 | 1 | 2 | 3;
+  gridSize: GridSize;
+  byCell: Record<string, string>;
+  inventory: Record<string, number>;
+}): Cell | null {
+  const y = 0; // Auto-placement lands on the ground plane.
+  const tx = Math.max(0, Math.min(args.gridSize.w - 1, Math.round(args.target.x)));
+  const tz = Math.max(0, Math.min(args.gridSize.d - 1, Math.round(args.target.z)));
+  const maxRing = Math.max(args.gridSize.w, args.gridSize.d);
+
+  for (let ring = 0; ring <= maxRing; ring++) {
+    let best: { cell: Cell; dist: number } | null = null;
+    for (let dx = -ring; dx <= ring; dx++) {
+      for (let dz = -ring; dz <= ring; dz++) {
+        // Only the perimeter of this ring; inner cells were tried already.
+        if (Math.max(Math.abs(dx), Math.abs(dz)) !== ring) continue;
+        const cell = { x: tx + dx, y, z: tz + dz };
+        const check = evaluatePlacement({
+          type: args.type,
+          position: cell,
+          rotation: args.rotation,
+          gridSize: args.gridSize,
+          byCell: args.byCell,
+          inventory: args.inventory,
+        });
+        if (!check.ok) continue;
+        const dist = dx * dx + dz * dz;
+        if (!best || dist < best.dist) best = { cell, dist };
+      }
+    }
+    if (best) return best.cell;
+  }
+  return null;
+}
+
 function buildCellIndex(voxels: PureBuildState['voxels']): Record<string, string> {
   const index: Record<string, string> = {};
   for (const instance of Object.values(voxels)) {
