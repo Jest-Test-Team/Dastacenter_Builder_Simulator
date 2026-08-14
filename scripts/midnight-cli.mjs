@@ -35,7 +35,9 @@ const INDEXER_URL =
   process.env.MIDNIGHT_INDEXER_URL ?? 'https://indexer.preview.midnight.network/api/v4/graphql';
 const INDEXER_WS_URL =
   process.env.MIDNIGHT_INDEXER_WS_URL ?? INDEXER_URL.replace(/^http/, 'ws').replace(/\/graphql$/, '/graphql/ws');
-const NODE_URL = process.env.MIDNIGHT_NODE_URL ?? 'https://rpc.preview.midnight.network';
+// The substrate node connection uses @polkadot/api, which needs a WebSocket URL
+// (wss://), not the https RPC — an https node URL times out at "trying to connect".
+const NODE_URL = process.env.MIDNIGHT_NODE_URL ?? 'wss://rpc.preview.midnight.network';
 
 /**
  * Reads the wallet seed WITHOUT it appearing in shell history or command args:
@@ -126,6 +128,7 @@ async function buildWallet() {
     : NetworkId.TestNet;
 
   const { WalletBuilder } = await import('@midnight-ntwrk/wallet');
+  const logLevel = process.env.MIDNIGHT_LOG_LEVEL; // 'trace'|'debug'|… to diagnose sync
   const wallet = await WalletBuilder.buildFromSeed(
     INDEXER_URL,
     INDEXER_WS_URL,
@@ -133,6 +136,7 @@ async function buildWallet() {
     NODE_URL,
     await resolveSeedHex(),
     walletNetworkId,
+    logLevel,
   );
   wallet.start();
   log('Wallet built; syncing with the indexer…');
@@ -144,16 +148,35 @@ async function buildWallet() {
  * we can read the address from). Returns the latest state. `wantFunds` waits for
  * a non-empty balance; otherwise it returns after the first meaningful state.
  */
-async function waitForWallet(wallet, { wantFunds = false, timeoutMs = 180_000 } = {}) {
-  const { firstValueFrom, filter, timeout } = await import('rxjs');
-  const ready = (s) =>
-    wantFunds ? Object.keys(s.balances ?? {}).length > 0 : Boolean(s.address);
-  try {
-    return await firstValueFrom(wallet.state().pipe(filter(ready), timeout(timeoutMs)));
-  } catch {
-    // Fall back to whatever the current first state is (may be unsynced).
-    return await firstValueFrom(wallet.state());
-  }
+async function waitForWallet(wallet, { wantFunds = false, timeoutMs = 600_000 } = {}) {
+  // A fresh wallet syncs all of Preview's history before balances are correct,
+  // which can take minutes. Wait for syncProgress.synced, logging lag so the
+  // run doesn't look hung. `synced` is the only point balances can be trusted.
+  return await new Promise((resolve) => {
+    let last = 0;
+    let latest;
+    let done = false;
+    const finish = () => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      sub.unsubscribe();
+      resolve(latest);
+    };
+    const timer = setTimeout(finish, timeoutMs);
+    const sub = wallet.state().subscribe((s) => {
+      latest = s;
+      const sp = s.syncProgress;
+      const now = Date.now();
+      if (now - last > 8000) {
+        last = now;
+        const lag = sp?.lag ? `indexer=${sp.lag.indexer} wallet=${sp.lag.wallet}` : 'starting…';
+        log(`  syncing (${lag}, synced=${sp?.synced ?? false})`);
+      }
+      const funded = Object.keys(s.balances ?? {}).length > 0;
+      if (sp?.synced === true && (!wantFunds || funded)) finish();
+    });
+  });
 }
 
 async function buildProviders({ wantFunds = false } = {}) {
