@@ -20,34 +20,47 @@ export async function importBuildFromFile(
 ): Promise<ImportResult> {
   try {
     const text = await file.text();
-    const data = JSON.parse(text) as BuildExportPayload;
+    const data = JSON.parse(text) as Partial<BuildExportPayload> & Partial<BuildSnapshot>;
 
-    // Validate structure
-    if (!data.version || !data.wallet || !data.build) {
-      return {
-        success: false,
-        error: 'Invalid file format. Missing required fields.',
-      };
+    if (!data || typeof data !== 'object') {
+      return { success: false, error: 'Invalid file format. Missing required fields.' };
     }
 
-    // Validate build snapshot structure
-    if (!data.build.buildId || !data.build.voxels) {
+    // Two shapes are accepted:
+    //  1. The wrapped export envelope from "Download your works":
+    //     { version, wallet, build: BuildSnapshot }.
+    //  2. A bare BuildSnapshot — what /demos/templates/[file] serves, so a demo
+    //     template downloaded from the app re-imports without being rejected.
+    let snapshot: BuildSnapshot | undefined;
+    let exportedWallet: string | undefined;
+
+    if (data.build) {
+      snapshot = data.build;
+      exportedWallet = data.wallet?.address;
+    } else if (data.buildId && data.voxels) {
+      snapshot = data as BuildSnapshot;
+    }
+
+    // Validate the snapshot we landed on, whichever shape it came from.
+    if (!snapshot || !snapshot.buildId || !snapshot.voxels) {
       return {
         success: false,
         error: 'Invalid build data. Missing buildId or voxels.',
       };
     }
 
-    // Check wallet match (warning only, not blocking)
-    const walletMismatch = currentWalletAddress
-      ? data.wallet.address.toLowerCase() !== currentWalletAddress.toLowerCase()
-      : undefined;
+    // Check wallet match (warning only, not blocking). A demo template carries
+    // no wallet, so there is nothing to mismatch against.
+    const walletMismatch =
+      currentWalletAddress && exportedWallet
+        ? exportedWallet.toLowerCase() !== currentWalletAddress.toLowerCase()
+        : undefined;
 
     return {
       success: true,
-      snapshot: data.build,
+      snapshot,
       walletMismatch,
-      exportedWallet: data.wallet.address,
+      exportedWallet,
     };
   } catch (error) {
     return {
