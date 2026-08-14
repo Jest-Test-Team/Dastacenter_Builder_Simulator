@@ -23,6 +23,11 @@ export interface MidnightConfig {
   proofServerUrl?: string;
   /** Deployed certificate contract address on Preview (from the deploy step). */
   certContractAddress?: string;
+  /**
+   * Expected holder wallet address (public — safe to ship). Used only to label
+   * and sanity-check the connected wallet in the UI; never used to sign.
+   */
+  walletAddress?: string;
 }
 
 export function midnightConfig(env: Record<string, string | undefined> = process.env): MidnightConfig {
@@ -33,7 +38,14 @@ export function midnightConfig(env: Record<string, string | undefined> = process
     nodeUrl: env.NEXT_PUBLIC_MIDNIGHT_NODE_URL,
     proofServerUrl: env.NEXT_PUBLIC_MIDNIGHT_PROOF_SERVER_URL,
     certContractAddress: env.NEXT_PUBLIC_MIDNIGHT_CERT_CONTRACT_ADDRESS,
+    walletAddress: env.NEXT_PUBLIC_MIDNIGHT_WALLET_ADDRESS,
   };
+}
+
+/** Shortens a Midnight bech32 address for display: mn_addr_preview1fk…xnwcn. */
+export function shortMidnightAddress(address: string): string {
+  if (address.length <= 24) return address;
+  return `${address.slice(0, 18)}…${address.slice(-6)}`;
 }
 
 /**

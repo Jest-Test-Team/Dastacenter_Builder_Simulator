@@ -90,7 +90,15 @@ export function MidnightMintPanel() {
         <p>
           Midnight is a privacy-first Cardano partner chain: the certificate is recorded by a{' '}
           <span className="font-mono">Compact</span> contract as a blinded commitment, so the design
-          itself is never published. Fees are paid from your <strong>unshielded NIGHT</strong>.
+          itself is never published. Fees are paid in <strong>DUST</strong>, generated from your
+          unshielded NIGHT.
+        </p>
+        <p className="mt-1.5 flex items-start gap-1.5 text-warn">
+          <span aria-hidden>⚠</span>
+          <span>
+            A mint needs spendable DUST. If your wallet shows <em>“DUST sponsor offline”</em> or 0
+            DUST, transactions can’t pay fees yet — resolve DUST generation first.
+          </span>
         </p>
       </div>
 
