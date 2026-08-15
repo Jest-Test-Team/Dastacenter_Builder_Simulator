@@ -10,7 +10,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Loader2, Wallet, ShieldOff, AlertCircle, Clock, ExternalLink } from 'lucide-react';
+import { Loader2, Wallet, ShieldOff, AlertCircle, Clock, ExternalLink, RefreshCw } from 'lucide-react';
 import {
   connectMidnightWallet,
   listMidnightWallets,
@@ -41,9 +41,41 @@ export function MidnightWalletBadge({
   const [connectingId, setConnectingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    setDetected(listMidnightWallets());
+  // Wallet extensions inject their connector into `window.midnight` *after* the
+  // page loads — and 1AM injects late — so a single scan on mount usually finds
+  // nothing. Poll for a few seconds, and re-scan whenever the tab regains focus
+  // (the user may have just installed / unlocked the wallet).
+  const scan = useCallback(() => {
+    const found = listMidnightWallets();
+    setDetected(found);
+    if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') {
+      // eslint-disable-next-line no-console
+      console.info('[midnight] injected connectors:', Object.keys((window as unknown as { midnight?: object }).midnight ?? {}));
+    }
+    return found.length > 0;
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout>;
+    let tries = 0;
+    const poll = () => {
+      if (cancelled) return;
+      const done = scan();
+      tries += 1;
+      if (!done && tries < 25) timer = setTimeout(poll, 400); // ~10s window
+    };
+    poll();
+    const onFocus = () => scan();
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onFocus);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onFocus);
+    };
+  }, [scan]);
 
   const connect = useCallback(
     async (walletId: string) => {
@@ -73,7 +105,7 @@ export function MidnightWalletBadge({
             network to mint here.
           </span>
         </p>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {KNOWN_MIDNIGHT_WALLETS.map((w) => {
             const { Icon, text } = brandStyle(w.accent);
             return (
@@ -89,7 +121,18 @@ export function MidnightWalletBadge({
               </a>
             );
           })}
+          <button
+            type="button"
+            onClick={() => scan()}
+            className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 text-fg-muted hover:bg-bg-subtle"
+          >
+            <RefreshCw className="h-3.5 w-3.5" /> Re-scan
+          </button>
         </div>
+        <p className="text-[10px] text-fg-muted">
+          Already installed? Unlock the wallet, make sure it&apos;s on <strong>Preview</strong>, then
+          Re-scan.
+        </p>
       </div>
     );
   }
