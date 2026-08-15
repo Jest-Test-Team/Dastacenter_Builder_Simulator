@@ -296,7 +296,7 @@ export function MintCertificateCard({
 
       {target === 'midnight' ? (
         <div className="mt-4">
-          <MidnightMintPanel />
+          <MidnightMintPanel onMintOnSepolia={() => setTarget('evm')} />
         </div>
       ) : minted ? (
         <div className="mt-4 rounded-lg border border-success/30 bg-success/10 p-4 text-sm">
