@@ -1,64 +1,110 @@
 /**
- * Connect / show the Midnight (Lace) wallet, including the unshielded NIGHT
- * balance used to pay mint fees (tDUST is generated from tNIGHT).
+ * Connect / show a Midnight wallet — Lace or 1AM — including the unshielded
+ * NIGHT balance used to pay mint fees (tDUST is generated from tNIGHT).
+ *
+ * Both wallets speak the same DApp Connector API, so we enumerate whatever is
+ * injected and offer each as a button. 1AM is DUST-sponsored on Preview; Lace
+ * is the IOG desktop extension. The connected wallet's brand tints the badge.
  */
 
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { Loader2, Wallet, ShieldOff, AlertCircle } from 'lucide-react';
+import { Loader2, Wallet, ShieldOff, AlertCircle, Clock, ExternalLink } from 'lucide-react';
 import {
   connectMidnightWallet,
-  isMidnightWalletAvailable,
+  listMidnightWallets,
+  KNOWN_MIDNIGHT_WALLETS,
   type ConnectedMidnightWallet,
+  type DetectedMidnightWallet,
 } from '@/lib/midnight/wallet';
+
+/** Per-brand icon + colour so Lace and 1AM read as distinct in the UI. */
+function brandStyle(accent: string) {
+  switch (accent) {
+    case '1am':
+      return { Icon: Clock, ring: 'border-amber-400/30 bg-amber-500/10', text: 'text-amber-300' };
+    case 'lace':
+      return { Icon: Wallet, ring: 'border-indigo-400/30 bg-indigo-500/10', text: 'text-indigo-300' };
+    default:
+      return { Icon: Wallet, ring: 'border-border bg-bg-subtle', text: 'text-fg-muted' };
+  }
+}
 
 export function MidnightWalletBadge({
   onConnected,
 }: {
   onConnected?: (wallet: ConnectedMidnightWallet) => void;
 }) {
-  const [available, setAvailable] = useState<boolean | null>(null);
+  const [detected, setDetected] = useState<DetectedMidnightWallet[] | null>(null);
   const [wallet, setWallet] = useState<ConnectedMidnightWallet | null>(null);
-  const [connecting, setConnecting] = useState(false);
+  const [connectingId, setConnectingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setAvailable(isMidnightWalletAvailable());
+    setDetected(listMidnightWallets());
   }, []);
 
-  const connect = useCallback(async () => {
-    setConnecting(true);
-    setError(null);
-    try {
-      const connected = await connectMidnightWallet();
-      setWallet(connected);
-      onConnected?.(connected);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect Midnight wallet');
-    } finally {
-      setConnecting(false);
-    }
-  }, [onConnected]);
+  const connect = useCallback(
+    async (walletId: string) => {
+      setConnectingId(walletId);
+      setError(null);
+      try {
+        const connected = await connectMidnightWallet(walletId);
+        setWallet(connected);
+        onConnected?.(connected);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to connect Midnight wallet');
+      } finally {
+        setConnectingId(null);
+      }
+    },
+    [onConnected],
+  );
 
-  if (available === false) {
+  // Nothing installed — name both supported wallets with install links.
+  if (detected !== null && detected.length === 0) {
     return (
-      <div className="rounded border border-warn/30 bg-warn/10 p-3 text-xs text-warn">
-        <p className="flex items-start gap-1.5">
+      <div className="space-y-2 rounded border border-warn/30 bg-warn/10 p-3 text-xs">
+        <p className="flex items-start gap-1.5 text-warn">
           <AlertCircle className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
           <span>
-            Midnight wallet not detected. Install <strong>Lace (Midnight)</strong> and switch it to
-            the <strong>Preview</strong> network to mint here.
+            No Midnight wallet detected. Install one and switch it to the <strong>Preview</strong>{' '}
+            network to mint here.
           </span>
         </p>
+        <div className="flex flex-wrap gap-2">
+          {KNOWN_MIDNIGHT_WALLETS.map((w) => {
+            const { Icon, text } = brandStyle(w.accent);
+            return (
+              <a
+                key={w.id}
+                href={w.installUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1 rounded border border-border px-2 py-1 hover:bg-bg-subtle"
+              >
+                <Icon className={`h-3.5 w-3.5 ${text}`} /> {w.label}
+                <ExternalLink className="h-3 w-3 text-fg-muted" />
+              </a>
+            );
+          })}
+        </div>
       </div>
     );
   }
 
+  // Connected — brand-tinted balance badge.
   if (wallet) {
+    const { Icon, ring, text } = brandStyle(
+      KNOWN_MIDNIGHT_WALLETS.find((w) => w.id === wallet.walletId)?.accent ?? 'generic',
+    );
     return (
-      <div className="rounded-lg border border-indigo-400/30 bg-indigo-500/10 p-3">
-        <div className="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-indigo-300">
+      <div className={`rounded-lg border p-3 ${ring}`}>
+        <div className={`flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] ${text}`}>
+          <Icon className="h-3 w-3" /> {wallet.walletLabel} connected
+        </div>
+        <div className="mt-2 flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-fg-muted">
           <ShieldOff className="h-3 w-3" /> Unshielded balance
         </div>
         <div className="mt-1 font-mono text-2xl font-bold text-fg">{wallet.unshieldedNight}</div>
@@ -70,18 +116,35 @@ export function MidnightWalletBadge({
     );
   }
 
+  // Detected but not connected — a button per wallet brand.
+  const busy = connectingId !== null || detected === null;
   return (
     <div className="space-y-2">
       {error && <p className="text-xs text-danger">{error}</p>}
-      <button
-        type="button"
-        onClick={() => void connect()}
-        disabled={connecting || available === null}
-        className="btn-ghost w-full text-sm"
-      >
-        {connecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wallet className="h-4 w-4" />}
-        Connect Midnight (Lace)
-      </button>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {(detected ?? []).map((w) => {
+          const { Icon, text } = brandStyle(w.accent);
+          return (
+            <button
+              key={w.id}
+              type="button"
+              onClick={() => void connect(w.id)}
+              disabled={busy}
+              className="btn-ghost flex-col items-start gap-0.5 py-2 text-sm"
+            >
+              <span className="flex items-center gap-1.5">
+                {connectingId === w.id ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Icon className={`h-4 w-4 ${text}`} />
+                )}
+                Connect {w.label}
+              </span>
+              <span className="text-[10px] font-normal text-fg-muted">{w.tagline}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

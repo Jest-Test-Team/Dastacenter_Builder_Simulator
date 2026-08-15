@@ -32,7 +32,7 @@ import { connectMidnightWallet, type ConnectedMidnightWallet } from './wallet';
 import { midnightConfig } from './config';
 
 export type MidnightMintStage =
-  | { stage: 'wallet'; address: string; unshieldedNight: string }
+  | { stage: 'wallet'; address: string; unshieldedNight: string; walletLabel: string }
   | { stage: 'witness'; graphDigest: string; threshold: number; rulePackVersion: string }
   | { stage: 'submitting'; contractAddress: string }
   | { stage: 'minted'; txId: string; blockHeight?: number; contractAddress: string }
@@ -48,6 +48,8 @@ export interface MidnightMintResult {
 
 export interface MidnightMintOptions {
   threshold?: number;
+  /** Wallet brand to connect: `lace`, `1am`, … Omit for the first detected. */
+  walletId?: string;
   onStage?: (event: MidnightMintStage) => void;
 }
 
@@ -70,9 +72,14 @@ export async function mintCertificateOnMidnight(
   const report = options.onStage;
   const config = midnightConfig();
 
-  // 1. Wallet — real. Fails with an actionable message if Lace is absent.
-  const wallet: ConnectedMidnightWallet = await connectMidnightWallet();
-  report?.({ stage: 'wallet', address: wallet.address, unshieldedNight: wallet.unshieldedNight });
+  // 1. Wallet — real. Fails with an actionable message if no wallet is present.
+  const wallet: ConnectedMidnightWallet = await connectMidnightWallet(options.walletId);
+  report?.({
+    stage: 'wallet',
+    address: wallet.address,
+    unshieldedNight: wallet.unshieldedNight,
+    walletLabel: wallet.walletLabel,
+  });
 
   // 2. Witness — real, derived locally exactly like the Noir path.
   const { witness, rulePackVersion } = await witnessFromBuild(state, { threshold });

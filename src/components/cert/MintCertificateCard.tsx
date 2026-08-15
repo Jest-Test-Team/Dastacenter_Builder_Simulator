@@ -262,8 +262,8 @@ export function MintCertificateCard({
       <p className="mt-1 text-sm text-fg-muted">
         Mint on <strong>EVM</strong> as a Soulbound NFT (a MetaMask/Coinbase wallet; the server
         relays it, so it&apos;s gasless for you), or on <strong>Midnight Preview</strong> with{' '}
-        <strong>Lace</strong> — a privacy chain where the certificate is a zero-knowledge Compact
-        commitment and fees come from your unshielded NIGHT (via DUST).
+        <strong>Lace</strong> or <strong>1AM</strong> — a privacy chain where the certificate is a
+        zero-knowledge Compact commitment and fees come from your unshielded NIGHT (via DUST).
       </p>
 
       {/* Off-screen certificate used only to generate the metadata image. */}
@@ -332,8 +332,8 @@ export function MintCertificateCard({
             <div className="rounded border border-border bg-bg-subtle p-3">
               <p className="mb-2 text-xs text-fg-muted">
                 Connect a wallet to receive your NFT. The wallet picker also lets you connect{' '}
-                <strong>Lace (Midnight)</strong> — switch to the &ldquo;Midnight Preview&rdquo; tab
-                above to mint the privacy certificate instead.
+                <strong>Lace (Midnight)</strong> or <strong>1AM</strong> — switch to the
+                &ldquo;Midnight Preview&rdquo; tab above to mint the privacy certificate instead.
               </p>
               <WalletPicker />
             </div>

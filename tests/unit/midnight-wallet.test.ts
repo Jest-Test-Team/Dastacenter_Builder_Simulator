@@ -4,9 +4,68 @@
  * proof server, so only the deterministic pieces are unit-tested here.
  */
 
-import { describe, expect, it } from 'vitest';
-import { sumUnshieldedNight } from '@/lib/midnight/wallet';
+import { afterEach, describe, expect, it } from 'vitest';
+import {
+  sumUnshieldedNight,
+  listMidnightWallets,
+  getMidnightConnector,
+  isMidnightWalletAvailable,
+} from '@/lib/midnight/wallet';
 import { isMidnightMintConfigured, midnightConfig } from '@/lib/midnight/config';
+
+/** Minimal fake connector matching the DApp Connector API shape we read. */
+function fakeConnector(name: string) {
+  return {
+    apiVersion: '4.0.0',
+    name,
+    enable: async () => ({ state: async () => ({ address: '', coinPublicKey: '', balances: {} }) }),
+    isEnabled: async () => false,
+  };
+}
+
+function setInjected(map: Record<string, ReturnType<typeof fakeConnector>> | undefined) {
+  (globalThis as unknown as { window?: unknown }).window = map ? { midnight: map } : {};
+}
+
+describe('listMidnightWallets', () => {
+  afterEach(() => {
+    delete (globalThis as unknown as { window?: unknown }).window;
+  });
+
+  it('detects Lace and 1AM by injection key and orders known wallets first', () => {
+    setInjected({ '1am': fakeConnector('1AM'), mnLace: fakeConnector('Lace') });
+    const wallets = listMidnightWallets();
+    expect(wallets.map((w) => w.id)).toEqual(['lace', '1am']);
+    expect(wallets.find((w) => w.id === '1am')?.accent).toBe('1am');
+  });
+
+  it('identifies a wallet by connector.name even under an unknown key', () => {
+    setInjected({ 'uuid-xyz': fakeConnector('1AM Wallet') });
+    const wallets = listMidnightWallets();
+    expect(wallets).toHaveLength(1);
+    expect(wallets[0]?.id).toBe('1am');
+    expect(wallets[0]?.key).toBe('uuid-xyz');
+  });
+
+  it('falls back to a generic entry for an unrecognised wallet', () => {
+    setInjected({ someWallet: fakeConnector('Some Other Wallet') });
+    const [wallet] = listMidnightWallets();
+    expect(wallet?.accent).toBe('generic');
+    expect(wallet?.label).toBe('Some Other Wallet');
+  });
+
+  it('reports no wallet when window.midnight is absent', () => {
+    setInjected(undefined);
+    expect(listMidnightWallets()).toEqual([]);
+    expect(isMidnightWalletAvailable()).toBe(false);
+  });
+
+  it('getMidnightConnector honours the preferred id, else returns the first', () => {
+    setInjected({ mnLace: fakeConnector('Lace'), '1am': fakeConnector('1AM') });
+    expect(getMidnightConnector('1am')?.id).toBe('1am');
+    expect(getMidnightConnector()?.id).toBe('lace');
+  });
+});
 
 describe('sumUnshieldedNight', () => {
   it('formats a single NIGHT balance like the wallet UI (6 decimals)', () => {

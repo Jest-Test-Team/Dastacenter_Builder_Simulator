@@ -118,16 +118,17 @@ function WalletModal({
           Phantom (EVM) and Coinbase Wallet are also supported.
         </p>
 
-        {/* Midnight (Lace) — the privacy chain. Connect + read unshielded NIGHT. */}
+        {/* Midnight (Lace / 1AM) — the privacy chain. Connect + read unshielded NIGHT. */}
         <div className="mt-5 border-t border-border pt-4">
           <p className="mb-1 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide text-indigo-300">
-            <ShieldOff className="h-3.5 w-3.5" /> Midnight Preview (Lace · privacy)
+            <ShieldOff className="h-3.5 w-3.5" /> Midnight Preview (Lace / 1AM · privacy)
           </p>
           <p className="mb-3 text-[11px] leading-relaxed text-fg-muted">
             Midnight is a Cardano partner chain with built-in zero-knowledge proofs. Connect{' '}
-            <strong>Lace (Midnight)</strong> on the <strong>Preview</strong> network to read your
-            unshielded NIGHT and mint the certificate as a private Compact-contract commitment. Fees
-            are paid in DUST generated from NIGHT.
+            <strong>Lace (Midnight)</strong> or <strong>1AM</strong> on the <strong>Preview</strong>{' '}
+            network to read your unshielded NIGHT and mint the certificate as a private
+            Compact-contract commitment. Fees are paid in DUST generated from NIGHT — 1AM sponsors
+            DUST on Preview.
           </p>
           <MidnightWalletBadge />
         </div>

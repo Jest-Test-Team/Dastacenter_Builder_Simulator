@@ -38,10 +38,11 @@ export function MidnightMintPanel() {
     try {
       const snapshot = useBuildStore.getState().exportSnapshot();
       const result = await mintCertificateOnMidnight(snapshot, {
+        walletId: wallet?.walletId,
         onStage: (event) => {
           switch (event.stage) {
             case 'wallet':
-              say('ok', `Lace connected · unshielded NIGHT: ${event.unshieldedNight}`);
+              say('ok', `${event.walletLabel} connected · unshielded NIGHT: ${event.unshieldedNight}`);
               say('info', 'Fees paid in tDUST generated from your unshielded tNIGHT.');
               break;
             case 'witness':
@@ -96,8 +97,9 @@ export function MidnightMintPanel() {
         <p className="mt-1.5 flex items-start gap-1.5 text-warn">
           <span aria-hidden>⚠</span>
           <span>
-            A mint needs spendable DUST. If your wallet shows <em>“DUST sponsor offline”</em> or 0
-            DUST, transactions can’t pay fees yet — resolve DUST generation first.
+            A mint needs spendable DUST. <strong>1AM</strong> sponsors DUST on Preview; with{' '}
+            <strong>Lace</strong>, if the wallet shows <em>“DUST sponsor offline”</em> or 0 DUST,
+            transactions can’t pay fees yet — resolve DUST generation first.
           </span>
         </p>
       </div>
