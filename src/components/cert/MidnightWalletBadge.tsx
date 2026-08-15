@@ -151,7 +151,7 @@ midnight keys           : ${report.midnightKeys.length ? report.midnightKeys.joi
 connectors              : ${
               report.connectors.length
                 ? report.connectors
-                    .map((c) => `${c.key} → "${c.name}" v${c.apiVersion}${c.hasEnable ? '' : ' (no enable!)'}`)
+                    .map((c) => `${c.key} → "${c.name}" [${c.rdns}] v${c.apiVersion}${c.hasConnect ? '' : ' (no connect!)'}`)
                     .join('\n                          ')
                 : '(none)'
             }

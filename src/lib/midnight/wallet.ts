@@ -16,39 +16,54 @@
 
 'use client';
 
-export interface DAppConnectorWalletState {
-  address: string;
-  coinPublicKey: string;
-  encryptionPublicKey?: string;
-  /** token-type (hex) -> amount, in the token's smallest unit. */
-  balances: Record<string, bigint | string | number>;
-}
+import { midnightConfig } from './config';
 
-export interface DAppConnectorWalletAPI {
-  state(): Promise<DAppConnectorWalletState>;
-  // Present on the full API; typed loosely because the mint flow loads the SDK
-  // lazily and this module only needs state() to read the balance.
-  balanceAndProveTransaction?: (tx: unknown, newCoins?: unknown) => Promise<unknown>;
-  submitTransaction?: (tx: unknown) => Promise<string>;
-}
+/** balances are token-type -> amount in the token's smallest unit. */
+export type MidnightBalances = Record<string, bigint | string | number>;
 
-export interface DAppConnectorAPI {
-  apiVersion: string;
-  name: string;
-  icon?: string;
-  enable(): Promise<DAppConnectorWalletAPI>;
-  isEnabled(): Promise<boolean>;
-  /** URIs the dApp should point its providers at (indexer, node, proof server). */
-  serviceUriConfig?: () => Promise<{
-    indexerUri?: string;
-    indexerWsUri?: string;
-    nodeUri?: string;
+/**
+ * The wallet API returned by `connect()` in DApp Connector API **v4** (the
+ * version Lace 4.0.1 and 1AM 4.0.0 ship). Addresses and balances are separate
+ * shielded/unshielded calls; the mint flow only needs the unshielded ones plus
+ * the transaction methods, so the rest are typed loosely and optional.
+ */
+export interface ConnectedAPI {
+  getUnshieldedAddress(): Promise<{ unshieldedAddress: string }>;
+  getUnshieldedBalances(): Promise<MidnightBalances>;
+  getShieldedAddresses?(): Promise<{
+    shieldedAddress: string;
+    shieldedCoinPublicKey: string;
+    shieldedEncryptionPublicKey: string;
+  }>;
+  getShieldedBalances?(): Promise<MidnightBalances>;
+  makeTransfer?(desiredOutputs: unknown[]): Promise<{ tx: string }>;
+  balanceUnsealedTransaction?(tx: string): Promise<{ tx: string }>;
+  submitTransaction?(tx: string): Promise<void>;
+  getConfiguration?(): Promise<{
+    indexerUri: string;
+    indexerWsUri: string;
     proverServerUri?: string;
+    substrateNodeUri: string;
+    networkId: string;
   }>;
 }
 
+/**
+ * The passive connector each wallet injects into `window.midnight` (EIP-6963
+ * style): stable `rdns` id, display metadata, and `connect(networkId)` which
+ * prompts the user and resolves to the {@link ConnectedAPI}. Note: no `enable()`
+ * — that was the pre-v4 spec this app originally (wrongly) targeted.
+ */
+export interface InitialAPI {
+  rdns: string;
+  name: string;
+  icon?: string;
+  apiVersion: string;
+  connect(networkId: string): Promise<ConnectedAPI>;
+}
+
 type MidnightWindow = Window & {
-  midnight?: Record<string, DAppConnectorAPI>;
+  midnight?: Record<string, InitialAPI>;
 };
 
 /** Friendly, app-facing metadata for a Midnight wallet brand. */
@@ -56,7 +71,9 @@ export interface MidnightWalletMeta {
   /** Stable id we use in the UI/mint flow (not necessarily the injection key). */
   id: string;
   label: string;
-  /** Known injection keys; used as a hint alongside connector.name matching. */
+  /** Stable reverse-DNS ids the wallet reports (v4) — the most reliable match. */
+  rdns: string[];
+  /** Known injection keys; used as a hint alongside rdns / name matching. */
   keys: string[];
   /** Matches the connector's self-reported `name`, so key drift doesn't matter. */
   match: (name: string) => boolean;
@@ -71,6 +88,7 @@ export const KNOWN_MIDNIGHT_WALLETS: MidnightWalletMeta[] = [
   {
     id: 'lace',
     label: 'Lace',
+    rdns: ['io.lace.wallet'],
     keys: ['mnLace'],
     match: (name) => /lace/i.test(name),
     accent: 'lace',
@@ -80,6 +98,7 @@ export const KNOWN_MIDNIGHT_WALLETS: MidnightWalletMeta[] = [
   {
     id: '1am',
     label: '1AM',
+    rdns: ['com.midnight.1am'],
     keys: ['1am', 'mn1am', 'oneAm'],
     match: (name) => /\b1\s*am\b/i.test(name),
     accent: '1am',
@@ -91,6 +110,7 @@ export const KNOWN_MIDNIGHT_WALLETS: MidnightWalletMeta[] = [
 const GENERIC_META = (id: string, label: string): MidnightWalletMeta => ({
   id,
   label,
+  rdns: [],
   keys: [id],
   match: () => false,
   accent: 'generic',
@@ -102,13 +122,14 @@ const GENERIC_META = (id: string, label: string): MidnightWalletMeta => ({
 export interface DetectedMidnightWallet extends MidnightWalletMeta {
   /** The live injection key on `window.midnight`. */
   key: string;
-  connector: DAppConnectorAPI;
+  connector: InitialAPI;
 }
 
-function metaFor(key: string, connector: DAppConnectorAPI): MidnightWalletMeta {
+function metaFor(key: string, connector: InitialAPI): MidnightWalletMeta {
   const name = connector.name ?? '';
+  const rdns = connector.rdns ?? '';
   const known = KNOWN_MIDNIGHT_WALLETS.find(
-    (w) => w.keys.includes(key) || w.match(name),
+    (w) => w.rdns.includes(rdns) || w.keys.includes(key) || w.match(name),
   );
   return known ?? GENERIC_META(key, name || key);
 }
@@ -126,7 +147,8 @@ export function listMidnightWallets(): DetectedMidnightWallet[] {
   const detected: DetectedMidnightWallet[] = [];
   const seen = new Set<string>();
   for (const [key, connector] of Object.entries(injected)) {
-    if (!connector || typeof connector.enable !== 'function') continue;
+    // v4 connectors expose connect() (own or on the prototype, as Lace does).
+    if (!connector || typeof connector.connect !== 'function') continue;
     const meta = metaFor(key, connector);
     if (seen.has(meta.id)) continue;
     seen.add(meta.id);
@@ -168,7 +190,7 @@ export interface MidnightInjectionReport {
   /** Keys on `window.midnight`. */
   midnightKeys: string[];
   /** Each injected connector's self-reported name + apiVersion. */
-  connectors: Array<{ key: string; name: string; apiVersion: string; hasEnable: boolean }>;
+  connectors: Array<{ key: string; name: string; rdns: string; apiVersion: string; hasConnect: boolean }>;
   /** Other top-level window globals whose name hints at a Midnight wallet. */
   suspects: string[];
 }
@@ -187,8 +209,9 @@ export function midnightInjectionReport(): MidnightInjectionReport {
     ? Object.entries(mid).map(([key, c]) => ({
         key,
         name: c?.name ?? '(no name)',
+        rdns: c?.rdns ?? '?',
         apiVersion: c?.apiVersion ?? '?',
-        hasEnable: typeof c?.enable === 'function',
+        hasConnect: typeof c?.connect === 'function',
       }))
     : [];
 
@@ -217,11 +240,13 @@ export function midnightInjectionReport(): MidnightInjectionReport {
 }
 
 export interface ConnectedMidnightWallet {
-  api: DAppConnectorWalletAPI;
+  api: ConnectedAPI;
   /** The wallet brand connected (lace / 1am / generic). */
   walletId: string;
   walletLabel: string;
+  /** The unshielded (Bech32m) address — matches the wallet's NIGHT balance. */
   address: string;
+  /** Shielded coin public key, when the wallet exposes it. */
   coinPublicKey: string;
   /** Total unshielded NIGHT, as a decimal string for display. */
   unshieldedNight: string;
@@ -240,7 +265,7 @@ function toDecimal(total: bigint, decimals = NIGHT_DECIMALS): string {
 }
 
 /** Sums the wallet's reported balances — the unshielded NIGHT the wallet holds. */
-export function sumUnshieldedNight(balances: DAppConnectorWalletState['balances']): string {
+export function sumUnshieldedNight(balances: MidnightBalances): string {
   let total = 0n;
   for (const value of Object.values(balances ?? {})) {
     try {
@@ -253,26 +278,41 @@ export function sumUnshieldedNight(balances: DAppConnectorWalletState['balances'
 }
 
 /**
- * Connects a Midnight wallet and reads its state. Pass a wallet id (`lace`,
- * `1am`, …) to target a specific brand; omit to use the first detected. Throws
- * a user-facing message when no wallet is installed or the user rejects — both
- * are meaningful, actionable outcomes, not errors to swallow.
+ * Connects a Midnight wallet and reads its state via the v4 connector API. Pass
+ * a wallet id (`lace`, `1am`, …) to target a specific brand; omit to use the
+ * first detected. `connect()` prompts the user — a rejection throws, which is a
+ * meaningful, actionable outcome, not an error to swallow.
+ *
+ * `networkId` is the network the dApp asks the wallet for (default Preview,
+ * env-tunable via NEXT_PUBLIC_MIDNIGHT_NETWORK) — the wallet itself must also be
+ * set to that network.
  */
-export async function connectMidnightWallet(preferredId?: string): Promise<ConnectedMidnightWallet> {
+export async function connectMidnightWallet(
+  preferredId?: string,
+  networkId: string = midnightConfig().network,
+): Promise<ConnectedMidnightWallet> {
   const wallet = getMidnightConnector(preferredId);
   if (!wallet)
     throw new Error(
       'No Midnight wallet found. Install Lace (Midnight) or 1AM and switch it to the Preview network.',
     );
 
-  const api = await wallet.connector.enable();
-  const state = await api.state();
+  const api = await wallet.connector.connect(networkId);
+
+  // Address + balance are separate calls in v4. The unshielded pair is what the
+  // mint uses (NIGHT → DUST fees); the shielded key is best-effort for display.
+  const [{ unshieldedAddress }, balances, shielded] = await Promise.all([
+    api.getUnshieldedAddress(),
+    api.getUnshieldedBalances(),
+    api.getShieldedAddresses?.().catch(() => undefined) ?? Promise.resolve(undefined),
+  ]);
+
   return {
     api,
     walletId: wallet.id,
     walletLabel: wallet.label,
-    address: state.address,
-    coinPublicKey: state.coinPublicKey,
-    unshieldedNight: sumUnshieldedNight(state.balances),
+    address: unshieldedAddress,
+    coinPublicKey: shielded?.shieldedCoinPublicKey ?? '',
+    unshieldedNight: sumUnshieldedNight(balances),
   };
 }

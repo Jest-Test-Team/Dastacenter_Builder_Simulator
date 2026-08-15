@@ -13,13 +13,16 @@ import {
 } from '@/lib/midnight/wallet';
 import { isMidnightMintConfigured, midnightConfig } from '@/lib/midnight/config';
 
-/** Minimal fake connector matching the DApp Connector API shape we read. */
-function fakeConnector(name: string) {
+/** Minimal fake connector matching the v4 DApp Connector API shape we read. */
+function fakeConnector(name: string, rdns = '') {
   return {
     apiVersion: '4.0.0',
     name,
-    enable: async () => ({ state: async () => ({ address: '', coinPublicKey: '', balances: {} }) }),
-    isEnabled: async () => false,
+    rdns,
+    connect: async () => ({
+      getUnshieldedAddress: async () => ({ unshieldedAddress: '' }),
+      getUnshieldedBalances: async () => ({}),
+    }),
   };
 }
 
@@ -37,6 +40,25 @@ describe('listMidnightWallets', () => {
     const wallets = listMidnightWallets();
     expect(wallets.map((w) => w.id)).toEqual(['lace', '1am']);
     expect(wallets.find((w) => w.id === '1am')?.accent).toBe('1am');
+  });
+
+  it('matches by rdns even when the name/key are unfamiliar', () => {
+    setInjected({ 'uuid-1': fakeConnector('some-brand', 'com.midnight.1am') });
+    const [wallet] = listMidnightWallets();
+    expect(wallet?.id).toBe('1am');
+  });
+
+  it('detects a wallet whose connect() lives on the prototype (Lace-style)', () => {
+    const proto = { connect: async () => ({}) };
+    const lace = Object.assign(Object.create(proto), {
+      name: 'lace',
+      rdns: 'io.lace.wallet',
+      apiVersion: '4.0.1',
+    });
+    (globalThis as unknown as { window?: unknown }).window = { midnight: { 'uuid-lace': lace } };
+    const [wallet] = listMidnightWallets();
+    expect(wallet?.id).toBe('lace');
+    expect(wallet?.accent).toBe('lace');
   });
 
   it('identifies a wallet by connector.name even under an unknown key', () => {
