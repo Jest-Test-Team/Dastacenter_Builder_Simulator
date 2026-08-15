@@ -11,7 +11,7 @@
 
 'use client';
 
-import { CheckCircle2, Clock, ShieldCheck, Zap, ArrowRight } from 'lucide-react';
+import { CheckCircle2, Clock, ShieldCheck, Zap, ArrowRight, Loader2 } from 'lucide-react';
 
 export interface MidnightZkStatusProps {
   walletLabel?: string | null;
@@ -19,8 +19,10 @@ export interface MidnightZkStatusProps {
   graphDigest?: string | null;
   threshold?: number;
   rulePackVersion?: string | null;
-  /** Switch the parent mint target to the EVM/Sepolia flow. */
+  /** Route the proof to the EVM/Sepolia flow now (skips the auto-route wait). */
   onMintOnSepolia?: () => void;
+  /** When true, the system is auto-routing to Sepolia — shows the live state. */
+  autoRouting?: boolean;
 }
 
 function shortDigest(digest?: string | null): string {
@@ -60,6 +62,7 @@ export function MidnightZkStatus({
   threshold = 85,
   rulePackVersion = 'v1',
   onMintOnSepolia,
+  autoRouting = false,
 }: MidnightZkStatusProps) {
   return (
     <div className="space-y-3">
@@ -116,10 +119,16 @@ export function MidnightZkStatus({
           once the toolchain update is published.
         </p>
 
+        {autoRouting && (
+          <p className="mt-3 flex items-center gap-2 rounded-md border border-amber-400/30 bg-amber-500/10 px-3 py-2 text-xs font-medium text-amber-200">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            Auto-routing the same proof to Ethereum Sepolia…
+          </p>
+        )}
         {onMintOnSepolia && (
           <button type="button" onClick={onMintOnSepolia} className="btn mt-3 w-full">
             <Zap className="h-4 w-4" />
-            Settle certificate on Ethereum Sepolia
+            {autoRouting ? 'Settle on Sepolia now' : 'Settle certificate on Ethereum Sepolia'}
             <ArrowRight className="h-4 w-4" />
           </button>
         )}

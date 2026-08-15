@@ -11,7 +11,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader2, Award, ExternalLink } from 'lucide-react';
 import { useBuildStore } from '@/lib/store/build-store';
 import { MidnightWalletBadge } from '@/components/cert/MidnightWalletBadge';
@@ -22,6 +22,8 @@ import {
   MidnightUnavailableError,
   type MidnightMintResult,
 } from '@/lib/midnight/mint';
+import { acquireThresholdProof } from '@/lib/zk/client';
+import type { Proof } from '@/lib/zk/types';
 import { useMidnightWallet } from '@/lib/midnight/store';
 
 interface ZkStatusData {
@@ -32,7 +34,11 @@ interface ZkStatusData {
   rulePackVersion?: string;
 }
 
-export function MidnightMintPanel({ onMintOnSepolia }: { onMintOnSepolia?: () => void }) {
+export function MidnightMintPanel({
+  onMintOnSepolia,
+}: {
+  onMintOnSepolia?: (proof: Proof) => void;
+}) {
   const wallet = useMidnightWallet();
   const connected = wallet.isConnected();
   const [minting, setMinting] = useState(false);
@@ -43,6 +49,15 @@ export function MidnightMintPanel({ onMintOnSepolia }: { onMintOnSepolia?: () =>
   const [error, setError] = useState<string | null>(null);
   const [fallbackActive, setFallbackActive] = useState(false);
   const [status, setStatus] = useState<ZkStatusData>({});
+  const [pendingProof, setPendingProof] = useState<Proof | null>(null);
+
+  // Show the ZK verification status for a beat so the cross-chain fallback is
+  // legible, then auto-route the same proof to Sepolia.
+  useEffect(() => {
+    if (!fallbackActive || !pendingProof || !onMintOnSepolia) return;
+    const timer = window.setTimeout(() => onMintOnSepolia(pendingProof), 2600);
+    return () => window.clearTimeout(timer);
+  }, [fallbackActive, pendingProof, onMintOnSepolia]);
 
   const say = (tone: ConsoleLine['tone'], text: string) =>
     setTrace((current) => [...current, { tone, text }]);
@@ -54,16 +69,21 @@ export function MidnightMintPanel({ onMintOnSepolia }: { onMintOnSepolia?: () =>
     setFallbackActive(false);
     setConsoleStatus('running');
     setConsoleOpen(true);
+
+    setStatus({ walletLabel: wallet.walletLabel ?? undefined, unshieldedNight: wallet.unshieldedNight ?? undefined });
+    say('ok', `${wallet.walletLabel ?? 'Wallet'} connected · unshielded NIGHT: ${wallet.unshieldedNight ?? '—'}`);
+
     try {
       const snapshot = useBuildStore.getState().exportSnapshot();
-      const result = await mintCertificateOnMidnight(snapshot, {
-        walletId: wallet.walletId ?? undefined,
+
+      // 1. Generate the REAL threshold ZK proof locally — this is the proof that
+      //    will back the certificate, whichever chain settles it.
+      const { proof } = await acquireThresholdProof(snapshot, {
         onStage: (event) => {
           switch (event.stage) {
-            case 'wallet':
-              setStatus((s) => ({ ...s, walletLabel: event.walletLabel, unshieldedNight: event.unshieldedNight }));
-              say('ok', `${event.walletLabel} connected · unshielded NIGHT: ${event.unshieldedNight}`);
-              say('info', 'Fees paid in tDUST generated from your unshielded tNIGHT.');
+            case 'graph':
+              if (event.nodeCount !== undefined)
+                say('local', `Graph fused: ${event.nodeCount} nodes · ${event.edgeCount} edges (local).`);
               break;
             case 'witness':
               setStatus((s) => ({
@@ -74,40 +94,60 @@ export function MidnightMintPanel({ onMintOnSepolia }: { onMintOnSepolia?: () =>
               }));
               say('local', 'Deriving threshold witness in-browser (design stays local)…');
               say('local', `  graphDigest = ${event.graphDigest.slice(0, 30)}…`);
-              say('ok', `Circuit datacenter-score/${event.rulePackVersion} compiled · witness derived`);
+              say('info', `Circuit: ${event.circuit} · rule pack ${event.rulePackVersion}`);
               say('info', `Claim: efficiency score (0-100) >= ${event.threshold}`);
               break;
-            case 'submitting':
-              say('info', `Submitting mintCertificate to ${event.contractAddress.slice(0, 18)}… on Midnight Preview`);
+            case 'proving':
+              say('info', 'Generating UltraHonk zero-knowledge proof…');
               break;
-            case 'minted':
-              say('ok', `Minted on Midnight · tx ${event.txId.slice(0, 26)}…`);
+            case 'proved':
+              say('ok', `Proof generated · ${event.proofBytes} bytes · ${event.publicInputCount} public inputs.`);
               break;
-            case 'unavailable':
-              // Not a failure — the ZK work succeeded; we route to Sepolia.
-              say('ok', 'ZK verification complete — engaging cross-chain fallback to Sepolia.');
+            case 'verified':
+              say('ok', 'Local verification passed — proof is self-consistent.');
+              break;
+            case 'rejected':
+              say('fail', `Assert (score >= threshold) … FAIL — ${event.message}`);
               break;
           }
         },
       });
-      say('ok', 'Certificate recorded on the Midnight ledger — commitment only, design private.');
-      setConsoleStatus('done');
-      setMinted(result);
-    } catch (err) {
-      if (err instanceof MidnightUnavailableError) {
-        // Expected until Midnight ships ledger-v9. Present as a fallback, not an
-        // error: the proof is valid and settles on Sepolia with the same logic.
+
+      // 2. Attempt Midnight settlement. Until Midnight ships ledger-v9 this
+      //    throws MidnightUnavailableError — a genuine attempt, never a fake tx.
+      try {
+        const result = await mintCertificateOnMidnight(snapshot, {
+          walletId: wallet.walletId ?? undefined,
+          onStage: (event) => {
+            if (event.stage === 'submitting')
+              say('info', `Submitting mintCertificate to ${event.contractAddress.slice(0, 18)}… on Midnight Preview`);
+            if (event.stage === 'minted') say('ok', `Minted on Midnight · tx ${event.txId.slice(0, 26)}…`);
+          },
+        });
+        say('ok', 'Certificate recorded on the Midnight ledger — commitment only, design private.');
+        setConsoleStatus('done');
+        setMinted(result);
+        return;
+      } catch (err) {
+        if (!(err instanceof MidnightUnavailableError)) throw err;
+
+        // 3. Cross-chain fallback: hand the SAME proof to the Sepolia mint. The
+        //    ZK verification already succeeded; this just changes the settlement
+        //    layer. Present as a fallback, not a red failure.
+        say('ok', 'ZK verification complete — Midnight Preview is on ledger-v9, ahead of the public toolchain.');
+        say('ok', 'Cross-chain fallback: routing the same proof to Ethereum Sepolia…');
+        setPendingProof(proof);
         setFallbackActive(true);
         setConsoleStatus('done');
         setConsoleOpen(false);
-      } else {
-        const message = err instanceof Error ? err.message : 'Midnight mint failed';
-        setTrace((current) =>
-          current.some((line) => line.tone === 'fail') ? current : [...current, { tone: 'fail', text: message }],
-        );
-        setConsoleStatus('failed');
-        setError(message);
       }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Verification failed';
+      setTrace((current) =>
+        current.some((line) => line.tone === 'fail') ? current : [...current, { tone: 'fail', text: message }],
+      );
+      setConsoleStatus('failed');
+      setError(message);
     } finally {
       setMinting(false);
     }
@@ -148,7 +188,10 @@ export function MidnightMintPanel({ onMintOnSepolia }: { onMintOnSepolia?: () =>
             graphDigest={status.graphDigest}
             threshold={status.threshold}
             rulePackVersion={status.rulePackVersion}
-            onMintOnSepolia={onMintOnSepolia}
+            autoRouting={pendingProof !== null}
+            onMintOnSepolia={
+              pendingProof && onMintOnSepolia ? () => onMintOnSepolia(pendingProof) : undefined
+            }
           />
           {trace.length > 0 && (
             <button

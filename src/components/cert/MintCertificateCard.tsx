@@ -29,6 +29,7 @@ import {
 import { isTestnetChain, SUPPORTED_CHAINS } from '@/lib/sbt/chains';
 import type { MintCertificateServerResult } from '@/lib/sbt/server';
 import { acquireThresholdProof } from '@/lib/zk/client';
+import type { Proof } from '@/lib/zk/types';
 import { ZkProvingConsole, type ConsoleLine } from '@/components/cert/ZkProvingConsole';
 import { MidnightMintPanel } from '@/components/cert/MidnightMintPanel';
 
@@ -123,8 +124,20 @@ export function MintCertificateCard({
     return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(xml)))}`;
   }
 
-  async function handleMint() {
-    if (!address || !isConnected) return;
+  /**
+   * Mint the Soulbound certificate on the selected EVM chain (default Sepolia).
+   *
+   * `preProof` is the cross-chain fallback path: when a Midnight mint hits the
+   * ledger-v9 gap, the proof it already generated is handed straight here and
+   * reused — the *same* zero-knowledge proof settles on Sepolia, no re-proving.
+   */
+  async function handleMint(preProof?: Proof) {
+    if (!address || !isConnected) {
+      // Auto-route landed here without an EVM recipient — surface the ask.
+      setTarget('evm');
+      setError('Connect an EVM wallet (MetaMask / Coinbase) to receive the Sepolia certificate.');
+      return;
+    }
     const svgDataUri = buildSvgDataUri();
     if (!svgDataUri) {
       setError('Certificate image not ready yet, please retry.');
@@ -138,9 +151,17 @@ export function MintCertificateCard({
     setConsoleOpen(true);
     try {
       const snapshot = useBuildStore.getState().exportSnapshot();
+      let proof = preProof;
+      if (proof) {
+        // Cross-chain fallback: reuse the proof generated for Midnight verbatim.
+        say('ok', 'Cross-chain fallback: reusing the zero-knowledge proof generated for Midnight.');
+        say('ok', `  commitment  ${proof.statement.commitment.slice(0, 30)}…`);
+        say('info', `  threshold   >= ${proof.statement.threshold} · rule pack ${proof.statement.rulePackVersion}`);
+        say('info', 'Same proof, new settlement layer — routing to Ethereum Sepolia.');
+      } else {
       // The graph digest is computed locally and only the threshold witness
       // leaves the browser; the mint is gated on the resulting proof.
-      const { proof } = await acquireThresholdProof(snapshot, {
+      proof = (await acquireThresholdProof(snapshot, {
         onStage: (event) => {
           switch (event.stage) {
             case 'graph':
@@ -200,7 +221,8 @@ export function MintCertificateCard({
               break;
           }
         },
-      });
+      })).proof;
+      }
 
       say('info', 'Verifying proof server-side, then relaying the mint…');
       const res = await fetch('/api/sbt/mint', {
@@ -296,7 +318,13 @@ export function MintCertificateCard({
 
       {target === 'midnight' ? (
         <div className="mt-4">
-          <MidnightMintPanel onMintOnSepolia={() => setTarget('evm')} />
+          <MidnightMintPanel
+            onMintOnSepolia={(proof) => {
+              setSelectedChainId(DEFAULT_CHAIN_ID);
+              setTarget('evm');
+              void handleMint(proof);
+            }}
+          />
         </div>
       ) : minted ? (
         <div className="mt-4 rounded-lg border border-success/30 bg-success/10 p-4 text-sm">
