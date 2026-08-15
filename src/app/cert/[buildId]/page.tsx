@@ -18,6 +18,7 @@ import { useBuildStore } from '@/lib/store/build-store';
 import { score, type RatingReport } from '@/lib/scoring';
 import { Award, Download, ExternalLink, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
 import { CertificateSvg } from '@/components/cert/CertificateSvg';
+import { ZkExplainer } from '@/components/cert/ZkExplainer';
 import { useT } from '@/lib/i18n/client';
 import { WalletPicker } from '@/components/wallet/WalletPicker';
 import {
@@ -327,6 +328,10 @@ export default function CertPage() {
               </div>
             )}
           </section>
+        </div>
+
+        <div className="mt-8">
+          <ZkExplainer />
         </div>
       </main>
     </div>

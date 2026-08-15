@@ -30,6 +30,7 @@ import { useT } from '@/lib/i18n/client';
 import { WalletPicker } from '@/components/wallet/WalletPicker';
 import { MintCertificateCard } from '@/components/cert/MintCertificateCard';
 import { CertificateSvg } from '@/components/cert/CertificateSvg';
+import { ZkExplainer } from '@/components/cert/ZkExplainer';
 
 export default function ResultPage() {
   const params = useParams<{ buildId: string }>();
@@ -119,6 +120,10 @@ export default function ResultPage() {
             )}
           </section>
         )}
+
+        <section className="mt-8">
+          <ZkExplainer />
+        </section>
 
         <section className="mt-10">
           <h2 className="flex items-center gap-2 text-xl font-semibold">

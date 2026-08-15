@@ -7,20 +7,20 @@
  * Midnight ledger, paying fees in tDUST generated from the wallet's unshielded
  * tNIGHT.
  *
- * The wallet connection, balance read, witness derivation and the compiled
- * `mintCertificate` circuit (circuits/build) are all real. The on-chain mint
- * itself runs through the headless CLI (`scripts/midnight-cli.mjs`, wrapped by
- * `./scripts/midnight-setup.sh deploy|mint`): the current proof server
- * (7.0.0-rc.1) exposes the `/check` + `/prove` endpoints midnight-js 4.1.1
- * needs — the old "no released combination" block (docs/MIDNIGHT_ZK.md, tested
- * against server 4.0.0) no longer holds — and the CLI deploys the contract and
- * calls `mintCertificate` with a funded Preview wallet seed.
+ * The wallet connection, balance read, zero-knowledge witness derivation and the
+ * compiled Compact circuit (circuits/build) are all real. The on-chain mint is
+ * gated by an UPSTREAM protocol-generation gap, verified 2026-08-14: the live
+ * Preview network + proof server run ledger-v9, but the newest published Compact
+ * compiler (0.31.1) and @midnight-ntwrk/wallet only produce ledger-v8 artifacts,
+ * and a v8 circuit cannot be minted on a v9 network. The aligned SDK exists
+ * (midnight-js 5.0.0-beta = ledger-v9) but there is no v9 compiler or wallet yet.
+ * See docs/MIDNIGHT_ZK.md.
  *
- * The browser path deliberately does NOT bundle the heavy midnight-js SDK (it
- * would jeopardise the Cloudflare Worker build), so from the browser this
- * connects the wallet, shows the unshielded-NIGHT balance and derives the
- * witness, then hands off to the CLI for the on-chain submission. It never
- * fabricates a transaction.
+ * So this connects Lace, shows the unshielded-NIGHT balance and derives the
+ * witness locally, then reports that gap precisely. It never fabricates a
+ * transaction. It activates unchanged the moment Midnight publishes a ledger-v9
+ * Compact compiler + wallet. The Sepolia mint issues a real certificate today,
+ * backed by the same threshold ZK proof.
  */
 
 'use client';
@@ -51,14 +51,16 @@ export interface MidnightMintOptions {
   onStage?: (event: MidnightMintStage) => void;
 }
 
-/** Precise, honest description of how the on-chain mint is driven. */
-const CLI_HANDOFF =
-  'On-chain Midnight mint runs through the CLI (the browser deliberately does not ' +
-  'bundle the heavy midnight-js SDK). Start a proof server (./scripts/midnight-setup.sh ' +
-  'serve), deploy the contract (./scripts/midnight-setup.sh deploy) and mint ' +
-  '(./scripts/midnight-setup.sh mint) with a funded Preview wallet seed — see ' +
-  'docs/MIDNIGHT_ZK.md. Your wallet, unshielded-NIGHT balance, the local witness and ' +
-  'the compiled mintCertificate circuit are all ready. No transaction is fabricated here.';
+/** Precise, honest description of the current upstream generation gap. */
+const GEN_GAP =
+  'Midnight on-chain mint is gated upstream. Live Preview runs ledger-v9, but the ' +
+  'newest public Compact compiler (0.31.1) and wallet only produce ledger-v8 — a v8 ' +
+  'circuit cannot be minted on a v9 network, and no v9 compiler/wallet is published ' +
+  'yet (see docs/MIDNIGHT_ZK.md). Your Lace wallet, unshielded-NIGHT balance and the ' +
+  'zero-knowledge witness above are all real, and the Compact circuit is compiled and ' +
+  'ready — this mint activates unchanged once Midnight ships the ledger-v9 toolchain. ' +
+  'No transaction is fabricated. Meanwhile the Sepolia mint issues a real certificate ' +
+  'backed by the same threshold ZK proof.';
 
 export async function mintCertificateOnMidnight(
   state: BuildState,
@@ -81,11 +83,11 @@ export async function mintCertificateOnMidnight(
     rulePackVersion,
   });
 
-  // 3. On-chain submission runs through the CLI (see the module comment). The
-  //    browser hands off rather than bundling the SDK or faking a transaction.
+  // 3. On-chain mint is gated by the ledger-v8 vs v9 gap (see the module
+  //    comment). Report it precisely rather than bundle the SDK or fake a tx.
   void config;
-  report?.({ stage: 'unavailable', reason: CLI_HANDOFF });
-  throw new MidnightUnavailableError(CLI_HANDOFF);
+  report?.({ stage: 'unavailable', reason: GEN_GAP });
+  throw new MidnightUnavailableError(GEN_GAP);
 }
 
 /** Thrown when the Midnight mint cannot proceed — carries the precise reason. */
