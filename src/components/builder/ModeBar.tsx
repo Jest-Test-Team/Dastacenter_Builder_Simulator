@@ -9,6 +9,7 @@ import { useBuildStore, useBuildHistory } from '@/lib/store/build-store';
 import { downloadBuildJson } from '@/lib/export/build-export';
 import { importBuildFromFile, createFileInput } from '@/lib/export/build-import';
 import { WalletPicker } from '@/components/wallet/WalletPicker';
+import { useMidnightWallet } from '@/lib/midnight/store';
 import { useRouter } from 'next/navigation';
 import { useAccount } from 'wagmi';
 import {
@@ -37,25 +38,31 @@ export function ModeBar() {
   const buildId = useBuildStore((s) => s.buildId);
   const { pastCount, futureCount, undo, redo } = useBuildHistory();
   const { address, isConnected, chain } = useAccount();
+  // Import/export tie a build to a wallet, but EITHER chain qualifies — a user
+  // who connected only Midnight (1AM/Lace) must still be able to import.
+  const midnight = useMidnightWallet();
+  const midnightConnected = midnight.isConnected();
+  const anyWallet = isConnected || midnightConnected;
+  const walletAddress = address ?? midnight.address ?? undefined;
   const t = useT();
   const [importing, setImporting] = useState(false);
 
   function handleDownloadWorks() {
-    if (!address) return;
+    if (!walletAddress) return;
     downloadBuildJson({
       snapshot: useBuildStore.getState().exportSnapshot(),
-      walletAddress: address,
+      walletAddress,
       chainId: chain?.id,
-      chainName: chain?.name,
+      chainName: chain?.name ?? (midnightConnected ? 'Midnight Preview' : undefined),
     });
   }
 
   function handleImportWorks() {
-    if (!address) return;
+    if (!walletAddress) return;
     setImporting(true);
 
     const input = createFileInput(async (file) => {
-      const result = await importBuildFromFile(file, address);
+      const result = await importBuildFromFile(file, walletAddress);
 
       if (!result.success) {
         alert(`${t('builder.import.error')}: ${result.error}`);
@@ -139,8 +146,8 @@ export function ModeBar() {
 
         <button
           onClick={handleImportWorks}
-          disabled={!isConnected || importing}
-          title={!isConnected ? t('builder.import.hint') : undefined}
+          disabled={!anyWallet || importing}
+          title={!anyWallet ? t('builder.import.hint') : undefined}
           className="btn-ghost disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Upload className="h-4 w-4" />
@@ -149,8 +156,8 @@ export function ModeBar() {
 
         <button
           onClick={handleDownloadWorks}
-          disabled={!isConnected}
-          title={!isConnected ? t('builder.export.hint') : undefined}
+          disabled={!anyWallet}
+          title={!anyWallet ? t('builder.export.hint') : undefined}
           className="btn-ghost disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Download className="h-4 w-4" />

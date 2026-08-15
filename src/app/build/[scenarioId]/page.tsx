@@ -107,7 +107,7 @@ export default function BuildPage() {
           </div>
           <button
             onClick={() => setPolicyOpen(true)}
-            className="absolute right-2 top-16 max-w-[calc(100vw-1rem)] btn-ghost md:right-4 md:top-20 background-bg-subtle/50"
+            className="absolute right-2 top-16 max-w-[calc(100vw-1rem)] btn-ghost border border-border bg-black/70 text-fg backdrop-blur-sm hover:bg-black/80 md:right-4 md:top-20"
             title={t('builder.policy')}
           >
             <Shield className="h-4 w-4" />

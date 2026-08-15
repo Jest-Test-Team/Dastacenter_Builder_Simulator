@@ -46,10 +46,12 @@ export default function HomePage() {
                 <PlayCircle className="h-5 w-5" />
                 Start building
               </Link>
+              {/*
               <Link href="/demos" className="btn-ghost text-base">
                 <Box className="h-5 w-5" />
                 Demo builds
               </Link>
+              */}
               <Link href="/learn" className="btn-ghost text-base">
                 <BookOpen className="h-5 w-5" />
                 Read the curriculum
