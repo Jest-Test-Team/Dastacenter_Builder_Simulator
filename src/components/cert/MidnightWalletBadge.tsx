@@ -14,9 +14,11 @@ import { Loader2, Wallet, ShieldOff, AlertCircle, Clock, ExternalLink, RefreshCw
 import {
   connectMidnightWallet,
   listMidnightWallets,
+  midnightInjectionReport,
   KNOWN_MIDNIGHT_WALLETS,
   type ConnectedMidnightWallet,
   type DetectedMidnightWallet,
+  type MidnightInjectionReport,
 } from '@/lib/midnight/wallet';
 
 /** Per-brand icon + colour so Lace and 1AM read as distinct in the UI. */
@@ -40,6 +42,8 @@ export function MidnightWalletBadge({
   const [wallet, setWallet] = useState<ConnectedMidnightWallet | null>(null);
   const [connectingId, setConnectingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [report, setReport] = useState<MidnightInjectionReport | null>(null);
+  const [showDiag, setShowDiag] = useState(false);
 
   // Wallet extensions inject their connector into `window.midnight` *after* the
   // page loads — and 1AM injects late — so a single scan on mount usually finds
@@ -48,10 +52,7 @@ export function MidnightWalletBadge({
   const scan = useCallback(() => {
     const found = listMidnightWallets();
     setDetected(found);
-    if (process.env.NODE_ENV !== 'production' && typeof window !== 'undefined') {
-      // eslint-disable-next-line no-console
-      console.info('[midnight] injected connectors:', Object.keys((window as unknown as { midnight?: object }).midnight ?? {}));
-    }
+    setReport(midnightInjectionReport());
     return found.length > 0;
   }, []);
 
@@ -133,6 +134,30 @@ export function MidnightWalletBadge({
           Already installed? Unlock the wallet, make sure it&apos;s on <strong>Preview</strong>, then
           Re-scan.
         </p>
+
+        {/* Self-service diagnostic — shows exactly what the browser injected, so
+            an "installed but not detected" wallet is identifiable at a glance. */}
+        <button
+          type="button"
+          onClick={() => setShowDiag((v) => !v)}
+          className="text-[10px] text-fg-muted underline underline-offset-2"
+        >
+          {showDiag ? 'Hide' : 'Show'} detection details
+        </button>
+        {showDiag && report && (
+          <pre className="mt-1 overflow-x-auto rounded border border-border bg-bg-panel p-2 text-[10px] leading-relaxed text-fg-muted">
+{`window.midnight present : ${report.hasMidnightGlobal ? 'yes' : 'NO'}
+midnight keys           : ${report.midnightKeys.length ? report.midnightKeys.join(', ') : '(none)'}
+connectors              : ${
+              report.connectors.length
+                ? report.connectors
+                    .map((c) => `${c.key} → "${c.name}" v${c.apiVersion}${c.hasEnable ? '' : ' (no enable!)'}`)
+                    .join('\n                          ')
+                : '(none)'
+            }
+other suspects          : ${report.suspects.length ? report.suspects.join(', ') : '(none)'}`}
+          </pre>
+        )}
       </div>
     );
   }

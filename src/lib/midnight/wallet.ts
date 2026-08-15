@@ -156,6 +156,66 @@ export function isMidnightWalletAvailable(): boolean {
   return listMidnightWallets().length > 0;
 }
 
+/**
+ * A snapshot of what the browser has actually injected — surfaced in the UI when
+ * detection fails so a "installed but not detected" case becomes diagnosable
+ * without opening DevTools. `suspects` catches a wallet that injected under an
+ * unexpected global (e.g. a Cardano-style `window.cardano` entry) so we can see
+ * exactly where 1AM landed.
+ */
+export interface MidnightInjectionReport {
+  hasMidnightGlobal: boolean;
+  /** Keys on `window.midnight`. */
+  midnightKeys: string[];
+  /** Each injected connector's self-reported name + apiVersion. */
+  connectors: Array<{ key: string; name: string; apiVersion: string; hasEnable: boolean }>;
+  /** Other top-level window globals whose name hints at a Midnight wallet. */
+  suspects: string[];
+}
+
+export function midnightInjectionReport(): MidnightInjectionReport {
+  const empty: MidnightInjectionReport = {
+    hasMidnightGlobal: false,
+    midnightKeys: [],
+    connectors: [],
+    suspects: [],
+  };
+  if (typeof window === 'undefined') return empty;
+
+  const mid = (window as MidnightWindow).midnight;
+  const connectors = mid
+    ? Object.entries(mid).map(([key, c]) => ({
+        key,
+        name: c?.name ?? '(no name)',
+        apiVersion: c?.apiVersion ?? '?',
+        hasEnable: typeof c?.enable === 'function',
+      }))
+    : [];
+
+  const suspects: string[] = [];
+  try {
+    for (const key of Object.keys(window as unknown as Record<string, unknown>)) {
+      if (key !== 'midnight' && /midnight|1am|lace/i.test(key)) suspects.push(key);
+    }
+    // 1AM is a Cardano partner-chain wallet; it may also expose a CIP-30 entry.
+    const cardano = (window as unknown as { cardano?: Record<string, unknown> }).cardano;
+    if (cardano) {
+      for (const key of Object.keys(cardano)) {
+        if (/1am|midnight/i.test(key)) suspects.push(`cardano.${key}`);
+      }
+    }
+  } catch {
+    /* enumerating window can throw on locked-down globals; ignore */
+  }
+
+  return {
+    hasMidnightGlobal: Boolean(mid),
+    midnightKeys: mid ? Object.keys(mid) : [],
+    connectors,
+    suspects,
+  };
+}
+
 export interface ConnectedMidnightWallet {
   api: DAppConnectorWalletAPI;
   /** The wallet brand connected (lace / 1am / generic). */
