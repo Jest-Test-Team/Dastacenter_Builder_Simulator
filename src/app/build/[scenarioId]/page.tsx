@@ -107,13 +107,13 @@ export default function BuildPage() {
           </div>
           <button
             onClick={() => setPolicyOpen(true)}
-            className="absolute right-2 top-16 max-w-[calc(100vw-1rem)] btn-ghost md:right-4 md:top-20"
+            className="absolute right-2 top-16 max-w-[calc(100vw-1rem)] btn-ghost md:right-4 md:top-20 background-bg-subtle/50"
             title={t('builder.policy')}
           >
             <Shield className="h-4 w-4" />
             {t('builder.policy')}
           </button>
-          <button
+          <button 
             onClick={() => setNetworkOpen(true)}
             className="absolute right-2 top-40 z-20 max-w-[calc(100vw-1rem)] btn md:right-4 md:top-44"
             title="Open enterprise SDN workspace"

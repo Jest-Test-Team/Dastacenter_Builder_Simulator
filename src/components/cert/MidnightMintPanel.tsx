@@ -15,10 +15,11 @@ import { useBuildStore } from '@/lib/store/build-store';
 import { MidnightWalletBadge } from '@/components/cert/MidnightWalletBadge';
 import { ZkProvingConsole, type ConsoleLine } from '@/components/cert/ZkProvingConsole';
 import { mintCertificateOnMidnight, type MidnightMintResult } from '@/lib/midnight/mint';
-import type { ConnectedMidnightWallet } from '@/lib/midnight/wallet';
+import { useMidnightWallet } from '@/lib/midnight/store';
 
 export function MidnightMintPanel() {
-  const [wallet, setWallet] = useState<ConnectedMidnightWallet | null>(null);
+  const wallet = useMidnightWallet();
+  const connected = wallet.isConnected();
   const [minting, setMinting] = useState(false);
   const [minted, setMinted] = useState<MidnightMintResult | null>(null);
   const [trace, setTrace] = useState<ConsoleLine[]>([]);
@@ -38,7 +39,7 @@ export function MidnightMintPanel() {
     try {
       const snapshot = useBuildStore.getState().exportSnapshot();
       const result = await mintCertificateOnMidnight(snapshot, {
-        walletId: wallet?.walletId,
+        walletId: wallet.walletId ?? undefined,
         onStage: (event) => {
           switch (event.stage) {
             case 'wallet':
@@ -104,7 +105,7 @@ export function MidnightMintPanel() {
         </p>
       </div>
 
-      <MidnightWalletBadge onConnected={setWallet} />
+      <MidnightWalletBadge />
 
       {minted ? (
         <div className="rounded-lg border border-success/30 bg-success/10 p-4 text-sm">
@@ -118,7 +119,7 @@ export function MidnightMintPanel() {
           {error && <p className="text-xs text-danger">{error}</p>}
           <button
             onClick={() => void handleMint()}
-            disabled={minting || !wallet}
+            disabled={minting || !connected}
             className="btn w-full"
           >
             {minting ? (
