@@ -18,6 +18,10 @@ layout and the asset inventory are never published. Noir + Barretenberg UltraHon
 **Current state:** [`docs/STATUS.md`](docs/STATUS.md) is the authoritative tracker.
 
 ---
+
+# demo video
+https://youtu.be/8SlsRhk8GK8?si=2cnU8mjoTey4Llgs
+
 ##  demo img 
 
 
