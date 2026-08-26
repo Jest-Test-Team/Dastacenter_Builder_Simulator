@@ -10,6 +10,7 @@
 import type { BuildState } from '@/lib/blocks';
 import { CIRCUIT_ID, DEFAULT_THRESHOLD, type Proof } from './types';
 import { witnessFromBuild } from './witness';
+import { recordProofProduced } from '@/lib/content/capstone';
 
 /**
  * Stages of proof acquisition, in order. Reported so the UI can show what is
@@ -115,6 +116,16 @@ export async function acquireThresholdProof(
     throw new Error(message);
   }
   report?.({ stage: 'verified', ok: true, elapsedMs: Date.now() - verifyStart });
+
+  // The curriculum's capstone is assessed by doing this, not by a quiz, and
+  // this is the only point in the app that knows a real proof was produced and
+  // locally verified. The recorder swallows its own failures — a progress note
+  // must never be able to spoil a proof that succeeded.
+  void recordProofProduced({
+    at: Date.now(),
+    backend: 'Noir + Barretenberg UltraHonk (WASM)',
+    threshold,
+  });
 
   return {
     proof,

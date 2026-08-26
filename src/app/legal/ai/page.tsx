@@ -11,7 +11,7 @@ export default function AiPolicyPage() {
       </header>
       <main id="main" tabIndex={-1} className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <h1 className="text-3xl font-bold">AI Use Policy</h1>
-        <p className="mt-1 text-xs text-fg-muted">Last updated: 2026-01-15.</p>
+        <p className="mt-1 text-xs text-fg-muted">Last updated: 2026-08-26.</p>
 
         <section className="mt-6 space-y-4 text-sm text-fg-muted">
           <p>
@@ -28,11 +28,20 @@ export default function AiPolicyPage() {
             re-running the same engine on the same snapshot.
           </p>
 
-          <h2 className="text-base font-semibold text-fg">Where AI may appear</h2>
+          <h2 className="text-base font-semibold text-fg">Where AI appears today</h2>
           <ul className="list-disc space-y-1 pl-6">
-            <li><strong>Optional "AI co-designer" (planned v2.0):</strong> a natural-language interface that suggests a starting build. It uses a third-party LLM (e.g. OpenAI) and the suggestions are advisory; the scoring engine still has the final word.</li>
-            <li><strong>Support chatbot (planned):</strong> when enabled, will be clearly labeled as AI. Will not have access to wallet data.</li>
+            <li><strong>Compact tutor (live):</strong> a question box on the privacy-track curriculum pages. Its entire context is circuit source that is already public in our repository, plus the lesson you are reading. No build state, no score, no wallet data is sent. Answers name the model that produced them.</li>
+            <li><strong>AI co-designer (planned):</strong> a natural-language interface that suggests a starting build. Its suggestions will be advisory; the scoring engine still has the final word, and every field sent to the model will be listed and individually toggleable before it is sent.</li>
           </ul>
+
+          <h2 className="text-base font-semibold text-fg">Which model, and where it runs</h2>
+          <p>
+            AI features run on <strong>Cloudflare Workers AI</strong>, on the
+            same infrastructure that already serves this site. We deliberately
+            do not use a third-party model API: that would add a data processor
+            to a product whose entire argument is about limiting disclosure.
+            No prompt is used to train a model.
+          </p>
 
           <h2 className="text-base font-semibold text-fg">Where AI is never used</h2>
           <ul className="list-disc space-y-1 pl-6">
@@ -42,13 +51,21 @@ export default function AiPolicyPage() {
             <li>Wallet authentication — never.</li>
           </ul>
 
-          <h2 className="text-base font-semibold text-fg">Data sent to AI providers</h2>
+          <h2 className="text-base font-semibold text-fg">What is sent</h2>
           <p>
-            If you use the AI co-designer, the natural-language prompt you
-            type and the build state you are currently editing are sent to
-            our LLM provider. We do not send your wallet address, your
-            browser fingerprint, or any analytics data. We never use your
-            prompts to train a model.
+            The Compact tutor sends only the question you type and an
+            identifier for the lesson you are on. It does not send your build,
+            your score, your wallet address, your browser fingerprint, or any
+            analytics data.
+          </p>
+          <p>
+            When the AI co-designer ships it will need to see something about
+            your design to be useful. It will never receive the raw build.
+            It will receive a declared projection &mdash; axis scores, failing
+            rule identifiers, block counts by category &mdash; shown to you
+            field by field, each one toggleable, before anything is sent. Grid
+            coordinates and the knowledge-graph digest are never sent under any
+            setting.
           </p>
 
           <h2 className="text-base font-semibold text-fg">Transparency</h2>
@@ -60,8 +77,8 @@ export default function AiPolicyPage() {
 
           <h2 className="text-base font-semibold text-fg">Right to opt out</h2>
           <p>
-            You can disable the AI co-designer in Settings → AI. The
-            simulator works fully without it.
+            Every AI feature is optional and none is required to build, score,
+            prove or mint. The simulator works fully without it.
           </p>
         </section>
       </main>

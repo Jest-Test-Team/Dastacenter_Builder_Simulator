@@ -17,10 +17,11 @@ import { Hotbar } from '@/components/builder/Hotbar';
 import { PlacementToast } from '@/components/builder/PlacementToast';
 import { ModeBar } from '@/components/builder/ModeBar';
 import { PolicyPanel } from '@/components/policy/PolicyPanel';
+import { CopilotPanel } from '@/components/builder/CopilotPanel';
 import { SecurityFrameworkPanel } from '@/components/builder/SecurityFrameworkPanel';
 import { KeyboardCheatsheet } from '@/components/a11y/KeyboardCheatsheet';
 import { decodeShareToken } from '@/lib/persist/share';
-import { GitBranch, Network, Shield, Target, X } from 'lucide-react';
+import { GitBranch, Network, Shield, Sparkles, Target, X } from 'lucide-react';
 import { getScenario, scenarioInventory, SCENARIOS } from '@/lib/scenarios';
 import { getAllBlocks } from '@/lib/blocks/registry';
 import { useT } from '@/lib/i18n/client';
@@ -46,6 +47,7 @@ export default function BuildPage() {
   const [mobilePanel, setMobilePanel] = useState<'blocks' | 'security' | null>(null);
   const [networkOpen, setNetworkOpen] = useState(false);
   const [graphOpen, setGraphOpen] = useState(false);
+  const [copilotOpen, setCopilotOpen] = useState(false);
   const scenario = (getScenario(scenarioId) ?? SCENARIOS[0])!;
   const buildId = search?.get('buildId') ?? null;
   const demoId = search?.get('demo') ?? null;
@@ -123,6 +125,15 @@ export default function BuildPage() {
             Network
           </button>
           <button
+            onClick={() => setCopilotOpen(true)}
+            className="absolute right-2 top-64 z-20 max-w-[calc(100vw-1rem)] btn md:right-4 md:top-68"
+            title="Open the design copilot"
+            aria-label="Open design copilot"
+          >
+            <Sparkles className="h-4 w-4" />
+            Copilot
+          </button>
+          <button
             onClick={() => setGraphOpen(true)}
             className="absolute right-2 top-52 z-20 max-w-[calc(100vw-1rem)] btn md:right-4 md:top-56"
             title="Open the knowledge graph workspace"
@@ -151,6 +162,7 @@ export default function BuildPage() {
         </div>
       </div>
       <PolicyPanel open={policyOpen} onClose={() => setPolicyOpen(false)} />
+      <CopilotPanel open={copilotOpen} onClose={() => setCopilotOpen(false)} />
       <KeyboardCheatsheet />
       {showGoal && (
         <ScenarioGoalDialog scenario={scenario!} onClose={() => setShowGoal(false)} />

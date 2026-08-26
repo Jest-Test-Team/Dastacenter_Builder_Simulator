@@ -23,6 +23,12 @@
       "database_id": "1ff99801-d812-44f2-b2bd-43390a702fc9"
     }
   ],
+  // Workers AI powers the Compact tutor in /learn. Grounded Q&A over source
+  // excerpts that are already public in this repo — no build data is sent, and
+  // there is deliberately no third-party model vendor. See src/lib/ai/.
+  "ai": {
+    "binding": "AI"
+  },
   "observability": {
     "enabled": true
   },
