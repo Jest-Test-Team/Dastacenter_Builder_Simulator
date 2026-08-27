@@ -17,11 +17,13 @@
 import { useEffect, useState } from 'react';
 import { ExternalLink, X } from 'lucide-react';
 import type { AgentEvent } from '@/lib/agent/types';
+import { useT } from '@/lib/i18n/client';
 
 type Settled = Extract<AgentEvent, { stage: 'settled' }>;
 
 export function DividendToast({ settled }: { settled: Settled | null }) {
   const [dismissed, setDismissed] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     if (settled) setDismissed(false);
@@ -38,17 +40,18 @@ export function DividendToast({ settled }: { settled: Settled | null }) {
       <button
         onClick={() => setDismissed(true)}
         className="absolute right-2 top-2 icon-btn"
-        aria-label="Dismiss"
+        aria-label={t('toast.dismiss')}
       >
         <X className="h-3.5 w-3.5" />
       </button>
 
       <p className="pr-6 text-sm font-semibold">
-        💰 Received {settled.amount.toLocaleString()} KSN Planetary Dividends from AI Agent
+        {t('toast.dividend.title', { amount: settled.amount.toLocaleString() })}
       </p>
       <p className="mt-1 text-xs text-fg-muted">
-        Disbursed autonomously to {settled.to.slice(0, 6)}…{settled.to.slice(-4)} after the agent
-        verified the credential — without ever seeing the design behind it.
+        {t('toast.dividend.detail', {
+          address: `${settled.to.slice(0, 6)}…${settled.to.slice(-4)}`,
+        })}
       </p>
       {/* A chain with no block explorer (a local node) still shows the hash —
           it just does not pretend there is somewhere to click through to. */}

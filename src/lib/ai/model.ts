@@ -13,8 +13,20 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { AiError } from './types';
 
-/** Small, fast, and adequate for grounded Q&A over excerpts we supply. */
-export const AI_MODEL = '@cf/meta/llama-3.1-8b-instruct';
+/**
+ * The model behind every AI skill.
+ *
+ * Workers AI retires models on its own schedule — `@cf/meta/llama-3.1-8b-instruct`
+ * was deprecated on 2026-05-30 and now returns error 5028 rather than an answer,
+ * which surfaced only in production because no local test can reach the binding.
+ * If the assistant starts erroring with a "was deprecated" message, check
+ * `npx wrangler ai models` and update this line.
+ *
+ * 70B fp8-fast rather than an 8B: the tutor answers from supplied source and the
+ * designer must emit parseable JSON, and both degrade badly on a small model.
+ * "fast" is Cloudflare's own latency-optimized build, so the trade is mild.
+ */
+export const AI_MODEL = '@cf/meta/llama-3.3-70b-instruct-fp8-fast';
 
 export interface ChatMessage {
   role: 'system' | 'user';

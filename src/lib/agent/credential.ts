@@ -27,7 +27,7 @@
 
 import { CIRCUIT_ID, DEFAULT_THRESHOLD } from '@/lib/zk';
 import { levelOf, type CertificateAttribute } from './rate-card';
-import type { CredentialCheck } from './types';
+import type { CredentialCheck, CredentialCheckId } from './types';
 
 /**
  * The rule packs this agent is willing to settle against.
@@ -92,12 +92,13 @@ export function verifyCredential(
   const attributes = credential.metadata?.attributes;
   const level = levelOf(attributes);
 
-  const add = (name: string, ok: boolean, detail: string) => {
-    checks.push({ name, ok, detail });
+  const add = (id: CredentialCheckId, name: string, ok: boolean, detail: string) => {
+    checks.push({ id, name, ok, detail });
     return ok;
   };
 
   add(
+    'ownership',
     'Ownership',
     credential.owner.toLowerCase() === claimant.toLowerCase(),
     `Token #${credential.tokenId} is held by ${credential.owner}`,
@@ -105,6 +106,7 @@ export function verifyCredential(
 
   const metadataHash = attribute(attributes, 'Blueprint Hash');
   add(
+    'binding',
     'Metadata binding',
     Boolean(metadataHash) &&
       metadataHash!.toLowerCase() === credential.onChainBlueprintHash.toLowerCase(),
@@ -117,6 +119,7 @@ export function verifyCredential(
   // would mean the money is the only thing in the loop that is real.
   const backend = attribute(attributes, 'Proof Backend');
   add(
+    'backing',
     'Cryptographic backing',
     backend !== undefined && backend !== 'mock',
     backend === undefined
@@ -128,6 +131,7 @@ export function verifyCredential(
 
   const circuit = attribute(attributes, 'Proof Circuit');
   add(
+    'circuit',
     'Circuit',
     circuit === CIRCUIT_ID,
     circuit ? `Proven under ${circuit}` : 'No circuit recorded',
@@ -135,6 +139,7 @@ export function verifyCredential(
 
   const rulePack = attribute(attributes, 'Rule Pack');
   add(
+    'rulePack',
     'Rule pack',
     Boolean(rulePack) && RECOGNISED_RULE_PACKS.some((pattern) => pattern.test(rulePack!)),
     rulePack ? `Judged under rule pack ${rulePack}` : 'No rule pack recorded',
@@ -142,6 +147,7 @@ export function verifyCredential(
 
   const threshold = thresholdFrom(attribute(attributes, 'Score'));
   add(
+    'threshold',
     'Threshold cleared',
     threshold !== null && threshold >= DEFAULT_THRESHOLD,
     threshold === null
@@ -156,6 +162,7 @@ export function verifyCredential(
   );
   const exactScore = threshold === null && attribute(attributes, 'Score') !== undefined;
   add(
+    'disclosure',
     'Design not disclosed',
     leaked.length === 0 && !exactScore && !/"graphDigest"/i.test(published),
     leaked.length > 0

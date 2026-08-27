@@ -46,7 +46,7 @@
     // the treasury is unconfigured — it never reports a payment it did not make.
     // The agent's signing key is a SECRET, not a var:
     //   wrangler secret put KSN_AGENT_PRIVATE_KEY
-    "NEXT_PUBLIC_KSN_TOKEN_ADDRESS_SEPOLIA": "",
+    "NEXT_PUBLIC_KSN_TOKEN_ADDRESS_SEPOLIA": "0x391A5EC5469E587eDFB6fa167e699A574C6E96d4",
 
     // Accepts MockProver in a deployed environment. Without it getProver()
     // refuses to run in production and /api/zk/prove answers 503, which breaks

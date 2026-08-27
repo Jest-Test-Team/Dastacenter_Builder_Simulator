@@ -62,6 +62,23 @@ pay and names the reason.
 | `src/components/agent/AgentTerminal.tsx` | The terminal |
 | `src/components/agent/DividendToast.tsx` | The receipt, which only a `settled` event can trigger |
 
+## Live deployment
+
+| | |
+|---|---|
+| **KSN token (Sepolia)** | `0x391A5EC5469E587eDFB6fa167e699A574C6E96d4` |
+| **Agent treasury** | `0xFbf9Da27b20D77038F4D249bfD209a277F6161E4` |
+| **First settlement** | [`0x0ddc5059a0659892…`](https://sepolia.etherscan.io/tx/0x0ddc5059a06598929480369f70f0b8bb54350802a01f783f563dd5ee159b1085) — 1,500 KSN, block 11576137 |
+
+The token has no owner, no mint function and no pause: the entire supply was
+minted once, at construction, to the agent treasury. Verified on-chain —
+`owner()` reverts because the function does not exist.
+
+The agent wallet is **not** the certificate issuer (`0x556C7223…`), so the party
+paying the dividend is independent of the party that minted the credential it is
+paid against. The deploy script now reads the SBT contract's `owner()` and warns
+if that stops being true.
+
 ## Deploying to Sepolia
 
 ```bash

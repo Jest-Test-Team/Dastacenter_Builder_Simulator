@@ -21,8 +21,24 @@ export type AgentStage =
   | 'settled'
   | 'blocked';
 
-/** One verification check and its real outcome. */
+/**
+ * One verification check and its real outcome.
+ *
+ * `id` is the stable handle a localized renderer keys off; `name` and `detail`
+ * stay English so a server log, a test assertion and a support ticket all read
+ * the same regardless of who was looking at the screen.
+ */
+export type CredentialCheckId =
+  | 'ownership'
+  | 'binding'
+  | 'backing'
+  | 'circuit'
+  | 'rulePack'
+  | 'threshold'
+  | 'disclosure';
+
 export interface CredentialCheck {
+  id: CredentialCheckId;
   name: string;
   ok: boolean;
   detail: string;
@@ -36,8 +52,24 @@ interface BaseEvent {
 }
 
 export type AgentEvent =
-  | (BaseEvent & { stage: 'watch'; chainId: number; attempt: number })
-  | (BaseEvent & { stage: 'found'; chainId: number; tokenId: string; certificates: number })
+  | (BaseEvent & {
+      stage: 'watch';
+      chainId: number;
+      /** Human-readable chain name, so a renderer need not re-look-it-up. */
+      chainName: string;
+      /** The address being watched. Carried structurally so a localized
+       *  renderer never has to parse it back out of `line`. */
+      holder: string;
+      attempt: number;
+      attempts: number;
+    })
+  | (BaseEvent & {
+      stage: 'found';
+      chainId: number;
+      chainName: string;
+      tokenId: string;
+      certificates: number;
+    })
   | (BaseEvent & { stage: 'read'; tokenId: string; level: string; metadataUri: string })
   | (BaseEvent & { stage: 'verify'; checks: CredentialCheck[] })
   | (BaseEvent & {
@@ -46,6 +78,12 @@ export type AgentEvent =
       amount: number;
       model: string;
       rationale: string;
+      /**
+       * True when the model was unreachable and `rationale` is the English
+       * rate-card fallback rather than generated text. The renderer swaps in a
+       * localized sentence instead of echoing English into a Chinese log.
+       */
+      rationaleFromModel: boolean;
     })
   | (BaseEvent & { stage: 'settle'; to: string; amount: number })
   | (BaseEvent & {

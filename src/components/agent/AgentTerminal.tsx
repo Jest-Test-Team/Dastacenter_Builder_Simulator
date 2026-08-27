@@ -16,6 +16,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { Terminal, Loader2, Play } from 'lucide-react';
 import type { AgentEvent } from '@/lib/agent/types';
+import { useT } from '@/lib/i18n/client';
+import { agentLine, checkName } from './lines';
 
 function toneOf(event: AgentEvent): string {
   if (event.stage === 'blocked') return 'text-warn';
@@ -37,6 +39,7 @@ export function AgentTerminal({
   const [running, setRunning] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const logRef = useRef<HTMLDivElement>(null);
+  const t = useT();
 
   const run = useCallback(async () => {
     if (!address || running) return;
@@ -51,7 +54,7 @@ export function AgentTerminal({
         body: JSON.stringify({ address, chainId }),
       });
       if (!res.ok || !res.body) {
-        setError('The settlement agent could not be reached.');
+        setError(t('agent.error.unreachable'));
         return;
       }
 
@@ -83,18 +86,18 @@ export function AgentTerminal({
         }
       }
     } catch {
-      setError('The settlement agent stream was interrupted.');
+      setError(t('agent.error.interrupted'));
     } finally {
       setRunning(false);
     }
-  }, [address, chainId, running, onEvent]);
+  }, [address, chainId, running, onEvent, t]);
 
   return (
     <section className="overflow-hidden rounded-xl border border-emerald-500/30 bg-black shadow-[0_0_40px_-16px_rgb(16_185_129/0.6)]">
       <header className="flex items-center gap-2 border-b border-emerald-500/20 bg-emerald-500/5 px-4 py-2.5">
         <Terminal className="h-4 w-4 text-emerald-400" />
         <h3 className="font-mono text-xs uppercase tracking-wider text-emerald-300">
-          KSN Settlement Agent
+          {t('agent.title')}
         </h3>
         <span className="ml-auto flex items-center gap-1.5 font-mono text-[10px] text-emerald-400/70">
           <span
@@ -102,7 +105,7 @@ export function AgentTerminal({
               running ? 'animate-pulse bg-emerald-400' : 'bg-emerald-400/40'
             }`}
           />
-          {running ? 'RUNNING' : 'IDLE'}
+          {running ? t('agent.status.running') : t('agent.status.idle')}
         </span>
       </header>
 
@@ -115,9 +118,7 @@ export function AgentTerminal({
       >
         {events.length === 0 && !running && (
           <p className="text-emerald-400/40">
-            {address
-              ? '$ awaiting run — the agent reads only public chain state.'
-              : '$ connect a wallet to give the agent an address to watch.'}
+            {address ? t('agent.idle.awaiting') : t('agent.idle.connect')}
           </p>
         )}
 
@@ -127,7 +128,7 @@ export function AgentTerminal({
               +{String(event.elapsedMs).padStart(5, ' ')}ms
             </span>
             <span className={toneOf(event)}>
-              [agent] {event.line}
+              [agent] {agentLine(event, t)}
             </span>
           </div>
         ))}
@@ -142,7 +143,7 @@ export function AgentTerminal({
                 {check.ok ? '✓' : '✗'}
               </span>
               <span className="text-emerald-400/60">
-                {check.name} — {check.detail}
+                {checkName(check, t)} — {check.detail}
               </span>
             </div>
           ))}
@@ -158,7 +159,7 @@ export function AgentTerminal({
           className="flex w-full items-center justify-center gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 font-mono text-xs text-emerald-300 transition-colors hover:bg-emerald-500/20 disabled:opacity-40"
         >
           {running ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Play className="h-3.5 w-3.5" />}
-          {running ? 'agent running…' : 'run settlement agent'}
+          {running ? t('agent.run.busy') : t('agent.run')}
         </button>
       </div>
     </section>

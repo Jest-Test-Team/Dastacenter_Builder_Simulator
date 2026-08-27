@@ -138,7 +138,10 @@ export async function* runSettlementAgent(request: SettleRequest): AsyncGenerato
     yield {
       stage: 'watch',
       chainId: request.chainId,
+      chainName: chain.name,
+      holder: claimant,
       attempt,
+      attempts: WATCH_ATTEMPTS,
       elapsedMs: since(),
       line: `Watching ${chain.name} for KSN-recognised credentials held by ${claimant.slice(0, 10)}… (pass ${attempt}/${WATCH_ATTEMPTS})`,
     };
@@ -162,6 +165,7 @@ export async function* runSettlementAgent(request: SettleRequest): AsyncGenerato
   yield {
     stage: 'found',
     chainId: request.chainId,
+    chainName: chain.name,
     tokenId: tokenId.toString(),
     certificates: tokenIds.length,
     elapsedMs: since(),
@@ -224,6 +228,7 @@ export async function* runSettlementAgent(request: SettleRequest): AsyncGenerato
   // is told the amount rather than asked for it.
   const amount = rateFor(verdict.level);
   let rationale = `Rate card: ${verdict.level} pays ${amount} KSN per epoch.`;
+  let rationaleFromModel = false;
   try {
     const messages: ChatMessage[] = [
       {
@@ -239,7 +244,11 @@ The disbursement has ALREADY been computed from a published rate card. Your job 
           .join(', ')}. The design itself was never disclosed.`,
       },
     ];
-    rationale = (await complete(messages)).split('\n')[0]?.trim() || rationale;
+    const generated = (await complete(messages)).split('\n')[0]?.trim();
+    if (generated) {
+      rationale = generated;
+      rationaleFromModel = true;
+    }
   } catch {
     // The model is the narrator, not the decider. If Workers AI is unreachable
     // the dividend is still owed, so fall through with the rate-card sentence.
@@ -251,6 +260,7 @@ The disbursement has ALREADY been computed from a published rate card. Your job 
     amount,
     model: AI_MODEL,
     rationale,
+    rationaleFromModel,
     elapsedMs: since(),
     line: `Disbursement authorised: ${amount} KSN. ${rationale}`,
   };
@@ -271,7 +281,7 @@ The disbursement has ALREADY been computed from a published rate card. Your job 
     to: claimant,
     amount,
     elapsedMs: since(),
-    line: `Signing dividend transfer of ${amount} KSN to ${claimant}…`,
+    line: `Triggering Scene 10 protocol — signing dividend transfer of ${amount} KSN to ${claimant}…`,
   };
 
   try {

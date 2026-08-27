@@ -21,6 +21,7 @@ import { Bot, Coins, Info, ExternalLink } from 'lucide-react';
 import type { CertificateInfo } from '@/lib/sbt/client';
 import { RATE_BY_LEVEL, DEFAULT_RATE } from '@/lib/agent/rate-card';
 import type { AgentEvent } from '@/lib/agent/types';
+import { useT } from '@/lib/i18n/client';
 
 type OwnedCert = CertificateInfo & { chainId: number };
 
@@ -42,6 +43,7 @@ export function PlanetaryDividend({
   settled?: Extract<AgentEvent, { stage: 'settled' }> | null;
   blocked?: Extract<AgentEvent, { stage: 'blocked' }> | null;
 }) {
+  const t = useT();
   if (certs.length === 0) return null;
 
   const lines = certs.map((cert) => {
@@ -59,14 +61,14 @@ export function PlanetaryDividend({
     <section className="panel overflow-hidden">
       <div className="flex items-center gap-2 border-b border-border px-5 py-3">
         <Bot className="h-4 w-4 text-accent" />
-        <h3 className="font-semibold">KSN dividend entitlement</h3>
+        <h3 className="font-semibold">{t('dividend.title')}</h3>
         {settled ? (
           <span className="badge ml-auto border-success/40 bg-success/10 text-[10px] uppercase tracking-wider text-success">
-            Settled
+            {t('dividend.badge.settled')}
           </span>
         ) : (
           <span className="badge ml-auto border-warn/40 bg-warn/10 text-[10px] uppercase tracking-wider text-warn">
-            Not settled
+            {t('dividend.badge.notSettled')}
           </span>
         )}
       </div>
@@ -76,9 +78,9 @@ export function PlanetaryDividend({
           <table className="w-full text-xs">
             <thead>
               <tr className="text-fg-muted">
-                <th className="pb-1 text-left font-normal">Certificate</th>
-                <th className="pb-1 text-left font-normal">Level</th>
-                <th className="pb-1 text-right font-normal">KSN / epoch</th>
+                <th className="pb-1 text-left font-normal">{t('dividend.col.certificate')}</th>
+                <th className="pb-1 text-left font-normal">{t('dividend.col.level')}</th>
+                <th className="pb-1 text-right font-normal">{t('dividend.col.rate')}</th>
               </tr>
             </thead>
             <tbody className="font-mono">
@@ -93,7 +95,7 @@ export function PlanetaryDividend({
             <tfoot>
               <tr className="border-t border-border font-mono font-semibold">
                 <td className="pt-1.5" colSpan={2}>
-                  Entitlement
+                  {t('dividend.entitlement')}
                 </td>
                 <td className="pt-1.5 text-right text-success">
                   <Coins className="mr-1 inline h-3 w-3" />
@@ -108,8 +110,7 @@ export function PlanetaryDividend({
           <p className="mt-3 flex items-start gap-1.5 text-[11px] leading-relaxed text-fg-muted">
             <Info className="mt-0.5 h-3 w-3 flex-shrink-0 text-success" />
             <span>
-              Settled on chain — {settled.amount.toLocaleString()} KSN was transferred to this
-              wallet by the settlement agent.{' '}
+              {t('dividend.status.settled', { amount: settled.amount.toLocaleString() })}{' '}
               {settled.explorerUrl.startsWith('http') ? (
                 <a
                   href={settled.explorerUrl}
@@ -128,18 +129,12 @@ export function PlanetaryDividend({
         ) : blocked ? (
           <p className="mt-3 flex items-start gap-1.5 text-[11px] leading-relaxed text-warn">
             <Info className="mt-0.5 h-3 w-3 flex-shrink-0" />
-            <span>
-              No dividend has been paid. The agent halted at {blocked.at}: {blocked.reason}
-            </span>
+            <span>{t('dividend.status.blocked', { stage: blocked.at, reason: blocked.reason })}</span>
           </p>
         ) : (
           <p className="mt-3 flex items-start gap-1.5 text-[11px] leading-relaxed text-fg-muted">
             <Info className="mt-0.5 h-3 w-3 flex-shrink-0" />
-            <span>
-              No dividend has been paid yet — this is the entitlement the rate card owes, not a
-              receipt. The certificates and their attributes above are read from chain. Run the
-              settlement agent to disburse it.
-            </span>
+            <span>{t('dividend.status.pending')}</span>
           </p>
         )}
       </div>

@@ -22,6 +22,10 @@ next-env.d.ts
 # Env
 .env
 .env.local
+# Wrangler's local secret file. It holds SESSION_SECRET and must never be
+# committed — it was, from 2026-06-09, in a public repo.
+.dev.vars
+.dev.vars.*
 .env.*.local
 
 # IDE

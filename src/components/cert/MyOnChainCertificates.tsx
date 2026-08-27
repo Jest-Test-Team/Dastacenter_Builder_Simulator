@@ -11,11 +11,11 @@
 import { Loader2, ExternalLink, ImageOff, Wallet } from 'lucide-react';
 import { WalletPicker } from '@/components/wallet/WalletPicker';
 import { getChainConfig, getExplorerUrl } from '@/lib/sbt/chains';
-import { PlanetaryDividend } from '@/components/cert/PlanetaryDividend';
-import { useOwnedCertificates, type OwnedCert } from '@/lib/sbt/use-owned-certificates';
+import { SettlementPanel } from '@/components/agent/SettlementPanel';
+import { SEPOLIA, useOwnedCertificates, type OwnedCert } from '@/lib/sbt/use-owned-certificates';
 
 export function MyOnChainCertificates() {
-  const { certs, loading, error, isConnected } = useOwnedCertificates();
+  const { certs, loading, error, isConnected, address } = useOwnedCertificates();
 
   if (!isConnected) {
     return (
@@ -65,7 +65,14 @@ export function MyOnChainCertificates() {
           <CertCard key={`${cert.chainId}-${cert.tokenId.toString()}`} cert={cert} />
         ))}
       </div>
-      <PlanetaryDividend certs={certs} />
+      {/* The entitlement panel tells the reader to "run the settlement agent",
+          so the agent has to be here too — otherwise the instruction points at
+          nothing. Same component as the dashboard, same live chain reads. */}
+      <SettlementPanel
+        certs={certs}
+        address={address}
+        chainId={certs[0]?.chainId ?? SEPOLIA}
+      />
     </>
   );
 }

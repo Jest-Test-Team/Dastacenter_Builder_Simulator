@@ -81,8 +81,33 @@ Measured on 2026-08-12, Node 20.20.2 (the version CI pins):
 | **P42** | CI recovery                | ✅ done | 5 stacked failures fixed; green since `c0db4b15` |
 | **P43** | KSN intro sequence         | ✅ done | R3F particle → shield → punch-through. `src/components/intro/` |
 | **P44** | Demo presentation path     | ✅ done | Proving console, private-data marker, dividend preview |
+| **P45** | **KSN settlement agent**    | ✅ done | Real ERC-20 dividend, SSE terminal, 7 on-chain checks. `docs/KSN_AGENT.md` |
 
 Legend: ✅ done · 🟡 partial/blocked · ⛔ removed · ⏳ pending
+
+## P45 — the settlement agent
+
+The economic loop closes: an autonomous agent watches the chain, verifies a credential and
+transfers a real ERC-20 dividend to the holder. It replaced a panel that walked four
+hard-coded strings on a 900 ms timer — the one scripted surface left in the demo, and the
+one sitting in the closing frame.
+
+Two invariants, both asserted by tests: **no `settled` event can exist without a transaction
+hash from a mined receipt**, and **the model never decides the amount** (it writes the
+rationale; the figure comes from the published rate card).
+
+Seven checks run against the published credential (`src/lib/agent/credential.ts`). The
+load-bearing one is **"Design not disclosed"**, which verifies over the actual published
+bytes that no exact score, PUE, layout or digest ever became public — turning the project's
+central claim into a checked property rather than a caption.
+
+The agent does **not** re-verify the SNARK, and says so: proof bytes are never written to
+chain and bb.js cannot run in workerd.
+
+**Live on Sepolia.** KSN token `0x391A5EC5469E587eDFB6fa167e699A574C6E96d4`, treasury
+`0xFbf9Da27b20D77038F4D249bfD209a277F6161E4`. First autonomous disbursement:
+[`0x0ddc5059a0659892…`](https://sepolia.etherscan.io/tx/0x0ddc5059a06598929480369f70f0b8bb54350802a01f783f563dd5ee159b1085) — 1,500 KSN,
+block 11576137, status `0x1`. Treasury and recipient balances reconcile exactly.
 
 ## P40 — why the Midnight path is blocked
 
