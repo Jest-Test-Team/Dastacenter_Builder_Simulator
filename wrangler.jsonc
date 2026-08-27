@@ -27,7 +27,10 @@
   // excerpts that are already public in this repo — no build data is sent, and
   // there is deliberately no third-party model vendor. See src/lib/ai/.
   "ai": {
-    "binding": "AI"
+    "binding": "AI",
+    // Workers AI has no local simulator; `next dev` proxies to the real account
+    // binding, which requires `wrangler login`.
+    "experimental_remote": true
   },
   "observability": {
     "enabled": true
@@ -37,6 +40,13 @@
     "NEXT_PUBLIC_WC_PROJECT_ID": "10ab544899577333e1c63767710a9a4b",
     "NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY": "0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB",
     "NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_SEPOLIA": "0x0e6dF52Ffc02095C8AdE30a7B2Fda67a9FFf88eB",
+
+    // The KSN dividend token, printed by `npm run deploy:ksn -- --network
+    // sepolia`. Until it is set the settlement agent halts at `settle` and says
+    // the treasury is unconfigured — it never reports a payment it did not make.
+    // The agent's signing key is a SECRET, not a var:
+    //   wrangler secret put KSN_AGENT_PRIVATE_KEY
+    "NEXT_PUBLIC_KSN_TOKEN_ADDRESS_SEPOLIA": "",
 
     // Accepts MockProver in a deployed environment. Without it getProver()
     // refuses to run in production and /api/zk/prove answers 503, which breaks

@@ -45,6 +45,14 @@ const securityHeaders = [
         'https://*.llamarpc.com https://eth.llamarpc.com https://*.binance.org',
         'https://*.arbitrum.io https://mainnet.optimism.io https://*.optimism.io https://*.base.org',
         'https://*.drpc.org https://*.publicnode.com https://*.merkle.io',
+        // A local Hardhat/Anvil node, for driving the settlement agent against a
+        // real EVM without testnet gas (`contracts/scripts/local-demo.js`).
+        // Development only — a production page has no business dialling
+        // localhost, and a missing host here shows up as a dead chain read with
+        // nothing but a CSP error in the console to explain it.
+        ...(process.env.NODE_ENV === 'development'
+          ? ['http://127.0.0.1:8545 http://localhost:8545']
+          : []),
       ].join(' '),
       // bb.js may run its prover in a worker created from a blob: URL; without
       // this it falls back to default-src 'self' and the worker is blocked.
@@ -120,5 +128,31 @@ const nextConfig = {
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 });
+
+// Opt-in: make Cloudflare bindings reachable from `next dev` via
+// getCloudflareContext(), so the AI copilot and Compact tutor can be exercised
+// locally instead of only against a deploy.
+//
+// Off by default, and deliberately so. Workers AI has no local simulator, so
+// this opens a REMOTE proxy session against the real account binding and
+// requires `wrangler login` — without it wrangler throws during config load and
+// takes the whole dev server down with it. Plain `npm run dev` must never
+// depend on being logged in to a cloud account.
+//
+//   wrangler login && DEV_REMOTE_BINDINGS=1 npm run dev
+//
+// Without it, `env.AI` is undefined locally and the assistant reports itself
+// offline rather than inventing an answer.
+if (process.env.NODE_ENV === 'development' && process.env.DEV_REMOTE_BINDINGS === '1') {
+  const { initOpenNextCloudflareForDev } = require('@opennextjs/cloudflare');
+  Promise.resolve(initOpenNextCloudflareForDev({ experimental: { remoteBindings: true } })).catch(
+    (error) => {
+      console.warn(
+        `[dev] Remote bindings unavailable (${error?.message ?? error}). ` +
+          'The AI assistant will report itself offline. Run `wrangler login` and retry.',
+      );
+    },
+  );
+}
 
 module.exports = withBundleAnalyzer(nextConfig);

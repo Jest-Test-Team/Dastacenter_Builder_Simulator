@@ -32,6 +32,9 @@
     "test:e2e:install": "playwright install chromium",
     "zk:compile": "compact compile circuits/datacenter-score.compact circuits/build",
     "test:contracts": "npm --prefix contracts test",
+    "deploy:ksn": "npm --prefix contracts run deploy:ksn:sepolia",
+    "chain:local": "npm --prefix contracts run node",
+    "chain:local:demo": "npm --prefix contracts run local:demo",
     "test:workers": "vitest run --config vitest.workers.config.ts",
     "zk:noir:compile": "cd circuits/noir && nargo compile"
   },

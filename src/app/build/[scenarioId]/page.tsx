@@ -126,12 +126,13 @@ export default function BuildPage() {
           </button>
           <button
             onClick={() => setCopilotOpen(true)}
-            className="absolute right-2 top-64 z-20 max-w-[calc(100vw-1rem)] btn md:right-4 md:top-68"
+            className="group absolute right-2 top-64 z-20 flex max-w-[calc(100vw-1rem)] items-center gap-2 rounded-md border border-primary/60 bg-gradient-to-r from-primary/30 to-accent/20 px-3 py-2 text-sm font-medium text-fg shadow-[0_0_20px_-4px_rgb(var(--primary)/0.6)] backdrop-blur-sm transition-colors hover:from-primary/50 hover:to-accent/30 md:right-4 md:top-[17rem]"
             title="Open the design copilot"
             aria-label="Open design copilot"
           >
-            <Sparkles className="h-4 w-4" />
-            Copilot
+            <Sparkles className="h-4 w-4 text-primary transition-transform group-hover:scale-110" />
+            AI Copilot
+            <span className="badge border-primary/40 text-[9px] uppercase tracking-wide">Beta</span>
           </button>
           <button
             onClick={() => setGraphOpen(true)}

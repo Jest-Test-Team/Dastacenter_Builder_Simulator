@@ -10,7 +10,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Sparkles, Send, Loader2 } from 'lucide-react';
+import { Sparkles, Send, Loader2, ShieldCheck } from 'lucide-react';
 import type { AiAnswer } from '@/lib/ai/types';
 
 const SUGGESTIONS = [
@@ -48,12 +48,21 @@ export function CompactTutor({ moduleId }: { moduleId: string }) {
   }
 
   return (
-    <section className="panel mt-10 p-5">
-      <h2 className="flex items-center gap-2 text-lg font-semibold">
+    <section className="mt-10 overflow-hidden rounded-xl border border-primary/40 bg-gradient-to-b from-primary/10 to-transparent shadow-[0_0_40px_-16px_rgb(var(--primary)/0.7)]">
+      <header className="flex flex-wrap items-center gap-2 border-b border-primary/30 bg-primary/10 px-5 py-3">
         <Sparkles className="h-5 w-5 text-primary" />
-        Ask about this circuit
-      </h2>
-      <p className="mt-1 text-sm text-fg-muted">
+        <h2 className="text-lg font-semibold">Ask the AI tutor</h2>
+        <span className="badge border-primary/40 text-[10px] uppercase tracking-wide text-primary">
+          AI
+        </span>
+        <span className="ml-auto flex items-center gap-1.5 text-[11px] text-fg-muted">
+          <ShieldCheck className="h-3.5 w-3.5 text-success" />
+          Nothing private is sent
+        </span>
+      </header>
+
+      <div className="p-5">
+      <p className="text-sm text-fg-muted">
         Answers are grounded in the circuit source quoted above — all of it already public in
         this repository. Nothing about your build, wallet or score is sent.
       </p>
@@ -116,6 +125,7 @@ export function CompactTutor({ moduleId }: { moduleId: string }) {
           </p>
         </div>
       )}
+      </div>
     </section>
   );
 }

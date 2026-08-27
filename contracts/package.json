@@ -8,7 +8,10 @@
     "deploy:polygon": "hardhat run scripts/deploy.js --network polygon",
     "deploy:sepolia": "hardhat run scripts/deploy.js --network sepolia",
     "deploy:bsc-testnet": "hardhat run scripts/deploy.js --network bsc-testnet",
-    "test": "hardhat test"
+    "test": "hardhat test",
+    "deploy:ksn:sepolia": "hardhat run scripts/deploy-ksn.js --network sepolia",
+    "local:demo": "hardhat run scripts/local-demo.js --network localhost",
+    "node": "hardhat node"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",

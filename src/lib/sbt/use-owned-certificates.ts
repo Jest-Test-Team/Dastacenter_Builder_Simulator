@@ -21,6 +21,13 @@ import {
 // Chains the SBT contract is deployed on.
 export const AMOY = 80002;
 export const SEPOLIA = 11155111;
+/**
+ * A local Hardhat node. Only ever scanned when someone has actually deployed to
+ * one and set `NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_LOCALHOST` — `getSBTContractAddress`
+ * returns null otherwise, so the target is filtered out and production never
+ * dials localhost.
+ */
+export const LOCALHOST = 31337;
 
 export type OwnedCert = CertificateInfo & { chainId: number };
 
@@ -36,6 +43,7 @@ export function useOwnedCertificates(): OwnedCertificatesState {
   const { address, isConnected } = useAccount();
   const amoyClient = usePublicClient({ chainId: AMOY });
   const sepoliaClient = usePublicClient({ chainId: SEPOLIA });
+  const localClient = usePublicClient({ chainId: LOCALHOST });
 
   const [loading, setLoading] = useState(false);
   const [certs, setCerts] = useState<OwnedCert[]>([]);
@@ -50,6 +58,7 @@ export function useOwnedCertificates(): OwnedCertificatesState {
     const targets = [
       { chainId: AMOY, client: amoyClient },
       { chainId: SEPOLIA, client: sepoliaClient },
+      { chainId: LOCALHOST, client: localClient },
     ].filter((t) => t.client && getSBTContractAddress(t.chainId));
 
     if (targets.length === 0) {
@@ -81,7 +90,7 @@ export function useOwnedCertificates(): OwnedCertificatesState {
     return () => {
       cancelled = true;
     };
-  }, [address, isConnected, amoyClient, sepoliaClient]);
+  }, [address, isConnected, amoyClient, sepoliaClient, localClient]);
 
   return { certs, loading, error, isConnected, address };
 }

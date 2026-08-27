@@ -93,6 +93,28 @@ export const SUPPORTED_CHAINS: Record<string, ChainConfig> = {
     },
   },
 
+  // Local Hardhat / Anvil node.
+  //
+  // Present so the settlement agent and the mint relay can be exercised end to
+  // end against a real EVM without spending testnet gas or waiting on a faucet
+  // — a full transfer with a real signature and a real receipt, just on a chain
+  // that lives for the length of a test. Contract addresses come from env
+  // because a fresh node redeploys them every time, so this entry is inert
+  // unless someone has actually started a node and deployed to it.
+  'localhost': {
+    chainId: 31337,
+    name: 'Local Hardhat',
+    network: 'localhost',
+    isTestnet: true,
+    rpcUrl: 'http://127.0.0.1:8545',
+    blockExplorer: '',
+    nativeCurrency: {
+      name: 'ETH',
+      symbol: 'ETH',
+      decimals: 18,
+    },
+  },
+
   // Ethereum Sepolia Testnet
   'sepolia': {
     chainId: 11155111,

@@ -7,8 +7,10 @@
  * computing a Planetary Dividend from it. It closes on a KSN × Midnight lockup.
  *
  * Everything on this page is read from chain and reuses the same components as
- * /verify — the certificates and their attributes are real; the dividend is a
- * clearly-labelled projection, never a payment.
+ * /verify. The dividend is no longer a projection: the agent on the right
+ * genuinely watches the chain, verifies the credential and transfers a real
+ * ERC-20, and the panel reports a transaction hash or says plainly why it did
+ * not pay. Nothing here claims a payment that did not happen.
  */
 
 'use client';
@@ -19,8 +21,9 @@ import { useSearchParams } from 'next/navigation';
 import { Award, ArrowLeft, CheckCircle2, ImageOff, Loader2, Wallet } from 'lucide-react';
 import { WalletPicker } from '@/components/wallet/WalletPicker';
 import { CertCard } from '@/components/cert/MyOnChainCertificates';
-import { PlanetaryDividend } from '@/components/cert/PlanetaryDividend';
-import { useOwnedCertificates, type OwnedCert } from '@/lib/sbt/use-owned-certificates';
+import { SEPOLIA, useOwnedCertificates, type OwnedCert } from '@/lib/sbt/use-owned-certificates';
+import { useAccount } from 'wagmi';
+import { SettlementPanel } from '@/components/agent/SettlementPanel';
 
 const ELITE_NAME = 'Elite Green Architect SBT';
 
@@ -63,6 +66,7 @@ function DashboardBody() {
   const search = useSearchParams();
   const justMinted = search?.get('minted') === '1';
   const { certs, loading, error, isConnected } = useOwnedCertificates();
+  const { address } = useAccount();
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-10">
@@ -140,7 +144,11 @@ function DashboardBody() {
             ))}
           </div>
           <div className="lg:sticky lg:top-6 lg:self-start">
-            <PlanetaryDividend certs={certs} />
+            <SettlementPanel
+              certs={certs}
+              address={address}
+              chainId={certs[0]?.chainId ?? SEPOLIA}
+            />
           </div>
         </div>
       )}

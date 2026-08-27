@@ -87,6 +87,17 @@ type SbtWalletClient = {
 export function getSBTContractAddress(chainId: number): Address | null {
   const config = getChainConfig(chainId);
   const network = config?.network;
+
+  // A local node redeploys on every start, so its address can only come from
+  // the environment. Note the STATIC member expression: Next inlines
+  // `process.env.NEXT_PUBLIC_FOO` into client bundles only when it can see the
+  // key literally, so the dynamic `process.env[key]` lookups below never
+  // resolve in the browser — the other chains work because they fall back to a
+  // hardcoded `sbtContractAddress`, and a local chain has none to fall back to.
+  if (chainId === 31337) {
+    return (process.env.NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_LOCALHOST || null) as Address | null;
+  }
+
   const envKeys =
     chainId === 80002
       ? ['NEXT_PUBLIC_SBT_CONTRACT_ADDRESS_POLYGON_AMOY']
