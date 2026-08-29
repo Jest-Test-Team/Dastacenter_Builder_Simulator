@@ -443,6 +443,10 @@ See [`docs/SECURITY.md`](docs/SECURITY.md) for the threat model.
 
 ---
 
+## agent on cloudflare ai workers
+
+The binding itself doesn't pin a specific model — it's bound to the full Workers AI catalog (project: "<catalog>"). The actual model is chosen at runtime in the Worker's code via AI.run("<model>", ...). Let me check the script content to find which model(s) it actually calls.The script is a large bundled Next.js app. Let me search within it for the AI model name programmatically.The Workers AI binding on datacenter-simulator (production) uses the model @cf/meta/llama-3.3-70b-instruct-fp8-fast.
+
 ## Documentation
 
 | Doc | What it covers |
