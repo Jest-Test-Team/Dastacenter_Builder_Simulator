@@ -55,6 +55,9 @@ describe('webmcp manifest', () => {
   it('declares the webmcp protocol and a pinned version', () => {
     expect(manifest.protocol).toBe('webmcp');
     expect(manifest.version).toBe(WEBMCP_MANIFEST_VERSION);
+    // Pinned literally: 1.1.0 added annotations to the manifest shape. Bumping
+    // the constant without meaning to change the manifest should fail here.
+    expect(WEBMCP_MANIFEST_VERSION).toBe('1.1.0');
   });
 
   it('exposes the stable tool set', () => {
@@ -90,6 +93,22 @@ describe('webmcp manifest', () => {
       expect.arrayContaining(['tier', 'pue', 'overallScore']),
     );
     expect(manifest.disclosure.neverDisclosed.join(' ').toLowerCase()).toContain('coordinates');
+  });
+
+  it('marks the read-only tools with readOnlyHint, and only those', () => {
+    // Spec ToolAnnotations: hints for the agent's planner, not enforcement.
+    const readOnly = ['list_block_types', 'get_build_snapshot', 'score_build', 'explain_failing_rules'];
+    for (const tool of manifest.tools) {
+      if (readOnly.includes(tool.name)) {
+        expect(tool.annotations, `${tool.name} should carry readOnlyHint`).toMatchObject({
+          readOnlyHint: true,
+        });
+      } else {
+        // Write tools omit annotations entirely: an absent hint reads as
+        // "assume it writes", which is the safe default.
+        expect(tool.annotations, `${tool.name} should not be marked read-only`).toBeUndefined();
+      }
+    }
   });
 
   it('has unique tool names', () => {

@@ -3,10 +3,11 @@
  *
  * Three things make this more delicate than a normal effect:
  *
- * 1. **The API moved.** It shipped on `navigator.modelContext` and moved to
- *    `document.modelContext` in Chromium 150. Both are live in the wild right
- *    now — a ChatGPT in-app browser and a Chrome 149 with the flag on will not
- *    agree — so we look for both and take whichever answers.
+ * 1. **The API moved.** It shipped on `navigator.modelContext`, which was
+ *    deprecated around Chromium 150 in favour of `document.modelContext`. Both
+ *    are live in the wild right now — a ChatGPT in-app browser and a Chrome 149
+ *    with the flag on will not agree — so we look for both and take whichever
+ *    answers.
  * 2. **The API is usually absent.** Every other browser has no `modelContext`
  *    at all. That is the normal case, not an error case: detection failing must
  *    be completely silent, with no console noise and no UI, or the 99% of users
@@ -35,7 +36,20 @@ import { WEBMCP_TOOLS, type WebMcpTool } from './tools';
  * optional because a given browser implements one, the other, or neither.
  */
 interface ModelContext {
-  registerTool?: (tool: WebMcpTool, options?: { signal?: AbortSignal }) => void;
+  /**
+   * Current spec shape: `Promise<undefined> registerTool(tool, options)`.
+   * Older builds returned nothing synchronously, so the return type admits
+   * both and the caller feature-detects the thenable.
+   */
+  registerTool?: (
+    tool: WebMcpTool,
+    options?: { signal?: AbortSignal },
+  ) => void | Promise<undefined>;
+  /**
+   * Legacy: `provideContext()` was removed from the spec in March 2026, but
+   * browsers in the wild that predate `registerTool` still expose it, so it
+   * stays as a fallback.
+   */
   provideContext?: (context: { tools: WebMcpTool[] }) => void;
 }
 
@@ -51,8 +65,9 @@ declare global {
 /**
  * Find the agent surface, preferring the current location.
  *
- * `document` first because that is where the API lives from Chromium 150 on;
- * a browser exposing both should be treated as the newer one.
+ * `document` first because that is where the spec puts the API;
+ * `navigator.modelContext` is deprecated (around Chromium 150) but still
+ * shipping, so a browser exposing both is treated as the newer one.
  */
 export function getModelContext(): ModelContext | null {
   if (typeof document === 'undefined') return null;
@@ -83,10 +98,21 @@ export function useWebMcp(tools: readonly WebMcpTool[] = WEBMCP_TOOLS): WebMcpSt
 
     if (typeof modelContext.registerTool === 'function') {
       for (const tool of tools) {
-        modelContext.registerTool(tool, { signal: controller.signal });
+        // The current spec returns Promise<undefined>; older builds return
+        // nothing. A rejecting registration is the "absent API" case arriving
+        // late, and the same invariant applies: completely silent.
+        const returned: unknown = modelContext.registerTool(tool, { signal: controller.signal });
+        if (
+          returned !== null &&
+          typeof returned === 'object' &&
+          typeof (returned as Promise<undefined>).catch === 'function'
+        ) {
+          (returned as Promise<undefined>).catch(() => undefined);
+        }
       }
     } else if (typeof modelContext.provideContext === 'function') {
-      // Older shape: one call replaces the whole set, so unregistering means
+      // Legacy shape, removed from the spec in March 2026 but still live in
+      // the wild: one call replaces the whole set, so unregistering means
       // handing back an empty list rather than aborting.
       modelContext.provideContext({ tools: [...tools] });
     } else {

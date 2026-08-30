@@ -31,6 +31,11 @@
  *
  * The asymmetry is the point. An agent may place a rack at (4, 0, 9) because it
  * chose to; it may never learn where the racks already are.
+ *
+ * Per the WebMCP spec's `ToolAnnotations`, the four read-only tools carry
+ * `annotations: { readOnlyHint: true }` so an agent can plan around them
+ * without asking. Annotations are hints, never enforcement — the disclosure
+ * gate above is what actually holds.
  */
 
 import { z } from 'zod';
@@ -56,7 +61,7 @@ import {
 import { countByType, findNearestLegalCell, useBuildStore } from '@/lib/store/build-store';
 
 /** Bumped when a tool's name or input shape changes. Judges and tests pin it. */
-export const WEBMCP_MANIFEST_VERSION = '1.0.0';
+export const WEBMCP_MANIFEST_VERSION = '1.1.0';
 
 /* -------------------------------------------------------------------------- */
 /* JSON Schema                                                                */
@@ -161,13 +166,31 @@ export interface WebMcpToolResult {
   isError?: boolean;
 }
 
+/**
+ * The spec's `ToolAnnotations`: hints an agent may use to plan, never to skip a
+ * check. `readOnlyHint` marks a tool that cannot mutate the build; the write
+ * tools simply omit annotations rather than declaring `readOnlyHint: false`,
+ * so an absent hint reads as "assume it writes".
+ */
+export interface WebMcpToolAnnotations {
+  readOnlyHint?: boolean;
+  untrustedContentHint?: boolean;
+}
+
 export interface WebMcpTool {
   /** Stable identifier the agent calls. Snake case, matched by the test suite. */
   name: string;
   /** Written for a model, not a developer: what it does and when to reach for it. */
   description: string;
   inputSchema: JsonSchema;
-  execute: (input: unknown) => Promise<WebMcpToolResult>;
+  annotations?: WebMcpToolAnnotations;
+  /**
+   * The spec calls this as `execute(inputObject, { signal })`. The second
+   * argument is declared (and ignored) so the type matches how browsers
+   * actually call it; every tool here completes synchronously enough that
+   * abort has nothing to interrupt.
+   */
+  execute: (input: unknown, options?: { signal?: AbortSignal }) => Promise<WebMcpToolResult>;
 }
 
 function ok(payload: unknown): WebMcpToolResult {
@@ -190,12 +213,14 @@ function defineTool<S extends z.ZodTypeAny>(spec: {
   name: string;
   description: string;
   schema: S;
+  annotations?: WebMcpToolAnnotations;
   run: (input: z.infer<S>) => unknown;
 }): WebMcpTool {
   return {
     name: spec.name,
     description: spec.description,
     inputSchema: toJsonSchema(spec.schema),
+    ...(spec.annotations ? { annotations: spec.annotations } : {}),
     execute: async (input: unknown) => {
       const parsed = spec.schema.safeParse(input ?? {});
       if (!parsed.success) {
@@ -411,6 +436,7 @@ export const WEBMCP_TOOLS: readonly WebMcpTool[] = Object.freeze([
       'List every block type that can be placed in the data center, with its category, ' +
       'footprint and what it is for. Call this before place_block so you use real type ids.',
     schema: ListBlockTypesInput,
+    annotations: { readOnlyHint: true },
     run: (input) => {
       const blocks = projectCatalog(input.category);
       return { count: blocks.length, categories: [...CATEGORIES], blocks };
@@ -473,6 +499,7 @@ export const WEBMCP_TOOLS: readonly WebMcpTool[] = Object.freeze([
       'the instanceIds you can remove, and the disclosure-gated scoring context. ' +
       'Block coordinates are never returned.',
     schema: SnapshotInput,
+    annotations: { readOnlyHint: true },
     run: () => {
       const state = liveState();
       return projectSnapshot(state.exportSnapshot(), state.gridSize);
@@ -486,6 +513,7 @@ export const WEBMCP_TOOLS: readonly WebMcpTool[] = Object.freeze([
       'Returns per-axis scores and failing rule ids by default. Exact overall score, PUE and ' +
       'tier are commercially sensitive and only returned if you ask for them in "include".',
     schema: ScoreBuildInput,
+    annotations: { readOnlyHint: true },
     run: (input) => {
       const state = liveState();
       return projectScore(state.exportSnapshot(), input.include ?? []);
@@ -499,6 +527,7 @@ export const WEBMCP_TOOLS: readonly WebMcpTool[] = Object.freeze([
       'from, the scoring axis it hurts, a hint for fixing it, and the instanceIds involved. ' +
       'Use this to decide what to place next.',
     schema: ExplainFailingRulesInput,
+    annotations: { readOnlyHint: true },
     run: (input) => {
       const state = liveState();
       return projectFailingRules(state.exportSnapshot(), input.ruleId);
@@ -513,7 +542,12 @@ export const WEBMCP_TOOLS: readonly WebMcpTool[] = Object.freeze([
 export interface WebMcpManifest {
   protocol: 'webmcp';
   version: string;
-  tools: Array<{ name: string; description: string; inputSchema: JsonSchema }>;
+  tools: Array<{
+    name: string;
+    description: string;
+    inputSchema: JsonSchema;
+    annotations?: WebMcpToolAnnotations;
+  }>;
   /**
    * The disclosure contract, stated once here rather than repeated in every
    * tool result. `neverDisclosed` is copied straight from the gate, so this
@@ -540,6 +574,7 @@ export function toolManifest(): WebMcpManifest {
       name: t.name,
       description: t.description,
       inputSchema: t.inputSchema,
+      ...(t.annotations ? { annotations: t.annotations } : {}),
     })),
     disclosure: {
       defaultFields: DISCLOSURE_FIELDS.filter((f) => defaults[f] === true),

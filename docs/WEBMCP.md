@@ -28,6 +28,14 @@ implementation of placement to drift out of sync with the one the user sees.
 | `score_build` | `score()` (`lib/scoring/engine.ts`) → `gate()` | Per-axis scores, failing rule ids, cert level; tier/PUE/exact score on request |
 | `explain_failing_rules` | `score().issues` + `allRules` | Failing rules with severity, standard, axis, hint, related instance ids |
 
+The four read tools — `list_block_types`, `get_build_snapshot`, `score_build`
+and `explain_failing_rules` — carry the spec's
+`annotations: { readOnlyHint: true }`, so an agent's planner can call them
+freely without asking. The write tools omit annotations on purpose: an absent
+hint reads as "assume it writes", which is the safe default. Annotations are
+hints for the agent, never enforcement — the disclosure gate is what actually
+holds.
+
 `place_block` takes an **optional** position. Omit it and the builder calls
 `findNearestLegalCell` to drop the block on the nearest legal free cell — which
 is usually the right call, because the agent cannot see the layout (see below).
@@ -81,11 +89,16 @@ JSON Schema, and the disclosure contract itself (`disclosure.defaultFields`,
 
 Open `/build/free` in one of:
 
-- **Chrome 149+** with WebMCP enabled: `chrome://flags` →
-  *Prompt API for Web / Web Machine Learning model context* → **Enabled**,
-  then restart. On Chrome 150+ the API is `document.modelContext`; on 149 it is
-  `navigator.modelContext`. The hook checks both.
-- **The ChatGPT in-app browser**, which exposes the API to its own agent.
+- **Chrome with WebMCP enabled locally**: open
+  `chrome://flags/#enable-webmcp-testing`, set it to **Enabled**, restart. The
+  origin trial spans Chrome 149 through roughly 156; abort-signal
+  unregistration (which the hook relies on for clean unmounts) landed in
+  Chrome 153. The current API is `document.modelContext` —
+  `navigator.modelContext` was deprecated around Chrome 150 but still ships,
+  and the hook checks both, preferring `document`.
+- **The ChatGPT desktop app's in-app browser**, which auto-discovers tools
+  registered by the top-level page (models GPT-5.6 Sol / Terra; not available
+  in Enterprise/Edu workspaces or on mobile).
 
 A chip reading **"6 WebMCP tools exposed"** appears at the bottom-left of the
 canvas. It renders *only* when the API is detected, so its presence is the
@@ -112,11 +125,17 @@ The blocks appear in the 3D scene as they are placed.
   the validation the call survives cannot disagree.
 - `src/lib/webmcp/use-webmcp.ts` — the React hook. Feature-detects
   `document.modelContext ?? navigator.modelContext` (the API moved from
-  `Navigator` to `Document` in Chromium 150, and both are live in the wild),
-  registers with an `AbortController` signal and aborts on unmount, falls back to
-  `provideContext({ tools })` where `registerTool` is absent, and is a silent
-  no-op when the API is missing. All access is inside `useEffect`, so it is safe
-  under SSR on Cloudflare Workers via OpenNext.
+  `Navigator` to `Document`; the `Navigator` form was deprecated around
+  Chromium 150 but both are live in the wild), registers with an
+  `AbortController` signal and aborts on unmount, and handles both a
+  sync-returning `registerTool` and the current spec's promise-returning one —
+  a rejecting registration is swallowed, because the "absent API is a silent
+  no-op" invariant extends to a registration that fails. Falls back to
+  `provideContext({ tools })` where `registerTool` is absent — `provideContext`
+  was removed from the spec in March 2026 but is kept as a legacy fallback for
+  older browsers — and is a silent no-op when the API is missing. All access is
+  inside `useEffect`, so it is safe under SSR on Cloudflare Workers via
+  OpenNext.
 - `src/components/builder/WebMcpBadge.tsx` — mounts the hook and renders the
   chip. Mounted from `src/app/build/[scenarioId]/page.tsx`, which also serves
   `/build/free`.
