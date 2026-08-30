@@ -29,9 +29,10 @@
 Clone the repository and install the dependencies:
 
 ```bash
-git clone [https://github.com/your-username/Datacenter_Builder_Simulator.git](https://github.com/your-username/Datacenter_Builder_Simulator.git)
-cd Datacenter_Builder_Simulator
+git clone https://github.com/Jest-Test-Team/Dastacenter_Builder_Simulator.git
+cd Dastacenter_Builder_Simulator
 npm install
+```
 
 ---
 
@@ -70,6 +71,42 @@ and the resulting certificate is minted as a **Soulbound Token** on-chain.
 
 No email. No password. No account. Wallet-only, and everything is stored in your
 own browser.
+
+---
+
+## WebMCP — drive the builder with an AI agent
+
+The builder page registers **6 WebMCP tools** on `document.modelContext`, so an
+agent sitting next to the page — in the ChatGPT desktop app's browser, or Chrome
+149+ with <kbd>chrome://flags/#enable-webmcp-testing</kbd> — operates the **live
+3D builder**: the same Zustand actions a mouse click calls, the same placement
+validation, the same undo stack.
+
+| Tool | What it does |
+|---|---|
+| `list_block_types` | The 47-block catalog: id, category, footprint, tags |
+| `place_block` | Place a block — position optional; omitted, it snaps to the nearest legal free cell |
+| `remove_block` | Remove a block by instance id |
+| `get_build_snapshot` | Counts by type, floor size, instance ids — gated |
+| `score_build` | Per-axis scores, failing rule ids, cert level — gated |
+| `explain_failing_rules` | Each failing rule with severity, cited standard and a fix hint |
+
+> "Add two UPS units and tell me which compliance rules are still failing" is a
+> workable instruction — the blocks appear in the 3D scene as the agent places them.
+
+Every tool response passes through the **same disclosure gate as the in-app
+copilot** (`src/lib/ai/disclosure.ts`): the agent gets scores and failing rules,
+but never grid coordinates, the knowledge-graph digest, the proof blinding, or
+the wallet. Coordinates travel inbound only — the agent may place a rack at
+(4, 0, 9) because it chose to; it never learns where the racks already are.
+
+No special browser needed to inspect the surface:
+
+```bash
+curl -s https://datacenter-building-simulator.dennisleehappy.org/api/webmcp/manifest | jq
+```
+
+📄 Full write-up: [`docs/WEBMCP.md`](docs/WEBMCP.md)
 
 ---
 
@@ -454,9 +491,13 @@ See [`docs/SECURITY.md`](docs/SECURITY.md) for the threat model.
 
 ---
 
-## agent on cloudflare ai workers
+## AI agent on Cloudflare Workers AI
 
-The binding itself doesn't pin a specific model — it's bound to the full Workers AI catalog (project: "<catalog>"). The actual model is chosen at runtime in the Worker's code via AI.run("<model>", ...). Let me check the script content to find which model(s) it actually calls.The script is a large bundled Next.js app. Let me search within it for the AI model name programmatically.The Workers AI binding on datacenter-simulator (production) uses the model @cf/meta/llama-3.3-70b-instruct-fp8-fast.
+The in-app copilot and settlement agent run on **Cloudflare Workers AI**, on the
+same edge deployment as the rest of the app. The Workers AI binding is not pinned
+to a model — it exposes the full catalog — so the model is chosen at runtime via
+`AI.run(...)`; in production, the `datacenter-simulator` Worker calls
+**`@cf/meta/llama-3.3-70b-instruct-fp8-fast`**.
 
 ## Documentation
 
