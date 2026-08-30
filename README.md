@@ -18,9 +18,20 @@
 
 **https://youtu.be/HEeLKUdFxDI**
 
-[![Watch the demo](https://img.youtube.com/vi/HEeLKUdFxDI/maxresdefault.jpg)](https://youtu.be/HEeLKUdFxDI)
+[![Watch the demo]](https://youtu.be/HEeLKUdFxDI)
 
 **Live app:** https://datacenter-building-simulator.dennisleehappy.org/
+
+---
+
+### 1. Installation & Local Development
+
+Clone the repository and install the dependencies:
+
+```bash
+git clone [https://github.com/your-username/Datacenter_Builder_Simulator.git](https://github.com/your-username/Datacenter_Builder_Simulator.git)
+cd Datacenter_Builder_Simulator
+npm install
 
 ---
 
