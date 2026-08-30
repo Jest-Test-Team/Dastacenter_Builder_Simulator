@@ -76,3 +76,7 @@ storybook-static/
 
 # Midnight ZK keys served to the browser (regenerate via zk:compile + copy)
 public/midnight-zk/
+
+# Claude Code agent worktrees (transient, never commit)
+.claude/worktrees/
+/.claude
