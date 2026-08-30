@@ -647,8 +647,11 @@ export function getInstanceAtCell(state: BuildState, cell: Cell): BlockInstance 
   return id ? state.voxels[id] : undefined;
 }
 
-/** Helper: count placed blocks by type. */
-export function countByType(state: BuildState): Record<string, number> {
+/** Helper: count placed blocks by type.
+ *  Takes the *pure* build state — it only reads `voxels`, and widening the
+ *  parameter lets a plain snapshot be counted without inventing a second
+ *  implementation. The live store satisfies this too. */
+export function countByType(state: PureBuildState): Record<string, number> {
   const out: Record<string, number> = {};
   for (const v of Object.values(state.voxels)) {
     out[v.type] = (out[v.type] ?? 0) + 1;
