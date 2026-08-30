@@ -79,3 +79,4 @@ public/midnight-zk/
 
 # Robot Framework keyword libraries compile beside the suites
 __pycache__/
+node_modules

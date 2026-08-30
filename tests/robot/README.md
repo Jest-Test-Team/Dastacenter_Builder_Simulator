@@ -82,6 +82,38 @@ can check the two things that actually break in the field:
 
 Tags: `smoke`, `contract`, `disclosure`.
 
+#### `webmcp/browser.robot`
+
+The same tools, exercised where they actually live: registered by the builder
+page inside a real (Playwright-driven) Chromium, executed against the live
+Zustand store. Where `manifest.robot` checks the catalog the server
+*describes*, this suite checks the catalog the page *delivers*:
+
+- **Registration happens.** No shipping browser exposes `modelContext`, so a
+  JS-extension keyword (`WebMcpStub.js`) installs an init script before
+  navigation whose stub records `registerTool` calls (and honours the abort
+  signal, so React strict-mode remounts in dev do not double-count). The
+  `data-testid="webmcp-badge"` chip must appear reading "6 WebMCP tools
+  exposed", and the captured registrations must be exactly the pinned tool
+  list, each with a description and an object `inputSchema`.
+- **Execution drives the live app.** `place_block` returns `ok: true` with an
+  `instanceId`, and a `get_build_snapshot` taken through the same surface
+  counts one more block than before the call.
+- **The disclosure gate holds on live payloads.** The `place_block` result
+  echoes no coordinate-shaped key even though the tool chose a cell, and the
+  `score_build` result contains none of the disclosure-gated key names (nor
+  any `x,y,z`-shaped cell key) at any depth — including inside the serialized
+  `content[0].text` copy of the payload.
+
+Needs the Playwright browsers that `robotframework-browser` drives; a one-time
+`rfbrowser init chromium` downloads them. Same server assumption and
+`${BASE_URL}` convention as `manifest.robot`; note the suite setup waits up to
+three minutes for the first load, because dev compiles `/build/free` on the
+first request. The placement tests are ordered (the snapshot test reads the
+count captured before the placement), so run the suite as a whole.
+
+Tags: `smoke`, `contract`, `disclosure`.
+
 ## Adding a suite
 
 - Put it in `tests/robot/<area>/`, with any Python keyword library beside it.
