@@ -80,3 +80,7 @@ public/midnight-zk/
 # Claude Code agent worktrees (transient, never commit)
 .claude/worktrees/
 /.claude
+
+# Robot Framework keyword libraries compile beside the suites
+__pycache__/
+node_modules

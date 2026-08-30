@@ -28,6 +28,7 @@ import { useT } from '@/lib/i18n/client';
 import { NetworkWorkspace } from '@/components/builder/NetworkWorkspace';
 import { GraphWorkspace } from '@/components/builder/GraphWorkspace';
 import { ObjectInspector } from '@/components/builder/ObjectInspector';
+import { WebMcpBadge } from '@/components/builder/WebMcpBadge';
 import { getDemoBuild } from '@/lib/demos';
 
 const BuilderCanvas = dynamic(
@@ -92,6 +93,9 @@ export default function BuildPage() {
           </div>
           <div className="pointer-events-none absolute right-2 top-2 md:right-4 md:top-4">
             <CoordReadout />
+          </div>
+          <div className="pointer-events-none absolute left-2 bottom-2 md:left-4 md:bottom-4">
+            <WebMcpBadge />
           </div>
           <div className="absolute left-2 top-2 z-20 flex gap-2 md:hidden">
             <button
