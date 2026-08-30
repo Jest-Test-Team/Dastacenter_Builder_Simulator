@@ -270,7 +270,7 @@ const PlaceBlockInput = z.object({
   type: z
     .string()
     .min(1)
-    .describe('Block type id from list_block_types, for example "rack" or "ups".'),
+    .describe('Block type id from list_block_types, for example "server_rack" or "ups".'),
   position: PositionSchema.optional(),
   rotation: RotationSchema.optional(),
 });
