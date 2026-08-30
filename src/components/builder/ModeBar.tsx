@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useBuildStore, useBuildHistory } from '@/lib/store/build-store';
 import { downloadBuildJson } from '@/lib/export/build-export';
 import { importBuildFromFile, createFileInput } from '@/lib/export/build-import';
@@ -46,6 +46,22 @@ export function ModeBar() {
   const walletAddress = address ?? midnight.address ?? undefined;
   const t = useT();
   const [importing, setImporting] = useState(false);
+
+  // Cmd/Ctrl+Z undoes, +Shift redoes — the docs promise it, and the WebMCP
+  // story ("the agent's blocks share your undo stack") depends on it. Calls
+  // are zero-arg on purpose; see the note at the buttons below.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.key.toLowerCase() !== 'z') return;
+      const el = e.target as HTMLElement | null;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
+      e.preventDefault();
+      if (e.shiftKey) redo();
+      else undo();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [undo, redo]);
 
   function handleDownloadWorks() {
     if (!walletAddress) return;
@@ -129,10 +145,13 @@ export function ModeBar() {
       <div className="mx-1 hidden h-6 w-px bg-border lg:block" />
 
       <div className="flex min-w-0 flex-wrap items-center gap-1">
-        <IconButton onClick={undo} disabled={pastCount === 0} title={t('builder.undo')}>
+        {/* Never pass the click event through: zundo's undo(steps) would read
+            the MouseEvent as a step count, splice(NaN) an empty slice, and set
+            the whole store to undefined — a full page crash. */}
+        <IconButton onClick={() => undo()} disabled={pastCount === 0} title={t('builder.undo')}>
           <Undo2 className="h-4 w-4" />
         </IconButton>
-        <IconButton onClick={redo} disabled={futureCount === 0} title={t('builder.redo')}>
+        <IconButton onClick={() => redo()} disabled={futureCount === 0} title={t('builder.redo')}>
           <Redo2 className="h-4 w-4" />
         </IconButton>
       </div>

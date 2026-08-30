@@ -622,7 +622,22 @@ export const useBuildStore = create<BuildStore>()(
           scenarioName: state.scenarioName,
         }) as BuildState,
       limit: 100,
-      equality: (a, b) => a === b,
+      // Shallow field identity over the tracked keys. Reducers replace these
+      // objects only when the world actually changes, so this records exactly
+      // one history entry per real change. The previous strict `a === b` was
+      // never true (partialize builds a fresh object per set), so EVERY set —
+      // hover moves included — pushed a duplicate snapshot, undo peeled
+      // duplicates instead of changes, and the next UI set wiped futureStates
+      // so redo never enabled.
+      equality: (a, b) =>
+        a.voxels === b.voxels &&
+        a.byCell === b.byCell &&
+        a.inventory === b.inventory &&
+        a.policies === b.policies &&
+        a.network === b.network &&
+        a.name === b.name &&
+        a.scenarioId === b.scenarioId &&
+        a.scenarioName === b.scenarioName,
     },
   ),
 );
