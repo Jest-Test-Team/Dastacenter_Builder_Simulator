@@ -19,7 +19,8 @@
     "devalue": "^5.9.3",
     "ip-address": "^10.7.4",
     "vite": "^6.4.4",
-    "js-yaml": "^4.3.2"
+    "js-yaml": "^4.3.2",
+    "toml": "^5.0.1"
   },
   "scripts": {
     "dev": "next dev",
