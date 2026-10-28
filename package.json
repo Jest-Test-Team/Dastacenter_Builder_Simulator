@@ -23,7 +23,8 @@
     "toml": "^5.0.1",
     "@fastify/busboy": "^3.2.2",
     "follow-redirects": "^1.16.1",
-    "ws": "^8.21.0"
+    "ws": "^8.21.0",
+    "lodash": "^4.18.0"
   },
   "scripts": {
     "dev": "next dev",
