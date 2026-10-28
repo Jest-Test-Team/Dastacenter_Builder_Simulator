@@ -21,7 +21,8 @@
     "vite": "^6.4.4",
     "js-yaml": "^4.3.2",
     "toml": "^5.0.1",
-    "@fastify/busboy": "^3.2.2"
+    "@fastify/busboy": "^3.2.2",
+    "follow-redirects": "^1.16.1"
   },
   "scripts": {
     "dev": "next dev",
