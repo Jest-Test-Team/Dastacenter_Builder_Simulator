@@ -9,7 +9,8 @@
   "overrides": {
     "rxjs": "7.8.2",
     "protobufjs": "^7.6.5",
-    "dompurify": "^3.4.17"
+    "dompurify": "^3.4.17",
+    "tinypool": "^2.1.2"
   },
   "scripts": {
     "dev": "next dev",
