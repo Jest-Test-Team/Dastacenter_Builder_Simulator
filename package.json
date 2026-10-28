@@ -22,7 +22,8 @@
     "js-yaml": "^4.3.2",
     "toml": "^5.0.1",
     "@fastify/busboy": "^3.2.2",
-    "follow-redirects": "^1.16.1"
+    "follow-redirects": "^1.16.1",
+    "ws": "^8.21.0"
   },
   "scripts": {
     "dev": "next dev",
