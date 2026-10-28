@@ -29,6 +29,7 @@
     "js-yaml": "^4.3.2",
     "@fastify/busboy": "^3.2.2",
     "follow-redirects": "^1.16.1",
-    "ws": "^8.21.0"
+    "ws": "^8.21.0",
+    "serialize-javascript": "^7.1.3"
   }
 }
