@@ -26,7 +26,8 @@
     "ws": "^8.21.0",
     "lodash": "^4.18.0",
     "sharp": "^0.35.5",
-    "body-parser": "^2.4.0"
+    "body-parser": "^2.4.0",
+    "browserslist": "^4.28.7"
   },
   "scripts": {
     "dev": "next dev",
