@@ -35,7 +35,8 @@
     "stream-json": "^3.6.0",
     "@vitest/mocker": "^4.1.12",
     "esbuild": "^0.28.1",
-    "pbkdf2": "^3.1.7"
+    "pbkdf2": "^3.1.7",
+    "postcss-selector-parser": "^6.1.5"
   },
   "scripts": {
     "dev": "next dev",
