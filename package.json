@@ -34,7 +34,8 @@
     "qs": "^6.16.1",
     "stream-json": "^3.6.0",
     "@vitest/mocker": "^4.1.12",
-    "esbuild": "^0.28.1"
+    "esbuild": "^0.28.1",
+    "pbkdf2": "^3.1.7"
   },
   "scripts": {
     "dev": "next dev",
