@@ -25,7 +25,8 @@
     "follow-redirects": "^1.16.1",
     "ws": "^8.21.0",
     "lodash": "^4.18.0",
-    "sharp": "^0.35.5"
+    "sharp": "^0.35.5",
+    "body-parser": "^2.4.0"
   },
   "scripts": {
     "dev": "next dev",
