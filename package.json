@@ -33,7 +33,8 @@
     "source-map-js": "^1.2.2",
     "qs": "^6.16.1",
     "stream-json": "^3.6.0",
-    "@vitest/mocker": "^4.1.12"
+    "@vitest/mocker": "^4.1.12",
+    "esbuild": "^0.28.1"
   },
   "scripts": {
     "dev": "next dev",
