@@ -36,7 +36,8 @@
     "@vitest/mocker": "^4.1.12",
     "esbuild": "^0.28.1",
     "pbkdf2": "^3.1.7",
-    "postcss-selector-parser": "^6.1.5"
+    "postcss-selector-parser": "^6.1.5",
+    "uuid": "^11.1.1"
   },
   "scripts": {
     "dev": "next dev",
