@@ -22,7 +22,7 @@
     "js-yaml": "^4.3.2",
     "toml": "^5.0.1",
     "@fastify/busboy": "^3.2.2",
-    "follow-redirects": "^1.16.1",
+    "follow-redirects": "^1.16.2",
     "ws": "^8.21.0",
     "lodash": "^4.18.0",
     "sharp": "^0.35.5",
