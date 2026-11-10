@@ -44,7 +44,8 @@
     "node-forge": "^1.4.3",
     "minimatch": "^11.0.1",
     "glob": "^14.0.2",
-    "@effect/platform": "^0.97.1"
+    "@effect/platform": "^0.97.1",
+    "fast-xml-parser": "^5.12.0"
   },
   "scripts": {
     "dev": "next dev",
