@@ -8,7 +8,8 @@
   },
   "overrides": {
     "rxjs": "7.8.2",
-    "protobufjs": "^7.6.5"
+    "protobufjs": "^7.6.5",
+    "tinypool": "^2.1.2"
   },
   "scripts": {
     "dev": "next dev",
